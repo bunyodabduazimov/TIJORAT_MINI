@@ -1,0 +1,11 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/MiniTrade.Core/MiniTrade.Core.csproj" />
+    <Project Path="src/MiniTrade.Desktop/MiniTrade.Desktop.csproj" />
+    <Project Path="src/MiniTrade.LicenseServer/MiniTrade.LicenseServer.csproj" />
+    <Project Path="src/MiniTrade.Licensing.Shared/MiniTrade.Licensing.Shared.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/MiniTrade.Tests/MiniTrade.Tests.csproj" />
+  </Folder>
+</Solution>

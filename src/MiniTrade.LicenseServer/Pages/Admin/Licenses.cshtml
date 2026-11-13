@@ -1,0 +1,60 @@
+@page "/admin/licenses"
+@model LicensesModel
+@{ ViewData["Title"] = "Лицензии"; }
+<div class="toolbar">
+    <h1 style="margin:0">Лицензии и ключи</h1>
+    <form method="get" class="actions">
+        <input name="q" value="@Model.Q" placeholder="Ключ или клиент" style="width:220px" />
+        <select name="filter" style="width:180px">
+            <option value="" selected="@(Model.Filter is null)">Все</option>
+            <option value="active" selected="@(Model.Filter == "active")">Активные</option>
+            <option value="trial" selected="@(Model.Filter == "trial")">Пробные</option>
+            <option value="expiring" selected="@(Model.Filter == "expiring")">Истекают (30 дн.)</option>
+            <option value="expired" selected="@(Model.Filter == "expired")">Истёкшие</option>
+            <option value="blocked" selected="@(Model.Filter == "blocked")">Заблокированные</option>
+        </select>
+        <button class="btn btn-light">Применить</button>
+    </form>
+</div>
+<div class="card" id="create">
+    <h2>Создать лицензионный ключ</h2>
+    <form method="post" class="form-grid">
+        <div><label>Клиент *</label>
+            <select asp-for="Input.CustomerId" required>
+                <option value="">— выберите —</option>
+                @foreach (var c in Model.Customers)
+                {
+                    <option value="@c.Id" selected="@(c.Id == Model.Input.CustomerId)">@c.FullName @(string.IsNullOrEmpty(c.Company) ? "" : $"({c.Company})")</option>
+                }
+            </select>
+        </div>
+        <div><label>Тип лицензии</label>
+            <select asp-for="Input.Type">
+                <option value="Annual">Годовая (365 дней)</option>
+                <option value="Perpetual">Бессрочная</option>
+                <option value="Trial">Пробная (14 дней)</option>
+            </select>
+        </div>
+        <div><label>Устройств</label><input asp-for="Input.MaxDevices" type="number" min="1" max="100" /></div>
+        <div><label>Примечание</label><input asp-for="Input.Notes" /></div>
+        <div><button class="btn" type="submit">Сгенерировать ключ</button></div>
+    </form>
+</div>
+<div class="card">
+    <table>
+        <tr><th>Ключ</th><th>Клиент</th><th>Тип</th><th>Действует до</th><th>Устройства</th><th>Статус</th><th></th></tr>
+        @foreach (var l in Model.Items)
+        {
+            <tr>
+                <td class="key">@l.Key</td>
+                <td>@l.Customer?.FullName<div class="muted">@l.Customer?.Company</div></td>
+                <td><span class="badge @(l.Type == LicenseType.Trial ? "badge-gray" : "badge-blue")">@LicenseDefaults.TypeName(l.Type)</span></td>
+                <td>@(l.ExpiresAt is null ? "Бессрочно" : Fmt.Date(l.ExpiresAt))</td>
+                <td>@l.Activations.Count(a => a.IsActive) / @l.MaxDevices</td>
+                <td><partial name="_Badges" model="l" /></td>
+                <td style="text-align:right"><a class="btn btn-light btn-sm" href="/admin/licenses/@l.Id">Управление</a></td>
+            </tr>
+        }
+        @if (Model.Items.Count == 0) { <tr><td colspan="7" class="muted">Лицензии не найдены</td></tr> }
+    </table>
+</div>

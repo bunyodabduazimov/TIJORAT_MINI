@@ -1,0 +1,36 @@
+@page "/admin/customers/{id:int}"
+@model CustomerModel
+@{ ViewData["Title"] = Model.Customer.FullName; }
+<div class="toolbar">
+    <h1 style="margin:0">@Model.Customer.FullName</h1>
+    <a class="btn" href="/admin/licenses?customerId=@Model.Customer.Id#create">Выдать лицензию</a>
+</div>
+<div class="grid grid-2">
+    <div class="card">
+        <h2>Данные клиента</h2>
+        <form method="post" class="grid" style="gap:12px">
+            <div><label>ФИО *</label><input asp-for="Input.FullName" required /></div>
+            <div><label>Компания</label><input asp-for="Input.Company" /></div>
+            <div><label>Телефон</label><input asp-for="Input.Phone" /></div>
+            <div><label>Email</label><input asp-for="Input.Email" type="email" /></div>
+            <div><label>Примечание</label><textarea asp-for="Input.Notes" rows="3"></textarea></div>
+            <div><button class="btn" type="submit">Сохранить</button></div>
+        </form>
+    </div>
+    <div class="card">
+        <h2>Лицензии клиента</h2>
+        <table>
+            <tr><th>Ключ</th><th>Тип</th><th>До</th><th>Статус</th></tr>
+            @foreach (var l in Model.Customer.Licenses.OrderByDescending(x => x.Id))
+            {
+                <tr>
+                    <td><a class="key" href="/admin/licenses/@l.Id">@l.Key</a></td>
+                    <td>@LicenseDefaults.TypeName(l.Type)</td>
+                    <td>@(l.ExpiresAt is null ? "Бессрочно" : Fmt.Date(l.ExpiresAt))</td>
+                    <td><partial name="_Badges" model="l" /></td>
+                </tr>
+            }
+            @if (Model.Customer.Licenses.Count == 0) { <tr><td colspan="4" class="muted">Нет лицензий</td></tr> }
+        </table>
+    </div>
+</div>

@@ -1,0 +1,246 @@
+<Window x:Class="MiniTrade.Desktop.Views.CheckoutWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:l="clr-namespace:MiniTrade.Desktop.Infrastructure"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:vm="clr-namespace:MiniTrade.Desktop.ViewModels"
+        mc:Ignorable="d" d:DataContext="{d:DesignInstance vm:SalesViewModel}"
+        Title="{l:T 'Оформление продажи'}" Width="760" SizeToContent="Height"
+        Style="{StaticResource AppWindow}" Background="Transparent"
+        WindowStyle="None" AllowsTransparency="True" ResizeMode="NoResize"
+        ShowInTaskbar="False" WindowStartupLocation="CenterOwner">
+    <!--
+        Оформление продажи: слева покупатель, касса, комментарий и состав чека; справа скидка и оплата.
+        F9 или Enter — провести, Esc — вернуться к чеку (чек сохраняется).
+    -->
+    <Window.InputBindings>
+        <KeyBinding Key="F9" Command="{Binding PostSaleCommand}"/>
+    </Window.InputBindings>
+
+    <Grid x:Name="ShadowRoom" Margin="20">
+        <Border Background="{DynamicResource SurfaceBrush}" CornerRadius="12" Effect="{DynamicResource DialogShadow}"/>
+        <Border Background="{DynamicResource SurfaceBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" CornerRadius="12">
+            <DockPanel>
+                <!-- Заголовок -->
+                <DockPanel DockPanel.Dock="Top" Background="Transparent" Margin="22,16,12,8" MouseLeftButtonDown="OnHeaderMouseDown">
+                    <Button DockPanel.Dock="Right" Style="{StaticResource IconButton}" Content="&#xF0156;" ToolTip="{l:T 'Закрыть (Esc)'}"
+                            Width="30" Height="30" IsTabStop="False" Focusable="False" Click="OnCancel" VerticalAlignment="Top"/>
+                    <Border Width="32" Height="32" CornerRadius="16" Background="{DynamicResource SuccessLightBrush}" Margin="0,0,12,0">
+                        <TextBlock Text="&#xF0111;" FontFamily="{StaticResource IconFont}" FontSize="14" Foreground="{DynamicResource SuccessBrush}"
+                                   HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+                    <StackPanel VerticalAlignment="Center">
+                        <TextBlock Text="{l:T 'Оформление продажи'}" FontSize="17" FontWeight="SemiBold"/>
+                        <TextBlock Style="{StaticResource Muted}" FontSize="12">
+                            <Run Text="{Binding ItemsCount, Mode=OneWay}"/><Run Text=" "/><Run Text="{l:T 'поз.'}"/><Run Text=" · "/><Run Text="{Binding Warehouse.Name, Mode=OneWay}"/>
+                        </TextBlock>
+                    </StackPanel>
+                </DockPanel>
+
+                <!-- Кнопки -->
+                <Border DockPanel.Dock="Bottom" Background="{DynamicResource SurfaceAltBrush}" BorderBrush="{DynamicResource BorderBrush}"
+                        BorderThickness="0,1,0,0" CornerRadius="0,0,12,12" Padding="22,12">
+                    <DockPanel>
+                        <Button DockPanel.Dock="Left" Style="{StaticResource SecondaryButton}" Click="OnSaveDraft" ToolTip="{l:T 'Сохранить чек и вернуться к нему позже'}">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="&#xF09EE;" FontFamily="{StaticResource IconFont}" FontSize="12" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                <TextBlock Text="{l:T 'В черновики'}"/>
+                            </StackPanel>
+                        </Button>
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                            <Button Content="{l:T 'Назад к чеку'}" Style="{StaticResource SecondaryButton}" IsCancel="True" Click="OnCancel" MinWidth="110"/>
+                            <Button Style="{StaticResource SuccessButton}" IsDefault="True" Command="{Binding PostSaleCommand}" Margin="8,0,0,0" MinWidth="190">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="{l:T 'Провести продажу'}"/>
+                                    <TextBlock Text="F9" Opacity="0.7" FontWeight="Normal" FontSize="12" Margin="10,1,0,0"/>
+                                </StackPanel>
+                            </Button>
+                        </StackPanel>
+                    </DockPanel>
+                </Border>
+
+                <Grid Margin="22,6,22,18">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="20"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <!-- ── Слева: кому и куда ── -->
+                    <StackPanel>
+                        <TextBlock Text="{l:T 'Покупатель'}" Style="{StaticResource FieldLabel}" Margin="0,0,0,4"/>
+                        <DockPanel>
+                            <Button DockPanel.Dock="Right" Style="{StaticResource InputAddonButton}" Content="&#xF0CB6;" ToolTip="{l:T 'Изменить покупателя'}" Command="{Binding EditCustomerCommand}" Visibility="{Binding Customer, Converter={StaticResource BoolToVis}}"/>
+                            <Button DockPanel.Dock="Right" Style="{StaticResource InputAddonButton}" Content="&#xF0415;" ToolTip="{l:T 'Новый покупатель'}" Command="{Binding AddCustomerCommand}" Visibility="{Binding Customer, Converter={StaticResource InvBoolToVis}}"/>
+                            <ComboBox ItemsSource="{Binding Customers}" SelectedItem="{Binding Customer}" DisplayMemberPath="Name"
+                                      l:Ui.Placeholder="{l:T 'Розничный покупатель'}"/>
+                        </DockPanel>
+
+                        <TextBlock Text="{l:T 'Касса'}" Style="{StaticResource FieldLabel}"/>
+                        <DockPanel>
+                            <ComboBox ItemsSource="{Binding CashRegisters}" SelectedItem="{Binding CashRegister}" DisplayMemberPath="Name"/>
+                        </DockPanel>
+
+                        <TextBlock Text="{l:T 'Комментарий'}" Style="{StaticResource FieldLabel}"/>
+                        <TextBox Text="{Binding Comment, UpdateSourceTrigger=PropertyChanged}" TextWrapping="Wrap" AcceptsReturn="False" MinHeight="56"
+                                 VerticalContentAlignment="Top" l:Ui.Placeholder="{l:T 'Необязательно'}"/>
+
+                        <!-- Состав чека (только просмотр) -->
+                        <TextBlock Text="{l:T 'Состав чека'}" Style="{StaticResource FieldLabel}"/>
+                        <Border BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" CornerRadius="8" Padding="10,4" MaxHeight="170">
+                            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                                <ItemsControl ItemsSource="{Binding Lines}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <DockPanel Margin="0,4">
+                                                <TextBlock DockPanel.Dock="Right" Text="{Binding Amount, Converter={StaticResource Money}}" FontWeight="SemiBold" Margin="10,0,0,0"/>
+                                                <TextBlock DockPanel.Dock="Right" Style="{StaticResource Muted}" FontSize="12" VerticalAlignment="Center">
+                                                    <Run Text="{Binding Quantity, Mode=OneWay, StringFormat={}{0:0.###}}"/><Run Text=" × "/><Run Text="{Binding Price, Mode=OneWay, StringFormat={}{0:N2}}"/>
+                                                </TextBlock>
+                                                <TextBlock Text="{Binding Product.Name}" TextTrimming="CharacterEllipsis" Margin="0,0,10,0"/>
+                                            </DockPanel>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </ScrollViewer>
+                        </Border>
+                    </StackPanel>
+
+                    <!-- ── Справа: сумма и оплата ── -->
+                    <StackPanel Grid.Column="2">
+                        <Border Background="{DynamicResource SurfaceAltBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" CornerRadius="10" Padding="14,10">
+                            <Grid>
+                                <Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                <StackPanel>
+                                    <TextBlock Text="{l:T 'К оплате'}" Style="{StaticResource Muted}"/>
+                                    <TextBlock Text="{Binding ToPay, Converter={StaticResource Money}}" FontSize="28" FontWeight="Bold" Foreground="{DynamicResource PrimaryBrush}"/>
+                                    <TextBlock Style="{StaticResource Muted}" FontSize="12" Visibility="{Binding HasDiscount, Converter={StaticResource BoolToVis}}">
+                                        <Run Text="{Binding Total, Converter={StaticResource Money}, Mode=OneWay}" TextDecorations="Strikethrough"/>
+                                        <Run Text="{Binding DiscountAmount, Converter={StaticResource Money}, StringFormat=−{0}, Mode=OneWay}" Foreground="{DynamicResource DangerBrush}"/>
+                                    </TextBlock>
+                                </StackPanel>
+                                <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                    <TextBlock Text="{l:T 'Скидка, %'}" Style="{StaticResource Muted}" FontSize="12" Margin="0,0,0,4"/>
+                                    <TextBox l:Ui.Numeric="True" Width="72" TextAlignment="Right"
+                                             Text="{Binding DiscountPercent, Converter={StaticResource Dec}, UpdateSourceTrigger=PropertyChanged}"/>
+                                </StackPanel>
+                            </Grid>
+                        </Border>
+
+                        <!-- Способ оплаты: сразу или в долг (остаток — на покупателя) -->
+                        <Grid Margin="0,12,0,0">
+                            <Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="8"/><ColumnDefinition/></Grid.ColumnDefinitions>
+                            <RadioButton Style="{StaticResource ChoiceTile}" GroupName="payMode" Padding="0"
+                                         IsChecked="{Binding OnCredit, Converter={StaticResource Not}}">
+                                <StackPanel Orientation="Horizontal" Margin="-2,-4">
+                                    <TextBlock Text="&#xF0114;" FontFamily="{StaticResource IconFont}" FontSize="18" Foreground="{DynamicResource SuccessBrush}" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                    <TextBlock Text="{l:T 'Оплата сразу'}" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </RadioButton>
+                            <RadioButton Grid.Column="2" Style="{StaticResource ChoiceTile}" GroupName="payMode" Padding="0"
+                                         IsChecked="{Binding OnCredit}" ToolTip="{l:T 'Неоплаченная часть записывается в долг покупателя'}">
+                                <StackPanel Orientation="Horizontal" Margin="-2,-4">
+                                    <TextBlock Text="&#xF0150;" FontFamily="{StaticResource IconFont}" FontSize="18" Foreground="{DynamicResource WarningBrush}" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                    <TextBlock Text="{l:T 'В долг'}" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </RadioButton>
+                        </Grid>
+
+                        <Grid Margin="0,12,0,0">
+                            <Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="8"/><ColumnDefinition/></Grid.ColumnDefinitions>
+                            <StackPanel>
+                                <Grid Margin="0,0,0,4">
+                                    <TextBlock Text="{l:T 'Получено'}" Style="{StaticResource Muted}" FontSize="12" Visibility="{Binding OnCredit, Converter={StaticResource InvBoolToVis}}"/>
+                                    <TextBlock Text="{l:T 'Оплачено сейчас'}" Style="{StaticResource Muted}" FontSize="12" Visibility="{Binding OnCredit, Converter={StaticResource BoolToVis}}"/>
+                                </Grid>
+                                <TextBox x:Name="ReceivedBox" l:Ui.Numeric="True" FontSize="16" FontWeight="SemiBold" MinHeight="36"
+                                         Text="{Binding Received, Converter={StaticResource Dec}, UpdateSourceTrigger=PropertyChanged}"/>
+                            </StackPanel>
+                            <!-- Сдача (оплата сразу) -->
+                            <StackPanel Grid.Column="2" Visibility="{Binding OnCredit, Converter={StaticResource InvBoolToVis}}">
+                                <TextBlock Text="{l:T 'Сдача'}" Style="{StaticResource Muted}" FontSize="12" Margin="0,0,0,4"/>
+                                <Border Background="{DynamicResource SuccessLightBrush}" CornerRadius="6" Padding="10,0" MinHeight="36">
+                                    <TextBlock Text="{Binding Change, Converter={StaticResource Money}}" FontSize="16" FontWeight="SemiBold" VerticalAlignment="Center"
+                                               Foreground="{DynamicResource SuccessBrush}"/>
+                                </Border>
+                            </StackPanel>
+                            <!-- Долг (в долг) -->
+                            <StackPanel Grid.Column="2" Visibility="{Binding OnCredit, Converter={StaticResource BoolToVis}}">
+                                <TextBlock Text="{l:T 'В долг'}" Style="{StaticResource Muted}" FontSize="12" Margin="0,0,0,4"/>
+                                <Border Background="{DynamicResource DangerLightBrush}" CornerRadius="6" Padding="10,0" MinHeight="36">
+                                    <TextBlock Text="{Binding DebtAmount, Converter={StaticResource Money}}" FontSize="16" FontWeight="SemiBold" VerticalAlignment="Center"
+                                               Foreground="{DynamicResource DangerBrush}"/>
+                                </Border>
+                            </StackPanel>
+                        </Grid>
+
+                        <!-- Быстрые суммы: «Без сдачи» и купюры (прибавляются к «Получено») -->
+                        <DockPanel Margin="0,8,0,0">
+                            <Button DockPanel.Dock="Left" Style="{StaticResource SmallButton}" Content="{l:T 'Без сдачи'}" Command="{Binding ExactCashCommand}" Margin="0,0,6,0"/>
+                            <Button DockPanel.Dock="Right" Style="{StaticResource SmallButton}" Content="&#xF0235;" FontFamily="{StaticResource IconFont}" ToolTip="{l:T 'Сбросить'}"
+                                    Command="{Binding ResetReceivedCommand}" Margin="6,0,0,0" Padding="8,0"/>
+                            <ItemsControl ItemsSource="{Binding Banknotes}">
+                                <ItemsControl.ItemsPanel><ItemsPanelTemplate><UniformGrid Rows="1"/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Button Style="{StaticResource SmallButton}" Content="{Binding StringFormat=+{0}}" Margin="2,0" Padding="0"
+                                                Command="{Binding DataContext.AddCashCommand, RelativeSource={RelativeSource AncestorType=Window}}" CommandParameter="{Binding}"/>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </DockPanel>
+                        <!-- Получено меньше: предложить записать остаток в долг -->
+                        <DockPanel Margin="0,8,0,0" Visibility="{Binding NotEnoughReceived, Converter={StaticResource BoolToVis}}">
+                            <Button DockPanel.Dock="Right" Style="{StaticResource SmallButton}" Command="{Binding ToggleCreditCommand}"
+                                    Content="{l:T 'Остаток в долг'}" Margin="8,0,0,0"/>
+                            <TextBlock Text="{l:T 'Получено меньше суммы к оплате'}" Foreground="{DynamicResource DangerBrush}" FontSize="12"
+                                       VerticalAlignment="Center" TextWrapping="Wrap"/>
+                        </DockPanel>
+                        <TextBlock Text="{l:T 'Для продажи в долг выберите покупателя слева'}" Foreground="{DynamicResource DangerBrush}" FontSize="12" Margin="0,8,0,0"
+                                   TextWrapping="Wrap" Visibility="{Binding CreditNeedsCustomer, Converter={StaticResource BoolToVis}}"/>
+                        <TextBlock Text="{l:T 'Пустое поле «Получено» — оплата без сдачи'}" Style="{StaticResource Muted}" FontSize="12" Margin="0,8,0,0" TextWrapping="Wrap"
+                                   Visibility="{Binding OnCredit, Converter={StaticResource InvBoolToVis}}"/>
+                        <TextBlock Text="{l:T 'Пустое поле — вся сумма в долг'}" Style="{StaticResource Muted}" FontSize="12" Margin="0,8,0,0" TextWrapping="Wrap"
+                                   Visibility="{Binding OnCredit, Converter={StaticResource BoolToVis}}"/>
+
+                        <!-- Смешанная оплата: часть суммы — на другие кассы, остаток — в основную -->
+                        <Border BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,1,0,0" Margin="0,12,0,0" Padding="0,10,0,0">
+                            <StackPanel>
+                                <DockPanel Visibility="{Binding HasExtraPayments, Converter={StaticResource BoolToVis}}" Margin="0,0,0,6">
+                                    <TextBlock DockPanel.Dock="Right" Text="{Binding MainPart, Converter={StaticResource Money}}" FontWeight="SemiBold"/>
+                                    <TextBlock Style="{StaticResource Muted}" FontSize="12" TextTrimming="CharacterEllipsis">
+                                        <Run Text="{l:T 'В основную кассу'}"/><Run Text=" ("/><Run Text="{Binding CashRegister.Name, Mode=OneWay}"/><Run Text="):"/>
+                                    </TextBlock>
+                                </DockPanel>
+                                <ItemsControl ItemsSource="{Binding ExtraPayments}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <DockPanel Margin="0,0,0,6">
+                                                <Button DockPanel.Dock="Right" Style="{StaticResource DangerIconButton}" Content="&#xF0156;" ToolTip="{l:T 'Убрать оплату'}" Margin="4,0,0,0"
+                                                        Command="{Binding DataContext.RemovePaymentCommand, RelativeSource={RelativeSource AncestorType=Window}}" CommandParameter="{Binding}"/>
+                                                <TextBox DockPanel.Dock="Right" l:Ui.Numeric="True" Width="110" TextAlignment="Right" Margin="6,0,0,0"
+                                                         Text="{Binding Amount, Converter={StaticResource Dec}, UpdateSourceTrigger=PropertyChanged}"/>
+                                                <ComboBox ItemsSource="{Binding DataContext.CashRegisters, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                          SelectedItem="{Binding CashRegister}" DisplayMemberPath="Name"/>
+                                            </DockPanel>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                                <TextBlock Text="{l:T 'Доп. оплаты больше суммы к оплате'}" Foreground="{DynamicResource DangerBrush}" FontSize="12" Margin="0,0,0,6"
+                                           Visibility="{Binding ExtraOverpaid, Converter={StaticResource BoolToVis}}"/>
+                                <Button Style="{StaticResource SmallButton}" HorizontalAlignment="Left" Command="{Binding AddPaymentCommand}"
+                                        ToolTip="{l:T 'Часть суммы оплачивается на другую кассу (карта, перевод и т.п.)'}">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="&#xF0415;" FontFamily="{StaticResource IconFont}" FontSize="11" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                                        <TextBlock Text="{l:T 'Оплата на другую кассу'}"/>
+                                    </StackPanel>
+                                </Button>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </Grid>
+            </DockPanel>
+        </Border>
+    </Grid>
+</Window>

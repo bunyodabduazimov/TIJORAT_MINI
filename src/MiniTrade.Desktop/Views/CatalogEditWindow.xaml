@@ -1,0 +1,283 @@
+<Window x:Class="MiniTrade.Desktop.Views.CatalogEditWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:l="clr-namespace:MiniTrade.Desktop.Infrastructure"
+        xmlns:dom="clr-namespace:MiniTrade.Core.Domain;assembly=MiniTrade.Core"
+        Title="{Binding Title}" Width="480" SizeToContent="Height"
+        Style="{StaticResource AppWindow}" Background="Transparent"
+        WindowStyle="None" AllowsTransparency="True" ResizeMode="NoResize"
+        ShowInTaskbar="False" WindowStartupLocation="CenterOwner">
+    <Window.Resources>
+        <!-- Формы по типу записи -->
+        <!-- Товар: широкое окно, поля в две колонки -->
+        <DataTemplate DataType="{x:Type dom:Product}">
+            <DockPanel>
+                <!-- Фото: клик — выбрать файл, можно перетащить файл мышью -->
+                <StackPanel DockPanel.Dock="Left" Width="170" Margin="0,0,20,0">
+                    <TextBlock Text="{l:T &apos;Фото&apos;}" Style="{StaticResource FieldLabel}" Margin="0,0,0,4"/>
+                    <Button x:Name="PhotoBox" Height="170" Padding="0" Cursor="Hand" AllowDrop="True"
+                            Command="{Binding DataContext.ChoosePhotoCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                            ToolTip="{l:T &apos;Нажмите, чтобы выбрать фото, или перетащите файл сюда&apos;}"
+                            DragEnter="OnPhotoDragOver" DragOver="OnPhotoDragOver" Drop="OnPhotoDrop">
+                        <Button.Template>
+                            <ControlTemplate TargetType="Button">
+                                <Grid>
+                                    <Border x:Name="Frame" CornerRadius="10" Background="{DynamicResource SurfaceAltBrush}"
+                                            BorderBrush="{DynamicResource InputBorderBrush}" BorderThickness="1"/>
+                                    <!-- Пустое место под фото -->
+                                    <StackPanel x:Name="Empty" VerticalAlignment="Center" HorizontalAlignment="Center">
+                                        <TextBlock Text="&#xF0976;" FontFamily="{StaticResource IconFont}" FontSize="28" HorizontalAlignment="Center"
+                                                   Foreground="{DynamicResource MutedBrush}"/>
+                                        <TextBlock Text="{l:T &apos;Добавить фото&apos;}" Foreground="{DynamicResource MutedBrush}" FontSize="12"
+                                                   HorizontalAlignment="Center" Margin="0,8,0,0"/>
+                                    </StackPanel>
+                                    <!-- Фото, обрезанное по рамке -->
+                                    <!-- Image в визуальном дереве (у ImageBrush привязка к окну не находит источник); углы скругляет Clip -->
+                                    <Image x:Name="PhotoFrame" Stretch="UniformToFill" Visibility="Collapsed"
+                                           Source="{Binding DataContext.PhotoImage, RelativeSource={RelativeSource AncestorType=Window}}">
+                                        <Image.Clip>
+                                            <RectangleGeometry Rect="0,0,170,170" RadiusX="10" RadiusY="10"/>
+                                        </Image.Clip>
+                                    </Image>
+                                </Grid>
+                                <ControlTemplate.Triggers>
+                                    <DataTrigger Binding="{Binding DataContext.HasPhoto, RelativeSource={RelativeSource AncestorType=Window}}" Value="True">
+                                        <Setter TargetName="PhotoFrame" Property="Visibility" Value="Visible"/>
+                                        <Setter TargetName="Empty" Property="Visibility" Value="Collapsed"/>
+                                    </DataTrigger>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter TargetName="Frame" Property="BorderBrush" Value="{DynamicResource PrimaryBrush}"/>
+                                    </Trigger>
+                                </ControlTemplate.Triggers>
+                            </ControlTemplate>
+                        </Button.Template>
+                    </Button>
+                    <UniformGrid Columns="2" Margin="0,8,0,0">
+                        <Button Content="{l:T &apos;Выбрать…&apos;}" Style="{StaticResource SmallButton}" Margin="0,0,4,0"
+                                Command="{Binding DataContext.ChoosePhotoCommand, RelativeSource={RelativeSource AncestorType=Window}}"/>
+                        <Button Content="{l:T &apos;Удалить&apos;}" Style="{StaticResource SmallButton}" Margin="4,0,0,0"
+                                Command="{Binding DataContext.RemovePhotoCommand, RelativeSource={RelativeSource AncestorType=Window}}"/>
+                    </UniformGrid>
+                </StackPanel>
+
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition/>
+                    <ColumnDefinition Width="16"/>
+                    <ColumnDefinition/>
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/><RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <StackPanel>
+                    <TextBlock Text="{l:T 'Наименование *'}" Style="{StaticResource FieldLabel}" Margin="0,0,0,4"/>
+                    <TextBox Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}"/>
+                </StackPanel>
+                <StackPanel Grid.Column="2">
+                    <TextBlock Text="{l:T 'Категория'}" Style="{StaticResource FieldLabel}" Margin="0,0,0,4"/>
+                    <DockPanel>
+                        <Button DockPanel.Dock="Right" Style="{StaticResource InputAddonButton}" Content="&#xF0415;" ToolTip="{l:T 'Новая категория'}"
+                                Command="{Binding DataContext.AddCategoryCommand, RelativeSource={RelativeSource AncestorType=Window}}"/>
+                        <ComboBox ItemsSource="{Binding DataContext.Categories, RelativeSource={RelativeSource AncestorType=Window}}"
+                                  SelectedItem="{Binding DataContext.SelectedCategory, RelativeSource={RelativeSource AncestorType=Window}}"
+                                  DisplayMemberPath="Name"/>
+                    </DockPanel>
+                </StackPanel>
+
+                <StackPanel Grid.Row="1">
+                    <TextBlock Text="{l:T 'Артикул'}" Style="{StaticResource FieldLabel}"/>
+                    <TextBox Text="{Binding Sku, UpdateSourceTrigger=PropertyChanged}"/>
+                </StackPanel>
+                <StackPanel Grid.Row="1" Grid.Column="2">
+                    <TextBlock Text="{l:T 'Штрихкод'}" Style="{StaticResource FieldLabel}"/>
+                    <TextBox Text="{Binding Barcode, UpdateSourceTrigger=PropertyChanged}"/>
+                </StackPanel>
+
+                <StackPanel Grid.Row="2">
+                    <TextBlock Text="{l:T 'Цена закупки, TJS'}" Style="{StaticResource FieldLabel}"/>
+                    <TextBox l:Ui.Numeric="True" Text="{Binding PurchasePrice, Converter={StaticResource Dec}, UpdateSourceTrigger=PropertyChanged}"/>
+                </StackPanel>
+                <StackPanel Grid.Row="2" Grid.Column="2">
+                    <TextBlock Text="{l:T 'Цена продажи, TJS'}" Style="{StaticResource FieldLabel}"/>
+                    <TextBox l:Ui.Numeric="True" Text="{Binding SalePrice, Converter={StaticResource Dec}, UpdateSourceTrigger=PropertyChanged}"/>
+                </StackPanel>
+
+                <StackPanel Grid.Row="3">
+                    <TextBlock Text="{l:T 'Ед. измерения'}" Style="{StaticResource FieldLabel}"/>
+                    <ComboBox Text="{Binding Unit, UpdateSourceTrigger=PropertyChanged}"
+                              ItemsSource="{Binding DataContext.Units, RelativeSource={RelativeSource AncestorType=Window}}"/>
+                </StackPanel>
+                <StackPanel Grid.Row="3" Grid.Column="2">
+                    <TextBlock Text="{l:T 'Мин. остаток'}" Style="{StaticResource FieldLabel}"/>
+                    <TextBox l:Ui.Numeric="True" Text="{Binding MinStock, Converter={StaticResource Dec}, UpdateSourceTrigger=PropertyChanged}"/>
+                </StackPanel>
+
+                <CheckBox Grid.Row="4" Grid.ColumnSpan="3" Content="{l:T 'Активен (доступен для выбора в документах)'}" IsChecked="{Binding IsActive}" Margin="0,14,0,0"/>
+            </Grid>
+            </DockPanel>
+        </DataTemplate>
+
+        <DataTemplate DataType="{x:Type dom:Category}">
+            <StackPanel>
+                <!-- Картинка категории (показывается на кассе): клик — выбрать, можно перетащить файл -->
+                <DockPanel Margin="0,0,0,10">
+                    <Button Width="72" Height="72" Padding="0" Cursor="Hand" AllowDrop="True" DockPanel.Dock="Left"
+                            Command="{Binding DataContext.ChoosePhotoCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                            ToolTip="{l:T 'Нажмите, чтобы выбрать картинку, или перетащите файл сюда'}"
+                            DragEnter="OnPhotoDragOver" DragOver="OnPhotoDragOver" Drop="OnPhotoDrop">
+                        <Button.Template>
+                            <ControlTemplate TargetType="Button">
+                                <Grid>
+                                    <Border x:Name="Frame" CornerRadius="10" Background="{DynamicResource SurfaceAltBrush}"
+                                            BorderBrush="{DynamicResource InputBorderBrush}" BorderThickness="1"/>
+                                    <TextBlock x:Name="Empty" Text="&#xF0976;" FontFamily="{StaticResource IconFont}" FontSize="22"
+                                               HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="{DynamicResource MutedBrush}"/>
+                                    <Image x:Name="PhotoFrame" Stretch="UniformToFill" Visibility="Collapsed"
+                                           Source="{Binding DataContext.PhotoImage, RelativeSource={RelativeSource AncestorType=Window}}">
+                                        <Image.Clip><RectangleGeometry Rect="0,0,72,72" RadiusX="10" RadiusY="10"/></Image.Clip>
+                                    </Image>
+                                </Grid>
+                                <ControlTemplate.Triggers>
+                                    <DataTrigger Binding="{Binding DataContext.HasPhoto, RelativeSource={RelativeSource AncestorType=Window}}" Value="True">
+                                        <Setter TargetName="PhotoFrame" Property="Visibility" Value="Visible"/>
+                                        <Setter TargetName="Empty" Property="Visibility" Value="Collapsed"/>
+                                    </DataTrigger>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter TargetName="Frame" Property="BorderBrush" Value="{DynamicResource PrimaryBrush}"/>
+                                    </Trigger>
+                                </ControlTemplate.Triggers>
+                            </ControlTemplate>
+                        </Button.Template>
+                    </Button>
+                    <StackPanel VerticalAlignment="Center" Margin="12,0,0,0">
+                        <TextBlock Text="{l:T 'Картинка'}" Style="{StaticResource FieldLabel}" Margin="0,0,0,6"/>
+                        <StackPanel Orientation="Horizontal">
+                            <Button Content="{l:T 'Выбрать…'}" Style="{StaticResource SmallButton}" Margin="0,0,6,0"
+                                    Command="{Binding DataContext.ChoosePhotoCommand, RelativeSource={RelativeSource AncestorType=Window}}"/>
+                            <Button Content="{l:T 'Удалить'}" Style="{StaticResource SmallButton}"
+                                    Command="{Binding DataContext.RemovePhotoCommand, RelativeSource={RelativeSource AncestorType=Window}}"/>
+                        </StackPanel>
+                    </StackPanel>
+                </DockPanel>
+                <TextBlock Text="{l:T 'Наименование *'}" Style="{StaticResource FieldLabel}" Margin="0,0,0,4"/>
+                <TextBox Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}"/>
+                <TextBlock Text="{l:T 'Описание'}" Style="{StaticResource FieldLabel}"/>
+                <TextBox Text="{Binding Description, UpdateSourceTrigger=PropertyChanged}"/>
+                <CheckBox Content="{l:T 'Активна'}" IsChecked="{Binding IsActive}" Margin="0,14,0,0"/>
+            </StackPanel>
+        </DataTemplate>
+
+        <!-- Группа контрагентов -->
+        <DataTemplate DataType="{x:Type dom:CounterpartyGroup}">
+            <StackPanel>
+                <TextBlock Text="{l:T 'Наименование *'}" Style="{StaticResource FieldLabel}" Margin="0,0,0,4"/>
+                <TextBox Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}"/>
+                <TextBlock Text="{l:T 'Описание'}" Style="{StaticResource FieldLabel}"/>
+                <TextBox Text="{Binding Description, UpdateSourceTrigger=PropertyChanged}"/>
+                <CheckBox Content="{l:T 'Активна'}" IsChecked="{Binding IsActive}" Margin="0,14,0,0"/>
+            </StackPanel>
+        </DataTemplate>
+
+        <!-- Контрагент: покупатель и/или поставщик, разделение по группам -->
+        <DataTemplate DataType="{x:Type dom:Counterparty}">
+            <StackPanel>
+                <TextBlock Text="{l:T 'Наименование / ФИО *'}" Style="{StaticResource FieldLabel}" Margin="0,0,0,4"/>
+                <TextBox Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}"/>
+                <TextBlock Text="{l:T 'Группа'}" Style="{StaticResource FieldLabel}"/>
+                <DockPanel>
+                    <Button DockPanel.Dock="Right" Style="{StaticResource InputAddonButton}" Content="&#xF0415;" ToolTip="{l:T 'Новая группа контрагентов'}"
+                            Command="{Binding DataContext.AddGroupCommand, RelativeSource={RelativeSource AncestorType=Window}}"/>
+                    <ComboBox ItemsSource="{Binding DataContext.Groups, RelativeSource={RelativeSource AncestorType=Window}}"
+                              SelectedItem="{Binding DataContext.SelectedGroup, RelativeSource={RelativeSource AncestorType=Window}}"
+                              DisplayMemberPath="Name"/>
+                </DockPanel>
+                <TextBlock Text="{l:T 'Телефон'}" Style="{StaticResource FieldLabel}"/>
+                <TextBox Text="{Binding Phone, UpdateSourceTrigger=PropertyChanged}"/>
+                <TextBlock Text="{l:T 'Адрес'}" Style="{StaticResource FieldLabel}"/>
+                <TextBox Text="{Binding Address, UpdateSourceTrigger=PropertyChanged}"/>
+                <TextBlock Text="{l:T 'Примечание'}" Style="{StaticResource FieldLabel}"/>
+                <TextBox Text="{Binding Note, UpdateSourceTrigger=PropertyChanged}"/>
+                <CheckBox Content="{l:T 'Активен'}" IsChecked="{Binding IsActive}" Margin="0,14,0,0"/>
+            </StackPanel>
+        </DataTemplate>
+
+        <DataTemplate DataType="{x:Type dom:Warehouse}">
+            <StackPanel>
+                <TextBlock Text="{l:T 'Наименование *'}" Style="{StaticResource FieldLabel}" Margin="0,0,0,4"/>
+                <TextBox Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}"/>
+                <TextBlock Text="{l:T 'Адрес'}" Style="{StaticResource FieldLabel}"/>
+                <TextBox Text="{Binding Address, UpdateSourceTrigger=PropertyChanged}"/>
+                <CheckBox Content="{l:T 'Активен'}" IsChecked="{Binding IsActive}" Margin="0,14,0,0"/>
+            </StackPanel>
+        </DataTemplate>
+
+        <DataTemplate DataType="{x:Type dom:FinanceArticle}">
+            <StackPanel>
+                <TextBlock Text="{l:T 'Тип статьи'}" Style="{StaticResource FieldLabel}" Margin="0,0,0,6"/>
+                <StackPanel Orientation="Horizontal">
+                    <RadioButton Content="{l:T 'Доход'}" GroupName="articleDirection" Margin="0,0,20,0"
+                                 IsChecked="{Binding Direction, Converter={StaticResource Equals}, ConverterParameter=Income}"/>
+                    <RadioButton Content="{l:T 'Расход'}" GroupName="articleDirection"
+                                 IsChecked="{Binding Direction, Converter={StaticResource Equals}, ConverterParameter=Expense}"/>
+                </StackPanel>
+                <TextBlock Text="{l:T 'Наименование *'}" Style="{StaticResource FieldLabel}"/>
+                <TextBox Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}"/>
+                <TextBlock Text="{l:T 'Описание'}" Style="{StaticResource FieldLabel}"/>
+                <TextBox Text="{Binding Description, UpdateSourceTrigger=PropertyChanged}"/>
+                <CheckBox Content="{l:T 'Активна'}" IsChecked="{Binding IsActive}" Margin="0,14,0,0"/>
+            </StackPanel>
+        </DataTemplate>
+
+        <DataTemplate DataType="{x:Type dom:CashRegister}">
+            <StackPanel>
+                <TextBlock Text="{l:T 'Наименование *'}" Style="{StaticResource FieldLabel}" Margin="0,0,0,4"/>
+                <TextBox Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}"/>
+                <TextBlock Text="{l:T 'Остаток'}" Style="{StaticResource FieldLabel}"/>
+                <TextBox Text="{Binding Balance, Converter={StaticResource Money}, Mode=OneWay}" IsReadOnly="True" Focusable="False"/>
+                <TextBlock Text="{l:T 'Остаток меняется только операциями в разделе «Финансы».'}" Style="{StaticResource Muted}" FontSize="11" Margin="0,4,0,0"/>
+                <CheckBox Content="{l:T 'Активна'}" IsChecked="{Binding IsActive}" Margin="0,14,0,0"/>
+            </StackPanel>
+        </DataTemplate>
+    </Window.Resources>
+
+    <!-- Поля по краям — место для тени -->
+    <Grid x:Name="ShadowRoom" Margin="20">
+        <Border Background="{DynamicResource SurfaceBrush}" CornerRadius="12" Effect="{DynamicResource DialogShadow}"/>
+        <Border Background="{DynamicResource SurfaceBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" CornerRadius="12">
+            <DockPanel>
+                <!-- Заголовок (за него можно перетаскивать окно) -->
+                <DockPanel DockPanel.Dock="Top" Background="Transparent" Margin="22,16,12,6" MouseLeftButtonDown="OnHeaderMouseDown">
+                    <Button DockPanel.Dock="Right" Style="{StaticResource IconButton}" Content="&#xF0156;" ToolTip="{l:T 'Закрыть (Esc)'}"
+                            Width="30" Height="30" IsTabStop="False" Focusable="False" Click="OnCancel" VerticalAlignment="Top"/>
+                    <TextBlock Text="{Binding Title}" FontSize="17" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/>
+                </DockPanel>
+
+                <!-- Кнопки -->
+                <Border DockPanel.Dock="Bottom" Background="{DynamicResource SurfaceAltBrush}" BorderBrush="{DynamicResource BorderBrush}"
+                        BorderThickness="0,1,0,0" CornerRadius="0,0,12,12" Padding="22,12">
+                    <DockPanel>
+                        <Button Content="{l:T 'Удалить'}" Style="{StaticResource DangerGhostButton}" Command="{Binding DeleteCommand}"
+                                Visibility="{Binding IsNew, Converter={StaticResource InvBoolToVis}}"/>
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                            <Button Content="{l:T 'Отмена'}" Style="{StaticResource SecondaryButton}" IsCancel="True" Click="OnCancel" MinWidth="96"/>
+                            <Button Content="{l:T 'Сохранить'}" IsDefault="True" Command="{Binding SaveCommand}" MinWidth="120" Margin="8,0,0,0"/>
+                        </StackPanel>
+                    </DockPanel>
+                </Border>
+
+                <!-- Ошибка -->
+                <Border DockPanel.Dock="Bottom" Margin="22,0,22,14" Padding="12,8" CornerRadius="6" Background="{DynamicResource DangerLightBrush}"
+                        Visibility="{Binding ErrorMessage, Converter={StaticResource BoolToVis}}">
+                    <DockPanel>
+                        <TextBlock Text="&#xF05D6;" FontFamily="{StaticResource IconFont}" Foreground="{DynamicResource DangerBrush}" Margin="0,2,8,0"/>
+                        <TextBlock Text="{Binding ErrorMessage}" Foreground="{DynamicResource DangerBrush}" TextWrapping="Wrap"/>
+                    </DockPanel>
+                </Border>
+
+                <ContentControl x:Name="Form" Content="{Binding Item}" Focusable="False" Margin="22,4,22,18"/>
+            </DockPanel>
+        </Border>
+    </Grid>
+</Window>

@@ -1,0 +1,20 @@
+@page "/admin/events"
+@model EventsModel
+@{ ViewData["Title"] = "Журнал"; }
+<h1>Журнал активаций</h1>
+<div class="card">
+    <table>
+        <tr><th>Время</th><th>Событие</th><th>Лицензия</th><th>Устройство</th><th>Детали</th><th>IP</th></tr>
+        @foreach (var e in Model.Items)
+        {
+            <tr>
+                <td>@Fmt.DateTime(e.At)</td>
+                <td>@EventsModel.ActionName(e.Action)</td>
+                <td>@if (e.LicenseId is { } lid) { <a href="/admin/licenses/@lid">#@lid</a> }</td>
+                <td class="muted">@e.DeviceId</td>
+                <td>@e.Details</td>
+                <td class="muted">@e.Ip</td>
+            </tr>
+        }
+    </table>
+</div>

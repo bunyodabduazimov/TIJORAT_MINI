@@ -1,0 +1,7 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:l="clr-namespace:MiniTrade.Desktop.Infrastructure"
+                    xmlns:vm="clr-namespace:MiniTrade.Desktop.ViewModels">
+    <!-- Шаблоны «{Модель}.Header»: кнопки справа от заголовка страницы (см. Infrastructure/PageHeaderSelector) -->
+    <!-- «Финансы»: кнопки «Фильтр» и «Создать» перенесены в саму страницу (Views/FinanceView.xaml) -->
+</ResourceDictionary>

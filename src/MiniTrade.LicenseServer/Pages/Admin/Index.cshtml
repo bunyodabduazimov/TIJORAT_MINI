@@ -1,0 +1,42 @@
+@page "/admin"
+@model IndexModel
+@{ ViewData["Title"] = "Обзор"; }
+<h1>Обзор</h1>
+<div class="grid grid-4" style="margin-bottom:18px">
+    <div class="stat"><div class="label">Клиенты</div><div class="value">@Model.Customers</div></div>
+    <div class="stat"><div class="label">Активные лицензии</div><div class="value">@Model.ActiveLicenses</div></div>
+    <div class="stat"><div class="label">Пробные (активные)</div><div class="value">@Model.ActiveTrials</div></div>
+    <div class="stat"><div class="label">Истекают за 30 дней</div><div class="value" style="color:var(--amber)">@Model.ExpiringSoon</div></div>
+    <div class="stat"><div class="label">Заблокированы</div><div class="value" style="color:var(--red)">@Model.Blocked</div></div>
+    <div class="stat"><div class="label">Устройства</div><div class="value">@Model.Devices</div></div>
+    <div class="stat"><div class="label">Активные активации</div><div class="value">@Model.ActiveActivations</div></div>
+    <div class="stat"><div class="label">Онлайн за 24 часа</div><div class="value">@Model.OnlineToday</div></div>
+</div>
+<div class="grid grid-2">
+    <div class="card">
+        <h2>Истекающие лицензии</h2>
+        <table>
+            <tr><th>Ключ</th><th>Клиент</th><th>Тип</th><th>До</th></tr>
+            @foreach (var l in Model.Expiring)
+            {
+                <tr>
+                    <td><a class="key" href="/admin/licenses/@l.Id">@l.Key</a></td>
+                    <td>@l.Customer?.FullName</td>
+                    <td>@LicenseDefaults.TypeName(l.Type)</td>
+                    <td>@Fmt.Date(l.ExpiresAt)</td>
+                </tr>
+            }
+            @if (Model.Expiring.Count == 0) { <tr><td colspan="4" class="muted">Нет</td></tr> }
+        </table>
+    </div>
+    <div class="card">
+        <h2>Последние события</h2>
+        <table>
+            <tr><th>Время</th><th>Событие</th><th>Детали</th></tr>
+            @foreach (var e in Model.Events)
+            {
+                <tr><td>@Fmt.DateTime(e.At)</td><td>@EventsModel.ActionName(e.Action)</td><td class="muted">@e.Details</td></tr>
+            }
+        </table>
+    </div>
+</div>

@@ -1,0 +1,84 @@
+<Window x:Class="MiniTrade.Desktop.Views.SaleReturnWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:l="clr-namespace:MiniTrade.Desktop.Infrastructure"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:vm="clr-namespace:MiniTrade.Desktop.ViewModels"
+        mc:Ignorable="d" d:DataContext="{d:DesignInstance vm:SaleReturnViewModel}"
+        Title="{Binding Title}" Width="680" SizeToContent="Height"
+        Style="{StaticResource AppWindow}" Background="Transparent"
+        WindowStyle="None" AllowsTransparency="True" ResizeMode="NoResize"
+        ShowInTaskbar="False" WindowStartupLocation="CenterOwner">
+    <!-- Модальное окно возврата товара по продаже -->
+    <Grid x:Name="ShadowRoom" Margin="20">
+        <Border Background="{DynamicResource SurfaceBrush}" CornerRadius="12" Effect="{DynamicResource DialogShadow}"/>
+        <Border Background="{DynamicResource SurfaceBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" CornerRadius="12">
+            <DockPanel>
+                <!-- Заголовок -->
+                <DockPanel DockPanel.Dock="Top" Background="Transparent" Margin="22,16,12,8" MouseLeftButtonDown="OnHeaderMouseDown">
+                    <Button DockPanel.Dock="Right" Style="{StaticResource IconButton}" Content="&#xF0156;" ToolTip="{l:T 'Закрыть (Esc)'}"
+                            Width="30" Height="30" IsTabStop="False" Focusable="False" Click="OnCancel" VerticalAlignment="Top"/>
+                    <Border Width="32" Height="32" CornerRadius="16" Background="{DynamicResource DangerLightBrush}" Margin="0,0,12,0" VerticalAlignment="Top">
+                        <TextBlock Text="&#xF054C;" FontFamily="{StaticResource IconFont}" FontSize="14" Foreground="{DynamicResource DangerBrush}"
+                                   HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+                    <StackPanel VerticalAlignment="Center">
+                        <TextBlock Text="{Binding Title}" FontSize="17" FontWeight="SemiBold"/>
+                        <TextBlock Text="{Binding Subtitle}" Style="{StaticResource Muted}" FontSize="12"/>
+                    </StackPanel>
+                </DockPanel>
+
+                <!-- Кнопки -->
+                <Border DockPanel.Dock="Bottom" Background="{DynamicResource SurfaceAltBrush}" BorderBrush="{DynamicResource BorderBrush}"
+                        BorderThickness="0,1,0,0" CornerRadius="0,0,12,12" Padding="22,12">
+                    <DockPanel>
+                        <TextBlock VerticalAlignment="Center" FontSize="15">
+                            <Run Text="{l:T 'К возврату: '}" Foreground="{DynamicResource MutedBrush}"/><Run Text="{Binding Total, Mode=OneWay, Converter={StaticResource Money}}" FontWeight="SemiBold" Foreground="{DynamicResource DangerBrush}"/>
+                        </TextBlock>
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                            <Button Content="{l:T 'Отмена'}" Style="{StaticResource SecondaryButton}" IsCancel="True" Click="OnCancel" MinWidth="96"/>
+                            <Button Content="{l:T 'Оформить возврат'}" Style="{StaticResource DangerButton}" IsDefault="True" Command="{Binding PostCommand}" Margin="8,0,0,0" MinWidth="150"/>
+                        </StackPanel>
+                    </DockPanel>
+                </Border>
+
+                <StackPanel Margin="22,4,22,18">
+                    <DockPanel Margin="0,0,0,6">
+                        <Button DockPanel.Dock="Right" Content="{l:T 'Вернуть всё'}" Style="{StaticResource SmallButton}" Command="{Binding ReturnAllCommand}"/>
+                        <TextBlock Text="{l:T 'Укажите количество к возврату'}" Style="{StaticResource Muted}" VerticalAlignment="Center"/>
+                    </DockPanel>
+                    <DataGrid ItemsSource="{Binding Lines}" MaxHeight="300" CanUserSortColumns="False" HeadersVisibility="Column">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="{l:T 'Товар'}" Binding="{Binding Product}" Width="*" MinWidth="160" IsReadOnly="True"/>
+                            <DataGridTextColumn Header="{l:T 'Цена'}" Binding="{Binding Price, StringFormat={}{0:N2}}" Width="85" IsReadOnly="True" ElementStyle="{StaticResource RightCell}"/>
+                            <DataGridTextColumn Header="{l:T 'Доступно'}" Binding="{Binding Available, StringFormat={}{0:0.###}}" Width="80" IsReadOnly="True" ElementStyle="{StaticResource RightCell}"/>
+                            <DataGridTemplateColumn Header="{l:T 'Вернуть'}" Width="90">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate><TextBox Style="{StaticResource CellTextBox}" Text="{Binding ReturnQuantity, Converter={StaticResource Dec}, UpdateSourceTrigger=PropertyChanged}"/></DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                            <DataGridTextColumn Header="{l:T 'Сумма'}" Binding="{Binding Amount, StringFormat={}{0:N2}}" Width="95" IsReadOnly="True" ElementStyle="{StaticResource RightCell}"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                    <Grid Margin="0,4,0,0">
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="12"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                        <StackPanel>
+                            <TextBlock Text="{Binding CashLabel}" Style="{StaticResource FieldLabel}"/>
+                            <ComboBox ItemsSource="{Binding CashRegisters}" SelectedItem="{Binding CashRegister}" DisplayMemberPath="Name"/>
+                        </StackPanel>
+                        <StackPanel Grid.Column="2">
+                            <TextBlock Text="{l:T 'Причина возврата'}" Style="{StaticResource FieldLabel}"/>
+                            <TextBox Text="{Binding Reason, UpdateSourceTrigger=PropertyChanged}"/>
+                        </StackPanel>
+                    </Grid>
+                    <!-- Как будет учтён возврат (для возврата поставщику: зачёт долга / деньги в кассу) -->
+                    <Border Margin="0,10,0,0" Padding="10,7" CornerRadius="6" Background="{DynamicResource InfoLightBrush}"
+                            Visibility="{Binding Hint, Converter={StaticResource BoolToVis}}">
+                        <TextBlock Text="{Binding Hint}" TextWrapping="Wrap" FontSize="12"/>
+                    </Border>
+                </StackPanel>
+            </DockPanel>
+        </Border>
+    </Grid>
+</Window>

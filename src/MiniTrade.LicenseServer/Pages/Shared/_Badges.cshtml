@@ -1,0 +1,20 @@
+@model License
+@{
+    var now = DateTime.UtcNow;
+}
+@if (Model.Status == LicenseStatus.Blocked)
+{
+    <span class="badge badge-red">Заблокирована</span>
+}
+else if (Model.IsExpired(now))
+{
+    <span class="badge badge-gray">Истекла</span>
+}
+else if (Model.ExpiresAt is { } e && (e - now).TotalDays <= 14)
+{
+    <span class="badge badge-amber">Истекает</span>
+}
+else
+{
+    <span class="badge badge-green">Активна</span>
+}

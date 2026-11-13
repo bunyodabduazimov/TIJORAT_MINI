@@ -1,0 +1,583 @@
+<UserControl x:Class="MiniTrade.Desktop.Views.DashboardView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:l="clr-namespace:MiniTrade.Desktop.Infrastructure"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:MiniTrade.Desktop.ViewModels"
+             mc:Ignorable="d" d:DataContext="{d:DesignInstance vm:DashboardViewModel}">
+    <UserControl.Resources>
+        <!-- ── Стили главной ── -->
+        <DropShadowEffect x:Key="SoftShadow" BlurRadius="22" ShadowDepth="3" Direction="270" Opacity="0.07" Color="#1E3A8A"/>
+
+        <Style x:Key="KpiLabel" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="12.5"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
+        </Style>
+        <Style x:Key="KpiHint" TargetType="TextBlock" BasedOn="{StaticResource Muted}">
+            <Setter Property="FontSize" Value="11.5"/>
+            <Setter Property="Margin" Value="0,3,0,0"/>
+            <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
+        </Style>
+        <Style x:Key="KpiValue" TargetType="TextBlock" BasedOn="{StaticResource StatValue}">
+            <Setter Property="FontSize" Value="23"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Margin" Value="0,8,0,0"/>
+        </Style>
+
+        <!-- Цветной квадрат под иконкой: Tag — кисть акцента -->
+        <Style x:Key="KpiIcon" TargetType="Border">
+            <Setter Property="CornerRadius" Value="8"/>
+            <Setter Property="Background" Value="{Binding Tag, RelativeSource={RelativeSource Self}}"/>
+            <Setter Property="Opacity" Value="0.14"/>
+        </Style>
+        <Style x:Key="KpiGlyph" TargetType="TextBlock">
+            <Setter Property="FontFamily" Value="{StaticResource IconFont}"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="HorizontalAlignment" Value="Center"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+        </Style>
+        <Style x:Key="ChipBox" TargetType="Grid">
+            <Setter Property="Width" Value="30"/>
+            <Setter Property="Height" Value="30"/>
+            <Setter Property="Margin" Value="0,0,10,0"/>
+        </Style>
+        <!-- Декоративная линия-тренд справа в карточке -->
+        <Style x:Key="Spark" TargetType="Path">
+            <Setter Property="Width" Value="64"/>
+            <Setter Property="Height" Value="30"/>
+            <Setter Property="Stretch" Value="Fill"/>
+            <Setter Property="StrokeThickness" Value="2"/>
+            <Setter Property="StrokeLineJoin" Value="Round"/>
+            <Setter Property="VerticalAlignment" Value="Top"/>
+            <Setter Property="Margin" Value="8,4,0,0"/>
+            <Setter Property="Data" Value="M0,30 C6,28 10,20 18,22 S28,26 34,16 S46,12 52,8 S60,4 64,0"/>
+        </Style>
+        <!-- Крупная полупрозрачная иконка справа в карточке -->
+        <Style x:Key="DecorGlyph" TargetType="TextBlock">
+            <Setter Property="FontFamily" Value="{StaticResource IconFont}"/>
+            <Setter Property="FontSize" Value="36"/>
+            <Setter Property="Opacity" Value="0.35"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="Margin" Value="8,0,4,0"/>
+        </Style>
+
+        <!-- Карточка-кнопка: вся карточка кликабельна и переводит в раздел -->
+        <Style x:Key="TileButton" TargetType="Button">
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Margin" Value="6"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
+            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bd" Background="{DynamicResource SurfaceBrush}" BorderBrush="{DynamicResource BorderBrush}"
+                                BorderThickness="1" CornerRadius="14" Padding="16,14" Effect="{StaticResource SoftShadow}">
+                            <ContentPresenter HorizontalAlignment="Stretch"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource PrimaryBrush}"/>
+                            </Trigger>
+                            <Trigger Property="IsKeyboardFocused" Value="True">
+                                <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource PrimaryBrush}"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource RowHoverBrush}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="LinkButton" TargetType="Button" BasedOn="{StaticResource GhostButton}">
+            <Setter Property="Padding" Value="8,2"/>
+            <Setter Property="MinHeight" Value="0"/>
+            <Setter Property="FontSize" Value="12.5"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Foreground" Value="{DynamicResource PrimaryBrush}"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+        </Style>
+
+        <Style x:Key="PanelCard" TargetType="Border" BasedOn="{StaticResource Card}">
+            <Setter Property="Padding" Value="18,14"/>
+            <Setter Property="CornerRadius" Value="14"/>
+            <Setter Property="Effect" Value="{StaticResource SoftShadow}"/>
+        </Style>
+
+        <Style x:Key="PanelTitle" TargetType="TextBlock" BasedOn="{StaticResource SectionTitle}">
+            <Setter Property="FontSize" Value="16"/>
+            <Setter Property="Margin" Value="0"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+        </Style>
+        <Style x:Key="PanelGlyph" TargetType="TextBlock">
+            <Setter Property="FontFamily" Value="{StaticResource IconFont}"/>
+            <Setter Property="FontSize" Value="16"/>
+            <Setter Property="Foreground" Value="{DynamicResource PrimaryBrush}"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="Margin" Value="0,0,10,0"/>
+        </Style>
+
+        <Style x:Key="EmptyText" TargetType="TextBlock" BasedOn="{StaticResource Muted}">
+            <Setter Property="HorizontalAlignment" Value="Center"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="TextAlignment" Value="Center"/>
+            <Setter Property="Margin" Value="0,16"/>
+        </Style>
+
+        <!-- Бейдж-«таблетка» -->
+        <Style x:Key="Pill" TargetType="Border">
+            <Setter Property="CornerRadius" Value="9"/>
+            <Setter Property="Padding" Value="9,2"/>
+            <Setter Property="HorizontalAlignment" Value="Right"/>
+        </Style>
+    </UserControl.Resources>
+
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel Margin="0,0,0,8">
+
+            <!-- ═══ Приветствие и обновление ═══ -->
+            <DockPanel Margin="0,0,0,10">
+                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBlock Text="{Binding UpdatedText}" Style="{StaticResource Muted}" FontSize="12" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                    <Button Style="{StaticResource SecondaryButton}" Command="{Binding LoadCommand}">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="&#xF0450;" FontFamily="{StaticResource IconFont}" FontSize="12" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                            <TextBlock Text="{l:T 'Обновить'}"/>
+                        </StackPanel>
+                    </Button>
+                </StackPanel>
+                <StackPanel>
+                    <TextBlock Text="{Binding Greeting}" FontSize="18" FontWeight="SemiBold"/>
+                    <TextBlock Style="{StaticResource Muted}" Margin="0,2,0,0">
+                        <Run Text="{Binding TodayText, Mode=OneWay}"/><Run Text=" · "/><Run Text="{l:T 'Сводка по торговле, деньгам и складу'}"/>
+                    </TextBlock>
+                </StackPanel>
+            </DockPanel>
+
+            <!-- ═══ KPI ═══ -->
+            <UniformGrid Columns="4" Margin="-6,6,-6,0">
+                <!-- Выручка сегодня -->
+                <Button Style="{StaticResource TileButton}" Command="{Binding OpenCommand}" CommandParameter="{x:Type vm:SalesViewModel}">
+                    <DockPanel>
+                        <Path DockPanel.Dock="Right" Style="{StaticResource Spark}" Stroke="{DynamicResource PrimaryBrush}"/>
+                        <StackPanel>
+                            <StackPanel Orientation="Horizontal">
+                                <Grid Style="{StaticResource ChipBox}">
+                                    <Border Style="{StaticResource KpiIcon}" Tag="{DynamicResource PrimaryBrush}"/>
+                                    <TextBlock Text="&#xF0111;" Style="{StaticResource KpiGlyph}" Foreground="{DynamicResource PrimaryBrush}"/>
+                                </Grid>
+                                <TextBlock Text="{l:T 'Выручка сегодня'}" Style="{StaticResource KpiLabel}"/>
+                            </StackPanel>
+                            <TextBlock Text="{Binding Summary.TodayRevenue, Converter={StaticResource Money}}" Style="{StaticResource KpiValue}"/>
+                            <DockPanel Margin="0,4,0,0">
+                                <Border CornerRadius="8" Padding="8,1" Margin="0,0,10,0">
+                                    <Border.Style>
+                                        <Style TargetType="Border">
+                                            <Setter Property="Background" Value="{DynamicResource SurfaceAltBrush}"/>
+                                            <Setter Property="TextElement.Foreground" Value="{DynamicResource MutedBrush}"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding TodayChangeKind}" Value="Up">
+                                                    <Setter Property="Background" Value="{DynamicResource SuccessLightBrush}"/>
+                                                    <Setter Property="TextElement.Foreground" Value="{DynamicResource SuccessBrush}"/>
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding TodayChangeKind}" Value="Down">
+                                                    <Setter Property="Background" Value="{DynamicResource DangerLightBrush}"/>
+                                                    <Setter Property="TextElement.Foreground" Value="{DynamicResource DangerBrush}"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Border.Style>
+                                    <TextBlock Text="{Binding TodayChangeText}" FontSize="11" FontWeight="SemiBold"/>
+                                </Border>
+                                <TextBlock Style="{StaticResource Muted}" FontSize="11.5" VerticalAlignment="Center" TextTrimming="CharacterEllipsis">
+                                    <Run Text="{l:T 'Чеков: '}"/><Run Text="{Binding Summary.TodaySalesCount, Mode=OneWay}"/>
+                                </TextBlock>
+                            </DockPanel>
+                        </StackPanel>
+                    </DockPanel>
+                </Button>
+                <!-- Выручка за месяц -->
+                <Button Style="{StaticResource TileButton}" Command="{Binding OpenCommand}" CommandParameter="{x:Type vm:ReportsViewModel}">
+                    <DockPanel>
+                        <Path DockPanel.Dock="Right" Style="{StaticResource Spark}" Stroke="{DynamicResource SuccessBrush}"/>
+                        <StackPanel>
+                            <StackPanel Orientation="Horizontal">
+                                <Grid Style="{StaticResource ChipBox}">
+                                    <Border Style="{StaticResource KpiIcon}" Tag="{DynamicResource PrimaryBrush}"/>
+                                    <TextBlock Text="&#xF0E18;" Style="{StaticResource KpiGlyph}" Foreground="{DynamicResource PrimaryBrush}"/>
+                                </Grid>
+                                <TextBlock Text="{l:T 'Выручка за месяц'}" Style="{StaticResource KpiLabel}"/>
+                            </StackPanel>
+                            <TextBlock Text="{Binding Summary.MonthRevenue, Converter={StaticResource Money}}" Style="{StaticResource KpiValue}"/>
+                            <TextBlock Style="{StaticResource KpiHint}">
+                                <Run Text="{l:T 'Средний чек: '}"/><Run Text="{Binding Summary.MonthAverageCheck, Mode=OneWay, Converter={StaticResource Money}}"/>
+                                <Run Text=" · "/><Run Text="{Binding Summary.MonthSalesCount, Mode=OneWay}"/><Run Text="{l:T ' чек.'}"/>
+                            </TextBlock>
+                        </StackPanel>
+                    </DockPanel>
+                </Button>
+                <!-- Прибыль -->
+                <Button Style="{StaticResource TileButton}" Command="{Binding OpenCommand}" CommandParameter="{x:Type vm:ReportsViewModel}">
+                    <DockPanel>
+                        <Path DockPanel.Dock="Right">
+                            <Path.Style>
+                                <Style TargetType="Path" BasedOn="{StaticResource Spark}">
+                                    <Setter Property="Stroke" Value="{DynamicResource SuccessBrush}"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsLoss}" Value="True">
+                                            <Setter Property="Stroke" Value="{DynamicResource DangerBrush}"/>
+                                            <Setter Property="Data" Value="M0,0 C6,2 10,10 18,8 S28,4 34,14 S46,18 52,22 S60,26 64,30"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Path.Style>
+                        </Path>
+                        <StackPanel>
+                            <StackPanel Orientation="Horizontal">
+                                <Grid Style="{StaticResource ChipBox}">
+                                    <Border Style="{StaticResource KpiIcon}" Tag="{DynamicResource SuccessBrush}"/>
+                                    <TextBlock Text="&#xF0127;" Style="{StaticResource KpiGlyph}" Foreground="{DynamicResource SuccessBrush}"/>
+                                </Grid>
+                                <TextBlock Text="{l:T 'Чистая прибыль за месяц'}" Style="{StaticResource KpiLabel}"/>
+                            </StackPanel>
+                            <TextBlock Text="{Binding Summary.MonthProfit, Converter={StaticResource Money}}">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock" BasedOn="{StaticResource KpiValue}">
+                                        <Setter Property="Foreground" Value="{DynamicResource SuccessBrush}"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsLoss}" Value="True">
+                                                <Setter Property="Foreground" Value="{DynamicResource DangerBrush}"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+                            <TextBlock Style="{StaticResource KpiHint}">
+                                <Run Text="{l:T 'Расходы: '}"/><Run Text="{Binding Summary.MonthExpenses, Mode=OneWay, Converter={StaticResource Money}}"/>
+                            </TextBlock>
+                        </StackPanel>
+                    </DockPanel>
+                </Button>
+                <!-- Кассы -->
+                <Button Style="{StaticResource TileButton}" Command="{Binding OpenCommand}" CommandParameter="{x:Type vm:FinanceViewModel}">
+                    <DockPanel>
+                        <Path DockPanel.Dock="Right" Style="{StaticResource Spark}" Stroke="{DynamicResource PrimaryBrush}"/>
+                        <StackPanel>
+                            <StackPanel Orientation="Horizontal">
+                                <Grid Style="{StaticResource ChipBox}">
+                                    <Border Style="{StaticResource KpiIcon}" Tag="{DynamicResource PrimaryBrush}"/>
+                                    <TextBlock Text="&#xF019B;" Style="{StaticResource KpiGlyph}" Foreground="{DynamicResource PrimaryBrush}"/>
+                                </Grid>
+                                <TextBlock Text="{l:T 'Деньги в кассах'}" Style="{StaticResource KpiLabel}"/>
+                            </StackPanel>
+                            <TextBlock Text="{Binding Summary.CashTotal, Converter={StaticResource Money}}" Style="{StaticResource KpiValue}" Foreground="{DynamicResource PrimaryBrush}"/>
+                            <TextBlock Text="{l:T 'Остаток по всем кассам'}" Style="{StaticResource KpiHint}"/>
+                        </StackPanel>
+                    </DockPanel>
+                </Button>
+
+                <!-- ═══ Склад и долги ═══ -->
+                <Button Style="{StaticResource TileButton}" Command="{Binding OpenCommand}" CommandParameter="{x:Type vm:WarehouseViewModel}">
+                    <DockPanel>
+                        <TextBlock DockPanel.Dock="Right" Text="&#xF03D7;" Style="{StaticResource DecorGlyph}" Foreground="{DynamicResource PrimaryBrush}"/>
+                        <StackPanel>
+                            <StackPanel Orientation="Horizontal">
+                                <Grid Style="{StaticResource ChipBox}">
+                                    <Border Style="{StaticResource KpiIcon}" Tag="{DynamicResource PrimaryBrush}"/>
+                                    <TextBlock Text="&#xF03D7;" Style="{StaticResource KpiGlyph}" Foreground="{DynamicResource PrimaryBrush}"/>
+                                </Grid>
+                                <TextBlock Text="{l:T 'Товар на складе (себест.)'}" Style="{StaticResource KpiLabel}"/>
+                            </StackPanel>
+                            <TextBlock Text="{Binding Summary.StockCostValue, Converter={StaticResource Money}}" Style="{StaticResource KpiValue}"/>
+                            <TextBlock Style="{StaticResource KpiHint}">
+                                <Run Text="{l:T 'В рознице: '}"/><Run Text="{Binding Summary.StockSaleValue, Mode=OneWay, Converter={StaticResource Money}}"/>
+                            </TextBlock>
+                        </StackPanel>
+                    </DockPanel>
+                </Button>
+                <Button Style="{StaticResource TileButton}" Command="{Binding OpenCommand}" CommandParameter="{x:Type vm:PurchasesViewModel}">
+                    <DockPanel>
+                        <TextBlock DockPanel.Dock="Right" Text="&#xF129B;" Style="{StaticResource DecorGlyph}" Foreground="{DynamicResource WarningBrush}"/>
+                        <StackPanel>
+                            <StackPanel Orientation="Horizontal">
+                                <Grid Style="{StaticResource ChipBox}">
+                                    <Border Style="{StaticResource KpiIcon}" Tag="{DynamicResource WarningBrush}"/>
+                                    <TextBlock Text="&#xF129B;" Style="{StaticResource KpiGlyph}" Foreground="{DynamicResource WarningBrush}"/>
+                                </Grid>
+                                <TextBlock Text="{l:T 'Долг поставщикам'}" Style="{StaticResource KpiLabel}"/>
+                            </StackPanel>
+                            <TextBlock Text="{Binding Summary.SupplierDebt, Converter={StaticResource Money}}" Style="{StaticResource KpiValue}" Foreground="{DynamicResource WarningBrush}"/>
+                            <TextBlock Text="{l:T 'Неоплаченные закупы'}" Style="{StaticResource KpiHint}"/>
+                        </StackPanel>
+                    </DockPanel>
+                </Button>
+                <Button Style="{StaticResource TileButton}" Command="{Binding OpenCommand}" CommandParameter="{x:Type vm:CatalogViewModel}">
+                    <DockPanel>
+                        <TextBlock DockPanel.Dock="Right" Text="&#xF0279;" Style="{StaticResource DecorGlyph}" Foreground="{DynamicResource SuccessBrush}"/>
+                        <StackPanel>
+                            <StackPanel Orientation="Horizontal">
+                                <Grid Style="{StaticResource ChipBox}">
+                                    <Border Style="{StaticResource KpiIcon}" Tag="{DynamicResource SuccessBrush}"/>
+                                    <TextBlock Text="&#xF0279;" Style="{StaticResource KpiGlyph}" Foreground="{DynamicResource SuccessBrush}"/>
+                                </Grid>
+                                <TextBlock Text="{l:T 'Активных товаров'}" Style="{StaticResource KpiLabel}"/>
+                            </StackPanel>
+                            <TextBlock Text="{Binding Summary.ProductsCount}" Style="{StaticResource KpiValue}"/>
+                            <TextBlock Text="{l:T 'В справочнике'}" Style="{StaticResource KpiHint}"/>
+                        </StackPanel>
+                    </DockPanel>
+                </Button>
+                <Button Style="{StaticResource TileButton}" Command="{Binding OpenCommand}" CommandParameter="{x:Type vm:WarehouseViewModel}">
+                    <DockPanel>
+                        <TextBlock DockPanel.Dock="Right" Text="&#xF002A;" Style="{StaticResource DecorGlyph}" Foreground="{DynamicResource DangerBrush}"/>
+                        <StackPanel>
+                            <StackPanel Orientation="Horizontal">
+                                <Grid Style="{StaticResource ChipBox}">
+                                    <Border Style="{StaticResource KpiIcon}" Tag="{DynamicResource DangerBrush}"/>
+                                    <TextBlock Text="&#xF002A;" Style="{StaticResource KpiGlyph}" Foreground="{DynamicResource DangerBrush}"/>
+                                </Grid>
+                                <TextBlock Text="{l:T 'Мало на складе'}" Style="{StaticResource KpiLabel}"/>
+                            </StackPanel>
+                            <TextBlock Text="{Binding Summary.LowStockCount}" Style="{StaticResource KpiValue}" Foreground="{DynamicResource DangerBrush}"/>
+                            <TextBlock Text="{l:T 'Остаток ниже минимума'}" Style="{StaticResource KpiHint}"/>
+                        </StackPanel>
+                    </DockPanel>
+                </Button>
+            </UniformGrid>
+
+            <!-- ═══ График + топ товаров ═══ -->
+            <Grid Margin="0,10,0,0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="3*"/>
+                    <ColumnDefinition Width="12"/>
+                    <ColumnDefinition Width="2*"/>
+                </Grid.ColumnDefinitions>
+
+                <Border Style="{StaticResource PanelCard}">
+                    <DockPanel>
+                        <DockPanel DockPanel.Dock="Top" Margin="0,0,0,14">
+                            <StackPanel DockPanel.Dock="Right" HorizontalAlignment="Right">
+                                <TextBlock Text="{Binding Summary.WeekRevenue, Converter={StaticResource Money}}" FontSize="17" FontWeight="Bold" HorizontalAlignment="Right"/>
+                                <TextBlock Text="{l:T 'итого за неделю'}" Style="{StaticResource Muted}" FontSize="12" HorizontalAlignment="Right"/>
+                            </StackPanel>
+                            <TextBlock Text="&#xF0127;" Style="{StaticResource PanelGlyph}"/>
+                            <TextBlock Text="{l:T 'Продажи за 7 дней'}" Style="{StaticResource PanelTitle}"/>
+                        </DockPanel>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="160"/>
+                                <RowDefinition Height="26"/>
+                            </Grid.RowDefinitions>
+
+                            <!-- Ось Y: подписи по центру опорных линий (шаг 40px) -->
+                            <ItemsControl ItemsSource="{Binding AxisTicks}" Margin="0,-20,10,0" VerticalAlignment="Top" MinWidth="36">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding}" Height="40" Padding="0,13,0,0" FontSize="11"
+                                                   Foreground="{DynamicResource MutedBrush}" HorizontalAlignment="Right"/>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+
+                            <!-- Опорные линии -->
+                            <Grid Grid.Column="1">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition/><RowDefinition/><RowDefinition/><RowDefinition/>
+                                </Grid.RowDefinitions>
+                                <Border Grid.Row="0" BorderThickness="0,1,0,0" BorderBrush="{DynamicResource BorderBrush}"/>
+                                <Border Grid.Row="1" BorderThickness="0,1,0,0" BorderBrush="{DynamicResource BorderBrush}"/>
+                                <Border Grid.Row="2" BorderThickness="0,1,0,0" BorderBrush="{DynamicResource BorderBrush}"/>
+                                <Border Grid.Row="3" BorderThickness="0,1,0,1" BorderBrush="{DynamicResource BorderBrush}"/>
+                            </Grid>
+
+                            <ItemsControl Grid.Column="1" Grid.RowSpan="2" ItemsSource="{Binding Bars}">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate><UniformGrid Rows="1"/></ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate DataType="vm:ChartBar">
+                                        <DockPanel Margin="10,0" Background="Transparent" ToolTip="{Binding Amount, Converter={StaticResource Money}}">
+                                            <TextBlock x:Name="Day" DockPanel.Dock="Bottom" Text="{Binding Label}" HorizontalAlignment="Center"
+                                                       FontSize="11" Foreground="{DynamicResource MutedBrush}" Height="26" Padding="0,8,0,0"/>
+                                            <Border x:Name="Bar" Height="{Binding Height}" MaxWidth="52" CornerRadius="7,7,0,0"
+                                                    VerticalAlignment="Bottom" Opacity="0.28">
+                                                <Border.Background>
+                                                    <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                                                        <GradientStop Color="#3B82F6" Offset="0"/>
+                                                        <GradientStop Color="#1D4ED8" Offset="1"/>
+                                                    </LinearGradientBrush>
+                                                </Border.Background>
+                                            </Border>
+                                        </DockPanel>
+                                        <DataTemplate.Triggers>
+                                            <DataTrigger Binding="{Binding IsToday}" Value="True">
+                                                <Setter TargetName="Bar" Property="Opacity" Value="1"/>
+                                                <Setter TargetName="Day" Property="Foreground" Value="{DynamicResource TextBrush}"/>
+                                                <Setter TargetName="Day" Property="FontWeight" Value="Bold"/>
+                                            </DataTrigger>
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter TargetName="Bar" Property="Opacity" Value="0.8"/>
+                                            </Trigger>
+                                        </DataTemplate.Triggers>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                            <TextBlock Grid.Column="1" Text="{l:T 'За последние 7 дней продаж не было'}" Style="{StaticResource EmptyText}"
+                                       Visibility="{Binding HasSalesThisWeek, Converter={StaticResource InvBoolToVis}}"/>
+                        </Grid>
+                    </DockPanel>
+                </Border>
+
+                <Border Grid.Column="2" Style="{StaticResource PanelCard}">
+                    <DockPanel>
+                        <DockPanel DockPanel.Dock="Top" Margin="0,0,0,12">
+                            <Button DockPanel.Dock="Right" Content="{l:T 'Отчёт'}" Style="{StaticResource LinkButton}"
+                                    Command="{Binding OpenCommand}" CommandParameter="{x:Type vm:ReportsViewModel}"/>
+                            <TextBlock Text="&#xF04D2;" Style="{StaticResource PanelGlyph}"/>
+                            <TextBlock Text="{l:T 'Топ товаров за месяц'}" Style="{StaticResource PanelTitle}"/>
+                        </DockPanel>
+                        <Grid>
+                            <ItemsControl ItemsSource="{Binding TopProducts}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate DataType="vm:TopProductBar">
+                                        <Grid Margin="0,6">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="38"/>
+                                                <ColumnDefinition Width="*"/>
+                                            </Grid.ColumnDefinitions>
+                                            <Border Width="28" Height="28" CornerRadius="14" Background="{DynamicResource SurfaceAltBrush}"
+                                                    BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" VerticalAlignment="Center" HorizontalAlignment="Left">
+                                                <TextBlock Text="{Binding Rank}" FontSize="12" FontWeight="Bold"
+                                                           HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                            </Border>
+                                            <StackPanel Grid.Column="1">
+                                                <DockPanel>
+                                                    <TextBlock DockPanel.Dock="Right" Text="{Binding Revenue, Converter={StaticResource Money}}" FontWeight="Bold" Margin="8,0,0,0"/>
+                                                    <TextBlock Text="{Binding Product}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/>
+                                                </DockPanel>
+                                                <DockPanel Margin="0,6,0,0">
+                                                    <TextBlock DockPanel.Dock="Right" Text="{Binding QuantityText}" Style="{StaticResource Muted}" FontSize="11" Margin="12,0,0,0" MinWidth="34" TextAlignment="Right"/>
+                                                    <!-- Полоска доли от лидера -->
+                                                    <Grid x:Name="Track" Height="7" VerticalAlignment="Center">
+                                                        <Border CornerRadius="4" Background="{DynamicResource SurfaceAltBrush}"/>
+                                                        <Border CornerRadius="4" HorizontalAlignment="Left">
+                                                            <Border.Background>
+                                                                <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                                                    <GradientStop Color="#2563EB" Offset="0"/>
+                                                                    <GradientStop Color="#60A5FA" Offset="1"/>
+                                                                </LinearGradientBrush>
+                                                            </Border.Background>
+                                                            <Border.Width>
+                                                                <MultiBinding Converter="{x:Static l:Ratio.Width}">
+                                                                    <Binding Path="Share"/>
+                                                                    <Binding Path="ActualWidth" ElementName="Track"/>
+                                                                </MultiBinding>
+                                                            </Border.Width>
+                                                        </Border>
+                                                    </Grid>
+                                                </DockPanel>
+                                            </StackPanel>
+                                        </Grid>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                            <TextBlock Text="{l:T 'В этом месяце продаж ещё нет'}" Style="{StaticResource EmptyText}">
+                                <TextBlock.Visibility>
+                                    <Binding Path="TopProducts.Count" Converter="{StaticResource InvBoolToVis}"/>
+                                </TextBlock.Visibility>
+                            </TextBlock>
+                        </Grid>
+                    </DockPanel>
+                </Border>
+            </Grid>
+
+            <!-- ═══ Последние продажи + заканчиваются ═══ -->
+            <Grid Margin="0,12,0,0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="3*"/>
+                    <ColumnDefinition Width="12"/>
+                    <ColumnDefinition Width="2*"/>
+                </Grid.ColumnDefinitions>
+
+                <Border Style="{StaticResource PanelCard}">
+                    <DockPanel>
+                        <DockPanel DockPanel.Dock="Top" Margin="0,0,0,10">
+                            <Button DockPanel.Dock="Right" Content="{l:T 'Все продажи'}" Style="{StaticResource LinkButton}"
+                                    Command="{Binding OpenCommand}" CommandParameter="{x:Type vm:SalesViewModel}"/>
+                            <TextBlock Text="&#xF09EE;" Style="{StaticResource PanelGlyph}"/>
+                            <TextBlock Text="{l:T 'Последние продажи'}" Style="{StaticResource PanelTitle}"/>
+                        </DockPanel>
+                        <Grid>
+                            <DataGrid ItemsSource="{Binding RecentSales}" BorderThickness="0" IsReadOnly="True">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="№" Binding="{Binding No}" Width="40"/>
+                                    <DataGridTextColumn Header="{l:T 'Номер'}" Binding="{Binding Item.Number}" Width="110"/>
+                                    <DataGridTextColumn Header="{l:T 'Дата'}" Binding="{Binding Item.Date, StringFormat={}{0:dd.MM.yyyy HH:mm}}" Width="130"/>
+                                    <DataGridTextColumn Header="{l:T 'Покупатель'}" Binding="{Binding Item.Customer.Name, FallbackValue='Розничный покупатель', TargetNullValue='Розничный покупатель'}" Width="*"/>
+                                    <DataGridTextColumn Header="{l:T 'Возврат'}" Binding="{Binding Item.ReturnedTotal, Converter={StaticResource Money}}" Width="110" ElementStyle="{StaticResource RightCell}"/>
+                                    <DataGridTemplateColumn Header="{l:T 'Сумма'}" Width="120" SortMemberPath="Item.Total">
+                                        <DataGridTemplateColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <Border Style="{StaticResource Pill}" Background="{DynamicResource SuccessLightBrush}">
+                                                    <TextBlock Text="{Binding Item.Total, Converter={StaticResource Money}}" FontWeight="SemiBold" FontSize="12"
+                                                               Foreground="{DynamicResource SuccessBrush}"/>
+                                                </Border>
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                    </DataGridTemplateColumn>
+                                </DataGrid.Columns>
+                            </DataGrid>
+                            <TextBlock Text="{l:T 'Продаж пока нет'}" Style="{StaticResource EmptyText}" Margin="0,40,0,0"
+                                       Visibility="{Binding RecentSales.Count, Converter={StaticResource InvBoolToVis}}"/>
+                        </Grid>
+                    </DockPanel>
+                </Border>
+
+                <Border Grid.Column="2" Style="{StaticResource PanelCard}">
+                    <DockPanel>
+                        <DockPanel DockPanel.Dock="Top" Margin="0,0,0,10">
+                            <Button DockPanel.Dock="Right" Content="{l:T 'Склад'}" Style="{StaticResource LinkButton}"
+                                    Command="{Binding OpenCommand}" CommandParameter="{x:Type vm:WarehouseViewModel}"/>
+                            <TextBlock Text="&#xF03D7;" Style="{StaticResource PanelGlyph}"/>
+                            <TextBlock Text="{l:T 'Заканчиваются товары'}" Style="{StaticResource PanelTitle}"/>
+                        </DockPanel>
+                        <Grid>
+                            <DataGrid ItemsSource="{Binding LowStock}" BorderThickness="0" IsReadOnly="True" MaxHeight="240">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="№" Binding="{Binding No}" Width="40"/>
+                                    <DataGridTextColumn Header="{l:T 'Товар'}" Binding="{Binding Item.Product}" Width="*" MinWidth="120"/>
+                                    <DataGridTextColumn Header="{l:T 'Склад'}" Binding="{Binding Item.Warehouse}" Width="Auto"/>
+                                    <DataGridTemplateColumn Header="{l:T 'Остаток'}" Width="Auto" SortMemberPath="Item.Quantity">
+                                        <DataGridTemplateColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <Border Style="{StaticResource Pill}" HorizontalAlignment="Left" Background="{DynamicResource DangerLightBrush}">
+                                                    <TextBlock Foreground="{DynamicResource DangerBrush}" FontWeight="SemiBold" FontSize="12">
+                                                        <Run Text="{Binding Item.Quantity, Mode=OneWay, StringFormat={}{0:0.###}}"/><Run Text=" / "/><Run Text="{Binding Item.MinStock, Mode=OneWay, StringFormat={}{0:0.###}}"/>
+                                                    </TextBlock>
+                                                </Border>
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                    </DataGridTemplateColumn>
+                                </DataGrid.Columns>
+                            </DataGrid>
+                            <StackPanel VerticalAlignment="Center" Margin="0,40,0,0"
+                                        Visibility="{Binding LowStock.Count, Converter={StaticResource InvBoolToVis}}">
+                                <TextBlock Text="&#xF012C;" FontFamily="{StaticResource IconFont}" FontSize="22" Foreground="{DynamicResource SuccessBrush}" HorizontalAlignment="Center"/>
+                                <TextBlock Text="{l:T 'Все остатки в норме'}" Style="{StaticResource EmptyText}" Margin="0,6,0,0"/>
+                            </StackPanel>
+                        </Grid>
+                    </DockPanel>
+                </Border>
+            </Grid>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

@@ -1,0 +1,580 @@
+﻿<UserControl x:Class="MiniTrade.Desktop.Views.SalesView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:l="clr-namespace:MiniTrade.Desktop.Infrastructure"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:MiniTrade.Desktop.ViewModels"
+             xmlns:inf="clr-namespace:MiniTrade.Desktop.Infrastructure"
+             mc:Ignorable="d" d:DataContext="{d:DesignInstance vm:SalesViewModel}"
+             DataContextChanged="OnDataContextChanged">
+    <UserControl.InputBindings>
+        <KeyBinding Key="F9" Command="{Binding CheckoutCommand}"/>
+        <KeyBinding Key="F8" Command="{Binding SaveDraftCommand}"/>
+    </UserControl.InputBindings>
+    <UserControl.Resources>
+        <!-- Элемент списка без системного выделения: оформление задаёт сам шаблон -->
+        <Style x:Key="PlainItem" TargetType="ListBoxItem">
+            <Setter Property="Focusable" Value="False"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ListBoxItem">
+                        <ContentPresenter/>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Картинка 1:1 с заглушкой-иконкой -->
+        <DataTemplate x:Key="CategoryChip" DataType="{x:Type vm:PosCategory}">
+            <Border x:Name="Bd" CornerRadius="8" Padding="4,4,10,4" Margin="0,0,8,8" BorderThickness="1"
+                    Background="{DynamicResource SurfaceBrush}" BorderBrush="{DynamicResource BorderBrush}">
+                <StackPanel Orientation="Horizontal">
+                    <Grid Width="26" Height="26">
+                        <Border x:Name="IconBg" CornerRadius="6" Background="{DynamicResource SurfaceAltBrush}">
+                            <TextBlock x:Name="Icon" Text="&#xF04FC;" FontFamily="{StaticResource IconFont}" FontSize="15"
+                                       Foreground="{DynamicResource MutedBrush}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <Image Source="{Binding Image, Converter={StaticResource Image}, ConverterParameter=96}" Stretch="UniformToFill">
+                            <Image.Clip><RectangleGeometry Rect="0,0,26,26" RadiusX="6" RadiusY="6"/></Image.Clip>
+                        </Image>
+                    </Grid>
+                    <StackPanel VerticalAlignment="Center" Margin="8,0,0,0">
+                        <TextBlock x:Name="Name" Text="{Binding Name}" Foreground="{DynamicResource TextBrush}" FontWeight="SemiBold" MaxWidth="150" TextTrimming="CharacterEllipsis"/>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+            <DataTemplate.Triggers>
+                <DataTrigger Binding="{Binding IsAll}" Value="True">
+                    <Setter TargetName="Icon" Property="Text" Value="&#xF0570;"/>
+                </DataTrigger>
+                <DataTrigger Binding="{Binding IsMouseOver, RelativeSource={RelativeSource AncestorType=ListBoxItem}}" Value="True">
+                    <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource PrimaryBrush}"/>
+                </DataTrigger>
+                <DataTrigger Binding="{Binding IsSelected, RelativeSource={RelativeSource AncestorType=ListBoxItem}}" Value="True">
+                    <Setter TargetName="Bd" Property="Background" Value="{DynamicResource PrimaryLightBrush}"/>
+                    <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource PrimaryBrush}"/>
+                    <Setter TargetName="Name" Property="Foreground" Value="{DynamicResource PrimaryBrush}"/>
+                    <Setter TargetName="IconBg" Property="Background" Value="{DynamicResource SurfaceBrush}"/>
+                    <Setter TargetName="Icon" Property="Foreground" Value="{DynamicResource PrimaryBrush}"/>
+                </DataTrigger>
+            </DataTemplate.Triggers>
+        </DataTemplate>
+
+        <!-- Плитка товара: фото, название, цена, остаток; синяя метка — сколько уже в чеке -->
+        <DataTemplate x:Key="ProductTile" DataType="{x:Type vm:PosItem}">
+            <Border x:Name="Bd" Width="116" Margin="0,0,8,8" CornerRadius="10" BorderThickness="1"
+                    Background="{DynamicResource SurfaceBrush}" BorderBrush="{DynamicResource BorderBrush}">
+                <StackPanel>
+                    <Grid Height="104">
+                        <Border CornerRadius="9,9,0,0" Background="{DynamicResource SurfaceAltBrush}">
+                            <TextBlock Text="&#xF03D7;" FontFamily="{StaticResource IconFont}" FontSize="34"
+                                       Foreground="{DynamicResource SubtleTextBrush}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <Image Source="{Binding Product.Thumbnail, Converter={StaticResource Image}, ConverterParameter=200}" Stretch="UniformToFill">
+                            <Image.Clip><RectangleGeometry Rect="0,0,138,138" RadiusX="9" RadiusY="9"/></Image.Clip>
+                        </Image>
+                        <Border HorizontalAlignment="Right" VerticalAlignment="Top" Margin="6" CornerRadius="10" Padding="7,1" MinWidth="22"
+                                Background="{DynamicResource PrimaryBrush}" Visibility="{Binding InCart, Converter={StaticResource BoolToVis}}">
+                            <TextBlock Text="{Binding InCartQuantity, StringFormat={}{0:0.###}}" Foreground="White" FontWeight="Bold" FontSize="12" HorizontalAlignment="Center"/>
+                        </Border>
+                    </Grid>
+                    <StackPanel Margin="7,4,7,6">
+                        <TextBlock Text="{Binding Product.Name}" Foreground="{DynamicResource TextBrush}" FontWeight="SemiBold" FontSize="12" TextWrapping="Wrap" TextTrimming="CharacterEllipsis"
+                                   Height="30" LineHeight="15" ToolTip="{Binding Product.Name}"/>
+                        <DockPanel Margin="0,2,0,0">
+                            <TextBlock x:Name="Stock" DockPanel.Dock="Right" Text="{Binding StockText}" Style="{StaticResource Muted}" FontSize="11" VerticalAlignment="Bottom"/>
+                            <TextBlock Text="{Binding Product.SalePrice, Converter={StaticResource Money}}" FontWeight="Bold" FontSize="12" Foreground="{DynamicResource PrimaryBrush}"/>
+                        </DockPanel>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+            <DataTemplate.Triggers>
+                <DataTrigger Binding="{Binding IsOut}" Value="True">
+                    <Setter TargetName="Stock" Property="Foreground" Value="{DynamicResource DangerBrush}"/>
+                </DataTrigger>
+                <DataTrigger Binding="{Binding IsMouseOver, RelativeSource={RelativeSource AncestorType=ListBoxItem}}" Value="True">
+                    <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource PrimaryBrush}"/>
+                </DataTrigger>
+                <DataTrigger Binding="{Binding IsSelected, RelativeSource={RelativeSource AncestorType=ListBoxItem}}" Value="True">
+                    <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource PrimaryBrush}"/>
+                    <Setter TargetName="Bd" Property="BorderThickness" Value="2"/>
+                </DataTrigger>
+            </DataTemplate.Triggers>
+        </DataTemplate>
+    </UserControl.Resources>
+
+    <TabControl SelectedIndex="{Binding SelectedTab}">
+        <!-- Новая продажа: слева витрина (поиск, категории, товары), справа чек и оплата. F2 — поиск, F9 — провести.
+             При изменении проведённой продажи вкладка называется «Изменение ПР-…» -->
+        <TabItem Header="{Binding EditorTabTitle}">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" MinWidth="360"/>
+                    <ColumnDefinition Width="16"/>
+                    <ColumnDefinition x:Name="CartColumn" Width="420" MinWidth="340" MaxWidth="900"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- ══ Витрина ══ -->
+                <Border Style="{StaticResource Card}">
+                    <DockPanel>
+                        <!-- Поиск: фильтрует витрину; Enter — в чек, сканер штрихкода работает сразу -->
+                        <DockPanel DockPanel.Dock="Top" Margin="0,0,0,12">
+                            <!-- Параметры кассы: склад, «только в наличии», новый товар -->
+                            <Grid DockPanel.Dock="Right" Margin="8,0,0,0">
+                                <Button x:Name="SettingsButton" Style="{StaticResource InputAddonButton}" Content="&#xF0493;" ToolTip="{l:T 'Параметры'}" FontSize="20"
+                                        Height="36" Width="36" Click="OnSettingsClick"/>
+                                <Popup x:Name="SettingsPopup" PlacementTarget="{Binding ElementName=SettingsButton}" Placement="Bottom" HorizontalOffset="-238"
+                                       StaysOpen="False" AllowsTransparency="True" PopupAnimation="Fade">
+                                    <Border Width="280" Margin="0,6,8,8" Padding="14" CornerRadius="10" BorderThickness="1"
+                                            Background="{DynamicResource SurfaceBrush}" BorderBrush="{DynamicResource BorderBrush}" Effect="{DynamicResource DialogShadow}">
+                                        <StackPanel>
+                                            <TextBlock Text="{l:T 'Параметры'}" FontWeight="SemiBold" FontSize="14" Margin="0,0,0,8"/>
+                                            <TextBlock Text="{l:T 'Склад'}" Style="{StaticResource FieldLabel}" Margin="0,0,0,4"/>
+                                            <DockPanel>
+                                                <ComboBox ItemsSource="{Binding Warehouses}" SelectedItem="{Binding Warehouse}" DisplayMemberPath="Name"
+                                                          ToolTip="{l:T 'Склад списания (остатки на витрине — по нему)'}"/>
+                                            </DockPanel>
+                                            <CheckBox Content="{l:T 'Только товары в наличии'}" IsChecked="{Binding OnlyInStock}" Margin="0,12,0,0"/>
+                                            <CheckBox Content="{l:T 'Показывать таблицей'}" IsChecked="{Binding ShowTable}" Margin="0,8,0,0"/>
+                                            <Button Style="{StaticResource SecondaryButton}" Command="{Binding AddProductCommand}" Margin="0,14,0,0" HorizontalAlignment="Stretch">
+                                                <StackPanel Orientation="Horizontal">
+                                                    <TextBlock Text="&#xF0417;" FontFamily="{StaticResource IconFont}" FontSize="16" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                                    <TextBlock Text="{l:T 'Новый товар'}"/>
+                                                </StackPanel>
+                                            </Button>
+                                        </StackPanel>
+                                    </Border>
+                                </Popup>
+                            </Grid>
+                            <Button DockPanel.Dock="Right" Height="36" Width="36" Margin="8,0,0,0" FontSize="18" Command="{Binding ToggleViewCommand}">
+                                <Button.Style>
+                                    <Style TargetType="Button" BasedOn="{StaticResource InputAddonButton}">
+                                        <Setter Property="Content" Value="&#xF0572;"/>
+                                        <Setter Property="ToolTip" Value="{l:T 'Показать таблицей'}"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding ShowTable}" Value="True">
+                                                <Setter Property="Content" Value="&#xF0570;"/>
+                                                <Setter Property="ToolTip" Value="{l:T 'Показать плитками'}"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Button.Style>
+                            </Button>
+                            <TextBox x:Name="SearchBox" Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" FontSize="14" MinHeight="36"
+                                     inf:Ui.Icon="&#xF0349;" inf:Ui.Placeholder="{l:T 'Штрихкод, артикул или название  (F2)'}"
+                                     PreviewKeyDown="OnSearchKeyDown"/>
+                        </DockPanel>
+
+                        <!-- Категории с картинками -->
+                        <ListBox DockPanel.Dock="Top" ItemsSource="{Binding PosCategories}" SelectedItem="{Binding SelectedPosCategory}"
+                                 ItemTemplate="{StaticResource CategoryChip}" ItemContainerStyle="{StaticResource PlainItem}"
+                                 PreviewMouseLeftButtonUp="OnCategoryClick"
+                                 BorderThickness="0" Background="Transparent" Padding="0" Margin="0,0,0,4"
+                                 ScrollViewer.HorizontalScrollBarVisibility="Auto" ScrollViewer.VerticalScrollBarVisibility="Disabled"
+                                 PreviewMouseWheel="OnCategoriesWheel">
+                            <ListBox.ItemsPanel><ItemsPanelTemplate><StackPanel Orientation="Horizontal"/></ItemsPanelTemplate></ListBox.ItemsPanel>
+                        </ListBox>
+
+                        <!-- Страницы витрины -->
+                        <DockPanel DockPanel.Dock="Bottom" Margin="0,8,0,0">
+                            <ContentControl DockPanel.Dock="Right" Content="{Binding ShowcasePager}" ContentTemplate="{StaticResource PagerBar}" Focusable="False"/>
+                            <TextBlock Text="{Binding ShowcasePager.PageInfo}" Style="{StaticResource Muted}" FontSize="12" VerticalAlignment="Center"/>
+                        </DockPanel>
+
+                        <Grid>
+                            <!-- Плитки -->
+                            <ListBox x:Name="TileList" ItemsSource="{Binding Showcase}" SelectedItem="{Binding SelectedItem}"
+                                     ItemTemplate="{StaticResource ProductTile}" ItemContainerStyle="{StaticResource PlainItem}"
+                                     BorderThickness="0" Background="Transparent" Padding="0"
+                                     ScrollViewer.HorizontalScrollBarVisibility="Disabled" ScrollViewer.VerticalScrollBarVisibility="Auto"
+                                     PreviewMouseLeftButtonUp="OnShowcaseClick"
+                                     Visibility="{Binding ShowTable, Converter={StaticResource InvBoolToVis}}">
+                                <ListBox.ItemsPanel><ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate></ListBox.ItemsPanel>
+                            </ListBox>
+
+                            <!-- Таблица: быстрый доступ, виртуализирована — подходит для тысяч товаров -->
+                            <DataGrid x:Name="ShowcaseGrid" ItemsSource="{Binding Showcase}" SelectedItem="{Binding SelectedItem}" RowHeight="40"
+                                      CanUserSortColumns="True" HorizontalScrollBarVisibility="Auto" PreviewMouseLeftButtonUp="OnShowcaseClick"
+                                      Visibility="{Binding ShowTable, Converter={StaticResource BoolToVis}}">
+                                <DataGrid.Columns>
+                                    <DataGridTemplateColumn Width="56" CanUserResize="False">
+                                        <DataGridTemplateColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <Grid Width="30" Height="30">
+                                                    <Border CornerRadius="6" Background="{DynamicResource SurfaceAltBrush}"><TextBlock Text="&#xF03D7;" FontFamily="{StaticResource IconFont}" FontSize="17" Foreground="{DynamicResource SubtleTextBrush}" HorizontalAlignment="Center" VerticalAlignment="Center"/></Border>
+                                                    <Image Source="{Binding Product.Thumbnail, Converter={StaticResource Image}, ConverterParameter=64}" Stretch="Uniform">
+                                                        <Image.Clip><RectangleGeometry Rect="0,0,30,30" RadiusX="6" RadiusY="6"/></Image.Clip>
+                                                    </Image>
+                                                </Grid>
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                    </DataGridTemplateColumn>
+                                    <DataGridTextColumn Header="{l:T 'Наименование'}" Binding="{Binding Product.Name}" Width="*" MinWidth="160" SortMemberPath="Product.Name"/>
+                                    <DataGridTextColumn Header="{l:T 'Артикул'}" Binding="{Binding Product.Sku}" Width="90"/>
+                                    <DataGridTextColumn Header="{l:T 'Штрихкод'}" Binding="{Binding Product.Barcode}" Width="120"/>
+                                    <DataGridTextColumn Header="{l:T 'Остаток'}" Binding="{Binding StockText}" Width="90" SortMemberPath="Stock" ElementStyle="{StaticResource RightCell}"/>
+                                    <DataGridTextColumn Header="{l:T 'Цена'}" Binding="{Binding Product.SalePrice, Converter={StaticResource Money}}" Width="100" SortMemberPath="Product.SalePrice">
+                                        <DataGridTextColumn.ElementStyle>
+                                            <Style TargetType="TextBlock" BasedOn="{StaticResource RightCell}">
+                                                <Setter Property="FontWeight" Value="SemiBold"/>
+                                            </Style>
+                                        </DataGridTextColumn.ElementStyle>
+                                    </DataGridTextColumn>
+                                    <DataGridTextColumn Header="{l:T 'В чеке'}" Binding="{Binding InCartQuantity, StringFormat={}{0:0.###}}" Width="64" ElementStyle="{StaticResource RightCell}"/>
+                                </DataGrid.Columns>
+                            </DataGrid>
+
+                            <!-- Ничего не найдено -->
+                            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" IsHitTestVisible="False"
+                                        Visibility="{Binding IsShowcaseEmpty, Converter={StaticResource BoolToVis}}">
+                                <TextBlock Text="&#xF0D2D;" FontFamily="{StaticResource IconFont}" FontSize="48" Foreground="{DynamicResource SubtleTextBrush}" HorizontalAlignment="Center"/>
+                                <TextBlock Text="{l:T 'Товары не найдены'}" FontSize="15" FontWeight="SemiBold" HorizontalAlignment="Center" Margin="0,10,0,4"/>
+                                <TextBlock Text="{l:T 'Нажмите Enter, чтобы создать товар'}" Style="{StaticResource Muted}" HorizontalAlignment="Center"/>
+                            </StackPanel>
+                        </Grid>
+                    </DockPanel>
+                </Border>
+
+                <!-- ══ Чек и оплата ══ -->
+                <GridSplitter Grid.Column="1" Width="16" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
+                              ResizeBehavior="PreviousAndNext" ResizeDirection="Columns" Background="Transparent"
+                              Cursor="SizeWE" Focusable="False" DragCompleted="OnSplitterDragCompleted" ToolTip="{l:T 'Потяните, чтобы изменить ширину'}"/>
+                <Border Grid.Column="2" Style="{StaticResource Card}">
+                    <DockPanel>
+                        <!-- Заголовок чека -->
+                        <DockPanel DockPanel.Dock="Top" Margin="0,0,0,10">
+                            <Button DockPanel.Dock="Right" Style="{StaticResource SmallButton}" Content="{l:T 'Очистить'}" Command="{Binding NewSaleCommand}"
+                                    ToolTip="{l:T 'Начать новую продажу'}"/>
+                            <!-- Черновики: отложенные чеки -->
+                            <Grid DockPanel.Dock="Right" Margin="0,0,6,0">
+                                <ToggleButton x:Name="DraftsToggle" IsChecked="{Binding IsDraftsOpen}" Cursor="Hand" Foreground="{DynamicResource TextBrush}" ToolTip="{l:T 'Отложенные чеки'}">
+                                    <ToggleButton.Template>
+                                        <ControlTemplate TargetType="ToggleButton">
+                                            <Border x:Name="Bd" Background="{DynamicResource SurfaceBrush}" BorderBrush="{DynamicResource InputBorderBrush}"
+                                                    BorderThickness="1" CornerRadius="6" Padding="10,0" MinHeight="32" TextElement.Foreground="{TemplateBinding Foreground}">
+                                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                    <TextBlock Text="&#xF0150;" FontFamily="{StaticResource IconFont}" FontSize="16" Foreground="{DynamicResource WarningBrush}" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                                                    <TextBlock Text="{l:T 'Черновики'}" VerticalAlignment="Center"/>
+                                                    <Border x:Name="Badge" CornerRadius="8" Background="{DynamicResource WarningBrush}" Padding="6,0" Margin="6,0,0,0" MinWidth="18"
+                                                            Visibility="{Binding HasDrafts, Converter={StaticResource BoolToVis}}">
+                                                        <TextBlock Text="{Binding DraftsCount}" Foreground="White" FontSize="11" FontWeight="SemiBold" HorizontalAlignment="Center"/>
+                                                    </Border>
+                                                </StackPanel>
+                                            </Border>
+                                            <ControlTemplate.Triggers>
+                                                <Trigger Property="IsMouseOver" Value="True">
+                                                    <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource InputHoverBrush}"/>
+                                                </Trigger>
+                                                <Trigger Property="IsChecked" Value="True">
+                                                    <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource PrimaryBrush}"/>
+                                                </Trigger>
+                                            </ControlTemplate.Triggers>
+                                        </ControlTemplate>
+                                    </ToggleButton.Template>
+                                </ToggleButton>
+                                <Popup IsOpen="{Binding IsDraftsOpen}" StaysOpen="False" PlacementTarget="{Binding ElementName=DraftsToggle}"
+                                       Placement="Bottom" HorizontalOffset="-250" AllowsTransparency="True" PopupAnimation="Fade">
+                                    <Grid Margin="8,4,8,12" Width="380">
+                                        <Border Background="{DynamicResource SurfaceBrush}" CornerRadius="10" Effect="{DynamicResource PopupShadow}"/>
+                                        <Border Background="{DynamicResource SurfaceBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" CornerRadius="10" Padding="6">
+                                            <DockPanel>
+                                                <TextBlock DockPanel.Dock="Top" Text="{l:T 'Отложенные чеки'}" FontWeight="SemiBold" Margin="8,6,8,6"/>
+                                                <TextBlock DockPanel.Dock="Top" Text="{l:T 'Черновиков нет. Нажмите «Отложить» (F8), чтобы сохранить чек.'}" Style="{StaticResource Muted}"
+                                                           TextWrapping="Wrap" Margin="8,4,8,10" Visibility="{Binding HasDrafts, Converter={StaticResource InvBoolToVis}}"/>
+                                                <ScrollViewer MaxHeight="360" VerticalScrollBarVisibility="Auto">
+                                                    <ItemsControl ItemsSource="{Binding Drafts}">
+                                                        <ItemsControl.ItemTemplate>
+                                                            <DataTemplate DataType="l:SaleDraft">
+                                                                <Button Cursor="Hand" Margin="0,1" HorizontalContentAlignment="Stretch" ToolTip="{l:T 'Открыть в чеке'}"
+                                                                        Command="{Binding DataContext.OpenDraftCommand, ElementName=DraftsToggle}" CommandParameter="{Binding}">
+                                                                    <Button.Template>
+                                                                        <ControlTemplate TargetType="Button">
+                                                                            <Border x:Name="Row" Background="Transparent" CornerRadius="6" Padding="8,7">
+                                                                                <ContentPresenter/>
+                                                                            </Border>
+                                                                            <ControlTemplate.Triggers>
+                                                                                <Trigger Property="IsMouseOver" Value="True">
+                                                                                    <Setter TargetName="Row" Property="Background" Value="{DynamicResource RowHoverBrush}"/>
+                                                                                </Trigger>
+                                                                            </ControlTemplate.Triggers>
+                                                                        </ControlTemplate>
+                                                                    </Button.Template>
+                                                                    <DockPanel>
+                                                                        <Button DockPanel.Dock="Right" Content="&#xF09E7;" Style="{StaticResource DangerIconButton}" ToolTip="{l:T 'Удалить черновик'}" Margin="8,0,0,0"
+                                                                                Command="{Binding DataContext.DeleteDraftCommand, ElementName=DraftsToggle}" CommandParameter="{Binding}"/>
+                                                                        <TextBlock DockPanel.Dock="Right" Text="{Binding Total, Converter={StaticResource Money}}" FontWeight="SemiBold" VerticalAlignment="Center" Margin="8,0,0,0"/>
+                                                                        <StackPanel>
+                                                                            <TextBlock Text="{Binding Title}" TextTrimming="CharacterEllipsis"/>
+                                                                            <TextBlock Style="{StaticResource Muted}" FontSize="12">
+                                                                                <Run Text="{Binding Saved, Mode=OneWay, StringFormat={}{0:dd.MM HH:mm}}"/><Run Text=" · "/><Run Text="{Binding ItemsCount, Mode=OneWay}"/><Run Text=" "/><Run Text="{l:T 'поз.'}"/>
+                                                                            </TextBlock>
+                                                                        </StackPanel>
+                                                                    </DockPanel>
+                                                                </Button>
+                                                            </DataTemplate>
+                                                        </ItemsControl.ItemTemplate>
+                                                    </ItemsControl>
+                                                </ScrollViewer>
+                                            </DockPanel>
+                                        </Border>
+                                    </Grid>
+                                </Popup>
+                            </Grid>
+                            <TextBlock VerticalAlignment="Center" FontSize="16" FontWeight="SemiBold">
+                                <Run Text="{l:T 'Чек'}"/><Run Text="  "/><Run Text="{Binding ItemsCount, Mode=OneWay}" Foreground="{DynamicResource MutedBrush}" FontWeight="Normal" FontSize="13"/><Run Text=" " /><Run Text="{l:T 'поз.'}" Foreground="{DynamicResource MutedBrush}" FontWeight="Normal" FontSize="13"/>
+                            </TextBlock>
+                        </DockPanel>
+
+                        <!-- Режим изменения проведённой продажи -->
+                        <Border DockPanel.Dock="Top" Background="{DynamicResource InfoLightBrush}" CornerRadius="8" Padding="12,8" Margin="0,0,0,10"
+                                Visibility="{Binding IsEditingSale, Converter={StaticResource BoolToVis}}">
+                            <DockPanel>
+                                <Button DockPanel.Dock="Right" Style="{StaticResource SmallButton}" Content="{l:T 'Отменить'}" Command="{Binding CancelEditCommand}"
+                                        ToolTip="{l:T 'Выйти из изменения без сохранения'}"/>
+                                <TextBlock Text="&#xF0CB6;" FontFamily="{StaticResource IconFont}" Foreground="{DynamicResource PrimaryBrush}" Margin="0,0,10,0" VerticalAlignment="Center"/>
+                                <TextBlock VerticalAlignment="Center" TextWrapping="Wrap" Foreground="{DynamicResource PrimaryBrush}">
+                                    <Run Text="{l:T 'Изменение продажи '}"/><Run Text="{Binding EditingSale.Number, Mode=OneWay}" FontWeight="SemiBold"/><Run Text=" · "/><Run Text="{Binding EditingSale.Date, Mode=OneWay, StringFormat={}{0:dd.MM.yyyy HH:mm}}"/>
+                                </TextBlock>
+                            </DockPanel>
+                        </Border>
+
+                        <!-- Итог последней продажи -->
+                        <Border DockPanel.Dock="Top" Background="{DynamicResource SuccessLightBrush}" CornerRadius="8" Padding="12,9" Margin="0,0,0,10"
+                                Visibility="{Binding LastResult, Converter={StaticResource BoolToVis}}">
+                            <DockPanel>
+                                <TextBlock Text="&#xF012C;" FontFamily="{StaticResource IconFont}" Foreground="{DynamicResource SuccessBrush}" Margin="0,2,10,0"/>
+                                <TextBlock Text="{Binding LastResult}" Foreground="{DynamicResource SuccessBrush}" FontWeight="SemiBold" TextWrapping="Wrap"/>
+                            </DockPanel>
+                        </Border>
+
+                        <!-- ── Итог и действия (внизу); покупатель, касса и оплата — в окне «Оформление» ── -->
+                        <StackPanel DockPanel.Dock="Bottom" Margin="0,12,0,0">
+                            <Border Background="{DynamicResource SurfaceAltBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" CornerRadius="10"
+                                    Padding="14,6">
+                                <DockPanel>
+                                    <StackPanel DockPanel.Dock="Right" VerticalAlignment="Center" HorizontalAlignment="Right">
+                                        <TextBlock Style="{StaticResource Muted}" FontSize="12" HorizontalAlignment="Right">
+                                            <Run Text="{l:T 'Кол-во: '}"/><Run Text="{Binding ItemsQuantity, Mode=OneWay, StringFormat={}{0:0.###}}"/>
+                                        </TextBlock>
+                                        <TextBlock Style="{StaticResource Muted}" FontSize="12" HorizontalAlignment="Right" Visibility="{Binding HasDiscount, Converter={StaticResource BoolToVis}}">
+                                            <Run Text="{l:T 'Скидка '}"/><Run Text="{Binding DiscountPercent, Mode=OneWay, StringFormat={}{0:0.##}%}" Foreground="{DynamicResource DangerBrush}"/>
+                                        </TextBlock>
+                                        <TextBlock Style="{StaticResource Muted}" FontSize="12" HorizontalAlignment="Right" TextTrimming="CharacterEllipsis" MaxWidth="160"
+                                                   Text="{Binding Customer.Name}" Visibility="{Binding Customer, Converter={StaticResource BoolToVis}}"/>
+                                    </StackPanel>
+                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                        <TextBlock Text="{l:T 'К оплате'}" Style="{StaticResource Muted}" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                                        <TextBlock Text="{Binding ToPay, Converter={StaticResource Money}}" FontSize="22" FontWeight="Bold" Foreground="{DynamicResource PrimaryBrush}" VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                </DockPanel>
+                            </Border>
+
+                            <Grid Margin="0,12,0,0">
+                                <Grid.ColumnDefinitions><ColumnDefinition Width="2*"/><ColumnDefinition Width="8"/><ColumnDefinition Width="3*"/></Grid.ColumnDefinitions>
+                                <Button Style="{StaticResource SecondaryButton}" MinHeight="48" Command="{Binding SaveDraftCommand}" ToolTip="{l:T 'Сохранить чек в черновики и начать новый'}">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="&#xF03E4;" FontFamily="{StaticResource IconFont}" FontSize="18" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                        <TextBlock Text="{l:T 'Отложить'}"/>
+                                        <TextBlock Text="F8" Opacity="0.6" FontWeight="Normal" FontSize="12" Margin="8,1,0,0"/>
+                                    </StackPanel>
+                                </Button>
+                                <Button Grid.Column="2" Style="{StaticResource SuccessButton}" MinHeight="48" FontSize="15" Command="{Binding CheckoutCommand}">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="&#xF012C;" FontFamily="{StaticResource IconFont}" FontSize="20" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                        <TextBlock Text="{l:T 'Оформить'}" VerticalAlignment="Center"/>
+                                        <TextBlock Text="F9" Opacity="0.7" FontWeight="Normal" FontSize="12" Margin="10,2,0,0"/>
+                                    </StackPanel>
+                                </Button>
+                            </Grid>
+                        </StackPanel>
+
+<!-- ── Корзина ── -->
+                        <Grid>
+                            <DataGrid ItemsSource="{Binding Lines}" SelectedItem="{Binding SelectedLine}" RowHeight="40" CanUserSortColumns="False"
+                                      HeadersVisibility="Column" PreviewKeyDown="OnCartKeyDown">
+                                <DataGrid.Columns>
+                                    <DataGridTemplateColumn Header="{l:T 'Товар'}" Width="*" MinWidth="110">
+                                        <DataGridTemplateColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <DockPanel VerticalAlignment="Center" Margin="2,0">
+                                                    <Grid DockPanel.Dock="Left" Width="30" Height="30" Margin="0,0,8,0">
+                                                        <Border CornerRadius="6" Background="{DynamicResource SurfaceAltBrush}"><TextBlock Text="&#xF03D7;" FontFamily="{StaticResource IconFont}" FontSize="17" Foreground="{DynamicResource SubtleTextBrush}" HorizontalAlignment="Center" VerticalAlignment="Center"/></Border>
+                                                        <Image Source="{Binding Product.Thumbnail, Converter={StaticResource Image}, ConverterParameter=64}" Stretch="Uniform">
+                                                            <Image.Clip><RectangleGeometry Rect="0,0,30,30" RadiusX="6" RadiusY="6"/></Image.Clip>
+                                                        </Image>
+                                                    </Grid>
+                                                    <TextBlock Text="{Binding Product.Name}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" ToolTip="{Binding Product.Name}"
+                                                               VerticalAlignment="Center"/>
+                                                </DockPanel>
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                    </DataGridTemplateColumn>
+                                    <DataGridTemplateColumn Header="{l:T 'Кол-во'}" Width="70" CanUserResize="False">
+                                        <DataGridTemplateColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <TextBox Style="{StaticResource CellTextBox}" MinWidth="0" Margin="2,0" TextAlignment="Center" VerticalAlignment="Center"
+                                                         Text="{Binding Quantity, Converter={StaticResource Dec}, UpdateSourceTrigger=PropertyChanged}"/>
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                    </DataGridTemplateColumn>
+                                    <DataGridTemplateColumn Header="{l:T 'Цена'}" Width="80" CanUserResize="False">
+                                        <DataGridTemplateColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <TextBox Style="{StaticResource CellTextBox}" MinWidth="0" Margin="2,0" TextAlignment="Center" VerticalAlignment="Center"
+                                                         Text="{Binding Price, Converter={StaticResource Dec}, UpdateSourceTrigger=PropertyChanged}"/>
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                    </DataGridTemplateColumn>
+                                    <DataGridTextColumn Header="{l:T 'Сумма'}" Binding="{Binding Amount, Converter={StaticResource Money}}" Width="92">
+                                        <DataGridTextColumn.ElementStyle>
+                                            <Style TargetType="TextBlock" BasedOn="{StaticResource RightCell}">
+                                                <Setter Property="FontWeight" Value="SemiBold"/>
+                                            </Style>
+                                        </DataGridTextColumn.ElementStyle>
+                                    </DataGridTextColumn>
+                                    <DataGridTemplateColumn Width="44" CanUserResize="False">
+                                        <DataGridTemplateColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <Button Content="&#xF0156;" Style="{StaticResource DangerIconButton}" Width="28" Height="28" MinWidth="0" MinHeight="0" Padding="0" HorizontalAlignment="Center" ToolTip="{l:T 'Удалить строку (Del)'}"
+                                                        Command="{Binding DataContext.RemoveFromCartCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}"/>
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                    </DataGridTemplateColumn>
+                                </DataGrid.Columns>
+                            </DataGrid>
+                            <!-- Пустой чек -->
+                            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" IsHitTestVisible="False" Margin="16,0"
+                                        Visibility="{Binding IsCartEmpty, Converter={StaticResource BoolToVis}}">
+                                <TextBlock Text="&#xF0076;" FontFamily="{StaticResource IconFont}" FontSize="48" Foreground="{DynamicResource SubtleTextBrush}" HorizontalAlignment="Center"/>
+                                <TextBlock Text="{l:T 'Чек пуст'}" FontSize="15" FontWeight="SemiBold" HorizontalAlignment="Center" Margin="0,10,0,4"/>
+                                <TextBlock Text="{l:T 'Нажмите на товар слева или отсканируйте штрихкод'}" Style="{StaticResource Muted}" HorizontalAlignment="Center"
+                                           TextWrapping="Wrap" TextAlignment="Center"/>
+                            </StackPanel>
+                        </Grid>
+                    </DockPanel>
+                </Border>
+            </Grid>
+        </TabItem>
+
+        <!-- История продаж: журнал как в «Финансах» — период, фильтр, поиск, страницы; «⋯» в строке — действия -->
+        <TabItem Header="{l:T 'История продаж'}">
+            <Border Style="{StaticResource Card}">
+                <DockPanel>
+                    <!-- Панель журнала: период слева, фильтр и поиск справа -->
+                    <DockPanel DockPanel.Dock="Top" Margin="0,0,0,10">
+                        <StackPanel DockPanel.Dock="Left" Orientation="Horizontal">
+                            <TextBlock Text="{l:T 'Период:'}" Style="{StaticResource Muted}" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                            <DatePicker SelectedDate="{Binding From}" Width="130"/>
+                            <TextBlock Text="—" VerticalAlignment="Center" Margin="6,0"/>
+                            <DatePicker SelectedDate="{Binding To}" Width="130"/>
+                            <Button Style="{StaticResource InputAddonButton}" Content="&#xF0450;" ToolTip="{l:T 'Обновить'}" Command="{Binding LoadHistoryCommand}" Margin="8,0,0,0"/>
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="12,0,0,0">
+                            <Button Style="{StaticResource SecondaryButton}" Command="{Binding OpenFilterCommand}" MinHeight="34" Margin="0,0,8,0">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="&#xF0236;" FontFamily="{StaticResource IconFont}" FontSize="13" VerticalAlignment="Center" Margin="0,1,8,0"/>
+                                    <TextBlock Text="{l:T 'Фильтр'}" VerticalAlignment="Center"/>
+                                    <Border Background="{DynamicResource PrimaryBrush}" CornerRadius="9" MinWidth="18" Height="18" Padding="5,0" Margin="8,0,0,0"
+                                            Visibility="{Binding HasActiveFilter, Converter={StaticResource BoolToVis}}">
+                                        <TextBlock Text="{Binding ActiveFilterCount}" Foreground="White" FontSize="11" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    </Border>
+                                </StackPanel>
+                            </Button>
+                            <TextBox Text="{Binding HistorySearch, UpdateSourceTrigger=PropertyChanged}" Width="320"
+                                     l:Ui.Icon="&#xF0349;" l:Ui.Placeholder="{l:T 'Поиск: № продажи, покупатель, комментарий'}"/>
+                        </StackPanel>
+                    </DockPanel>
+                    <!-- Итоги и постраничный вывод -->
+                    <DockPanel DockPanel.Dock="Bottom" Margin="0,10,0,0">
+                        <ContentControl DockPanel.Dock="Right" Content="{Binding}" ContentTemplate="{StaticResource PagerBar}" Focusable="False" Margin="12,0,0,0"/>
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                            <TextBlock Text="{Binding PageInfo}" Style="{StaticResource Muted}" Margin="0,0,24,0"/>
+                            <TextBlock Text="{l:T 'Продажи: '}" Style="{StaticResource Muted}"/>
+                            <TextBlock Text="{Binding PeriodTotal, Converter={StaticResource Money}}" FontWeight="SemiBold" Margin="0,0,20,0"/>
+                            <TextBlock Text="{l:T 'Возвраты: '}" Style="{StaticResource Muted}"/>
+                            <TextBlock Text="{Binding PeriodReturned, Converter={StaticResource Money}}" Foreground="{DynamicResource DangerBrush}" FontWeight="SemiBold" Margin="0,0,20,0"/>
+                            <TextBlock Text="{l:T 'Итого: '}" Style="{StaticResource Muted}"/>
+                            <TextBlock Text="{Binding PeriodNet, Converter={StaticResource Money}}" Foreground="{DynamicResource SuccessBrush}" FontWeight="SemiBold"/>
+                        </StackPanel>
+                    </DockPanel>
+                    <!-- «⋯» — меню действий; двойной щелчок — изменить (или копия, если по продаже был возврат) -->
+                    <DataGrid ItemsSource="{Binding History}" HeadersVisibility="Column" l:Ui.RowNumbers="False"
+                              l:Ui.RowDoubleClickCommand="{Binding OpenSaleCommand}">
+                        <DataGrid.Columns>
+                            <DataGridTemplateColumn Width="44" CanUserResize="False">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <Button Style="{StaticResource IconButton}" Content="&#xF0493;" FontSize="20" ToolTip="{l:T 'Действия'}" Width="28" Height="26" MinHeight="0" Padding="0"
+                                                l:Ui.DropDownMenu="True" Tag="{Binding DataContext, RelativeSource={RelativeSource AncestorType=DataGrid}}">
+                                            <Button.ContextMenu>
+                                                <ContextMenu Style="{StaticResource DropDownMenu}">
+                                                    <MenuItem Style="{StaticResource IconMenuItem}" Header="{l:T 'Изменить'}" l:Ui.Icon="&#xF0CB6;"
+                                                              Command="{Binding PlacementTarget.Tag.EditSaleCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" CommandParameter="{Binding}"/>
+                                                    <MenuItem Style="{StaticResource IconMenuItem}" Header="{l:T 'Скопировать'}" l:Ui.Icon="&#xF018F;"
+                                                              Command="{Binding PlacementTarget.Tag.CopySaleCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" CommandParameter="{Binding}"/>
+                                                    <MenuItem Style="{StaticResource IconMenuItem}" Header="{l:T 'Печать чека'}" l:Ui.Icon="&#xF1786;"
+                                                              Command="{Binding PlacementTarget.Tag.PrintSaleCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" CommandParameter="{Binding}"/>
+                                                    <MenuItem Style="{StaticResource IconMenuItem}" Header="{l:T 'Печать накладной'}" l:Ui.Icon="&#xF09EE;"
+                                                              Command="{Binding PlacementTarget.Tag.PrintInvoiceCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" CommandParameter="{Binding}"/>
+                                                    <MenuItem Style="{StaticResource IconMenuItem}" Header="{l:T 'Возврат'}" l:Ui.Icon="&#xF054C;" Tag="{DynamicResource WarningBrush}"
+                                                              Command="{Binding PlacementTarget.Tag.ReturnSaleCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" CommandParameter="{Binding}"/>
+                                                    <Separator Style="{StaticResource MenuSeparator}"/>
+                                                    <MenuItem Style="{StaticResource IconMenuItem}" Header="{l:T 'Удалить'}" l:Ui.Icon="&#xF09E7;" Tag="{DynamicResource DangerBrush}"
+                                                              Command="{Binding PlacementTarget.Tag.DeleteSaleCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" CommandParameter="{Binding}"/>
+                                                </ContextMenu>
+                                            </Button.ContextMenu>
+                                        </Button>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                            <DataGridTextColumn Header="{l:T 'Номер'}" Binding="{Binding Number}" Width="110"/>
+                            <DataGridTextColumn Header="{l:T 'Дата'}" Binding="{Binding Date, StringFormat={}{0:dd.MM.yyyy HH:mm}}" Width="130"/>
+                            <DataGridTextColumn Header="{l:T 'Покупатель'}" Binding="{Binding Customer.Name, FallbackValue='Розничный', TargetNullValue='Розничный'}" Width="*" MinWidth="140"/>
+                            <DataGridTextColumn Header="{l:T 'Склад'}" Binding="{Binding Warehouse.Name}" Width="140"/>
+                            <DataGridTextColumn Header="{l:T 'Касса'}" Binding="{Binding CashRegister.Name}" Width="140"/>
+                            <DataGridTextColumn Header="{l:T 'Комментарий'}" Binding="{Binding Comment}" Width="*" MinWidth="120"/>
+                            <DataGridTextColumn Header="{l:T 'Возвращено'}" Binding="{Binding ReturnedTotal, Converter={StaticResource Money}}" Width="120">
+                                <DataGridTextColumn.ElementStyle>
+                                    <Style TargetType="TextBlock" BasedOn="{StaticResource RightCell}">
+                                        <Setter Property="Foreground" Value="{DynamicResource DangerBrush}"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding ReturnedTotal}" Value="0">
+                                                <Setter Property="Foreground" Value="{DynamicResource SubtleTextBrush}"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </DataGridTextColumn.ElementStyle>
+                            </DataGridTextColumn>
+                            <DataGridTextColumn Header="{l:T 'Сумма'}" Binding="{Binding Total, Converter={StaticResource Money}}" Width="130">
+                                <DataGridTextColumn.ElementStyle>
+                                    <Style TargetType="TextBlock" BasedOn="{StaticResource RightCell}">
+                                        <Setter Property="FontWeight" Value="SemiBold"/>
+                                    </Style>
+                                </DataGridTextColumn.ElementStyle>
+                            </DataGridTextColumn>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </DockPanel>
+            </Border>
+        </TabItem>
+
+        <!-- Журнал возвратов -->
+        <TabItem Header="{l:T 'Возвраты'}">
+            <Border Style="{StaticResource Card}">
+                <DataGrid ItemsSource="{Binding Returns}">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="{l:T 'Номер'}" Binding="{Binding Number}" Width="110"/>
+                        <DataGridTextColumn Header="{l:T 'Дата'}" Binding="{Binding Date, StringFormat={}{0:dd.MM.yyyy HH:mm}}" Width="140"/>
+                        <DataGridTextColumn Header="{l:T 'Продажа'}" Binding="{Binding Sale.Number}" Width="110"/>
+                        <DataGridTextColumn Header="{l:T 'Касса'}" Binding="{Binding CashRegister.Name}" Width="150"/>
+                        <DataGridTextColumn Header="{l:T 'Причина'}" Binding="{Binding Reason}" Width="*"/>
+                        <DataGridTextColumn Header="{l:T 'Сумма'}" Binding="{Binding Total, Converter={StaticResource Money}}" Width="140" ElementStyle="{StaticResource RightCell}"/>
+                    </DataGrid.Columns>
+                </DataGrid>
+            </Border>
+        </TabItem>
+    </TabControl>
+</UserControl>

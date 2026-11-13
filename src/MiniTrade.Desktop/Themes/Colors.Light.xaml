@@ -1,0 +1,46 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <!--
+        Светлая палитра. Ключи совпадают с Colors.Dark.xaml — ThemeManager подменяет словарь целиком,
+        а стили и экраны берут цвета через DynamicResource, поэтому тема меняется на лету.
+    -->
+    <Color x:Key="PrimaryColor">#2F6FED</Color>
+    <SolidColorBrush x:Key="PrimaryBrush" Color="#2F6FED"/>
+    <SolidColorBrush x:Key="PrimaryDarkBrush" Color="#1F56C4"/>
+    <SolidColorBrush x:Key="PrimaryLightBrush" Color="#E7EEFD"/>
+    <SolidColorBrush x:Key="FocusRingBrush" Color="#402F6FED"/>
+    <SolidColorBrush x:Key="SidebarBrush" Color="#141B2D"/>
+    <SolidColorBrush x:Key="SidebarHoverBrush" Color="#222B44"/>
+    <SolidColorBrush x:Key="SidebarTextBrush" Color="#B7C0D6"/>
+    <SolidColorBrush x:Key="BackgroundBrush" Color="#F4F6FB"/>
+    <SolidColorBrush x:Key="SurfaceBrush" Color="#FFFFFF"/>
+    <SolidColorBrush x:Key="SurfaceAltBrush" Color="#F7F9FC"/>
+    <SolidColorBrush x:Key="BorderBrush" Color="#E1E6EF"/>
+    <SolidColorBrush x:Key="InputBorderBrush" Color="#D3DAE6"/>
+    <SolidColorBrush x:Key="InputHoverBrush" Color="#AEB8CA"/>
+    <SolidColorBrush x:Key="DisabledBrush" Color="#F1F3F8"/>
+    <SolidColorBrush x:Key="DisabledTextBrush" Color="#9AA3B5"/>
+    <SolidColorBrush x:Key="PlaceholderBrush" Color="#9AA3B5"/>
+    <SolidColorBrush x:Key="SubtleTextBrush" Color="#B9C0CE"/>
+    <SolidColorBrush x:Key="TextBrush" Color="#1D2433"/>
+    <SolidColorBrush x:Key="MutedBrush" Color="#6B7489"/>
+    <SolidColorBrush x:Key="SuccessBrush" Color="#16A34A"/>
+    <SolidColorBrush x:Key="DangerBrush" Color="#DC2626"/>
+    <SolidColorBrush x:Key="DangerLightBrush" Color="#FDECEC"/>
+    <SolidColorBrush x:Key="SuccessLightBrush" Color="#E8F7EE"/>
+    <SolidColorBrush x:Key="InfoLightBrush" Color="#EEF4FF"/>
+    <SolidColorBrush x:Key="WarningBrush" Color="#D97706"/>
+    <SolidColorBrush x:Key="RowHoverBrush" Color="#F3F7FF"/>
+    <SolidColorBrush x:Key="ScrollThumbBrush" Color="#C9D0DC"/>
+    <SolidColorBrush x:Key="ScrollThumbHoverBrush" Color="#A3AEC2"/>
+    <!-- Затемнение кнопок при наведении (накладывается с малой прозрачностью) -->
+    <SolidColorBrush x:Key="ShadeBrush" Color="#1D2433"/>
+    <SolidColorBrush x:Key="TooltipBrush" Color="#1D2433"/>
+
+    <DropShadowEffect x:Key="PopupShadow" BlurRadius="16" ShadowDepth="3" Direction="270" Opacity="0.14" Color="#1D2433"/>
+    <DropShadowEffect x:Key="DialogShadow" BlurRadius="28" ShadowDepth="6" Direction="270" Opacity="0.22" Color="#101628"/>
+    <DropShadowEffect x:Key="MenuShadow" BlurRadius="18" ShadowDepth="4" Direction="270" Opacity="0.16" Color="#101628"/>
+
+    <!-- Системные цвета, которые используют стандартные части WPF (уголок между полосами прокрутки и т.п.) -->
+    <SolidColorBrush x:Key="{x:Static SystemColors.ControlBrushKey}" Color="#F7F9FC"/>
+</ResourceDictionary>

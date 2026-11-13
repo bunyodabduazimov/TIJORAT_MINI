@@ -1,0 +1,437 @@
+<UserControl x:Class="MiniTrade.Desktop.Views.ReportsView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:l="clr-namespace:MiniTrade.Desktop.Infrastructure"
+             xmlns:inf="clr-namespace:MiniTrade.Desktop.Infrastructure"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:MiniTrade.Desktop.ViewModels"
+             mc:Ignorable="d" d:DataContext="{d:DesignInstance vm:ReportsViewModel}">
+    <!-- Структура каждой вкладки: 1) вкладки; 2) дашборд (KPI); 3) панель — период слева, фильтры и поиск справа;
+         4) таблица с постраничным выводом (до 100 000 строк на странице) -->
+    <UserControl.Resources>
+        <inf:BindingProxy x:Key="Proxy" Data="{Binding}"/>
+        <Style x:Key="KpiLabel" TargetType="TextBlock" BasedOn="{StaticResource Muted}">
+            <Setter Property="FontSize" Value="12"/>
+        </Style>
+        <Style x:Key="KpiValue" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="18"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Margin" Value="0,2,0,0"/>
+        </Style>
+        <Style x:Key="Kpi" TargetType="Border" BasedOn="{StaticResource Card}">
+            <Setter Property="Margin" Value="0,0,12,0"/>
+            <Setter Property="Padding" Value="14,10"/>
+            <Setter Property="MinWidth" Value="190"/>
+        </Style>
+        <Style x:Key="KpiRow" TargetType="WrapPanel">
+            <Setter Property="Margin" Value="0,0,0,12"/>
+            <Setter Property="DockPanel.Dock" Value="Top"/>
+        </Style>
+        <Style x:Key="ProfitLabel" TargetType="TextBlock">
+            <Setter Property="VerticalAlignment" Value="Center"/>
+        </Style>
+        <Style x:Key="ProfitValue" TargetType="TextBlock">
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="HorizontalAlignment" Value="Right"/>
+        </Style>
+
+        <!-- Панель навигации (общая для всех вкладок): период и экспорт слева · фильтры, поиск, страницы справа -->
+        <DataTemplate x:Key="Toolbar">
+            <DockPanel Margin="0,0,0,10">
+                <StackPanel DockPanel.Dock="Left" Orientation="Horizontal">
+                    <StackPanel Orientation="Horizontal" Visibility="{Binding PeriodVisible, Converter={StaticResource BoolToVis}}">
+                        <TextBlock Text="{l:T 'Период:'}" Style="{StaticResource Muted}" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                        <DatePicker SelectedDate="{Binding From}" Width="130"/>
+                        <TextBlock Text="—" VerticalAlignment="Center" Margin="6,0"/>
+                        <DatePicker SelectedDate="{Binding To}" Width="130"/>
+                        <!-- Быстрый выбор периода -->
+                        <Button Style="{StaticResource InputAddonButton}" Content="&#xF0E18;" ToolTip="{l:T 'Быстрый период'}" Margin="8,0,0,0"
+                                l:Ui.DropDownMenu="True">
+                            <Button.ContextMenu>
+                                <ContextMenu Style="{StaticResource DropDownMenu}">
+                                    <MenuItem Header="{l:T 'Сегодня'}" Command="{Binding SetPeriodCommand}" CommandParameter="today"/>
+                                    <MenuItem Header="{l:T 'Вчера'}" Command="{Binding SetPeriodCommand}" CommandParameter="yesterday"/>
+                                    <MenuItem Header="{l:T '7 дней'}" Command="{Binding SetPeriodCommand}" CommandParameter="week"/>
+                                    <MenuItem Header="{l:T 'Месяц'}" Command="{Binding SetPeriodCommand}" CommandParameter="month"/>
+                                    <MenuItem Header="{l:T 'Прошлый месяц'}" Command="{Binding SetPeriodCommand}" CommandParameter="prevmonth"/>
+                                    <MenuItem Header="{l:T 'Квартал'}" Command="{Binding SetPeriodCommand}" CommandParameter="quarter"/>
+                                    <MenuItem Header="{l:T 'Год'}" Command="{Binding SetPeriodCommand}" CommandParameter="year"/>
+                                </ContextMenu>
+                            </Button.ContextMenu>
+                        </Button>
+                    </StackPanel>
+                    <TextBlock Text="{l:T 'Остатки на текущий момент (не зависят от периода)'}" Style="{StaticResource Muted}" VerticalAlignment="Center"
+                               Visibility="{Binding IsStockTab, Converter={StaticResource BoolToVis}}"/>
+                    <Button Style="{StaticResource InputAddonButton}" Content="&#xF0450;" ToolTip="{l:T 'Обновить'}" Command="{Binding RefreshCommand}" Margin="8,0,0,0"/>
+                    <Button Style="{StaticResource SecondaryButton}" Command="{Binding ExportCommand}" MinHeight="34" Margin="8,0,0,0">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="&#xF01DA;" FontFamily="{StaticResource IconFont}" FontSize="13" VerticalAlignment="Center" Margin="0,1,8,0"/>
+                            <TextBlock Text="{l:T 'Экспорт в CSV'}" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
+                    <TextBlock Text="{l:T 'Загрузка…'}" Style="{StaticResource Muted}" VerticalAlignment="Center" Margin="12,0,0,0"
+                               Visibility="{Binding IsLoading, Converter={StaticResource BoolToVis}}"/>
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="12,0,0,0">
+                    <CheckBox Content="{l:T 'Только ниже минимума'}" IsChecked="{Binding OnlyLowStock}" VerticalAlignment="Center" Margin="0,0,12,0"
+                              Visibility="{Binding IsStockTab, Converter={StaticResource BoolToVis}}"/>
+                    <ComboBox ItemsSource="{Binding Groupings}" SelectedItem="{Binding Grouping}" DisplayMemberPath="Name" Width="170" Margin="0,0,8,0"
+                              ToolTip="{l:T 'Разрез'}" Visibility="{Binding IsSalesTab, Converter={StaticResource BoolToVis}}"/>
+                    <ComboBox ItemsSource="{Binding Warehouses}" SelectedItem="{Binding WarehouseFilter}" DisplayMemberPath="Name" Width="170" Margin="0,0,8,0"
+                              ToolTip="{l:T 'Склад'}" Visibility="{Binding WarehouseFilterVisible, Converter={StaticResource BoolToVis}}"/>
+                    <TextBox Text="{Binding Search, UpdateSourceTrigger=PropertyChanged, Delay=250}" Style="{StaticResource TableSearch}" Margin="0"
+                             l:Ui.Placeholder="{l:T 'Поиск в отчёте'}"/>
+                </StackPanel>
+            </DockPanel>
+        </DataTemplate>
+
+        <!-- Под таблицей: «Показано X–Y из N» слева, страницы справа (DataContext — ReportPager) -->
+        <DataTemplate x:Key="Pager">
+            <DockPanel Margin="0,10,0,0">
+                <ContentControl DockPanel.Dock="Right" Content="{Binding}" ContentTemplate="{StaticResource PagerBar}" Focusable="False"/>
+                <TextBlock Text="{Binding PageInfo}" Style="{StaticResource Muted}" VerticalAlignment="Center"/>
+            </DockPanel>
+        </DataTemplate>
+    </UserControl.Resources>
+
+    <TabControl SelectedIndex="{Binding SelectedTab}">
+        <!-- ═══ Продажи ═══ -->
+        <TabItem Header="{l:T 'Продажи'}">
+            <DockPanel>
+                <WrapPanel Style="{StaticResource KpiRow}">
+                    <Border Style="{StaticResource Kpi}">
+                        <StackPanel>
+                            <TextBlock Text="{l:T 'Выручка'}" Style="{StaticResource KpiLabel}"/>
+                            <TextBlock Text="{Binding SalesRevenue, Converter={StaticResource Money}}" Style="{StaticResource KpiValue}"/>
+                        </StackPanel>
+                    </Border>
+                    <Border Style="{StaticResource Kpi}">
+                        <StackPanel>
+                            <TextBlock Text="{l:T 'Себестоимость'}" Style="{StaticResource KpiLabel}"/>
+                            <TextBlock Text="{Binding SalesCost, Converter={StaticResource Money}}" Style="{StaticResource KpiValue}"/>
+                        </StackPanel>
+                    </Border>
+                    <Border Style="{StaticResource Kpi}">
+                        <StackPanel>
+                            <TextBlock Text="{l:T 'Валовая прибыль'}" Style="{StaticResource KpiLabel}"/>
+                            <TextBlock Text="{Binding SalesProfit, Converter={StaticResource Money}}" Style="{StaticResource KpiValue}" Foreground="{DynamicResource SuccessBrush}"/>
+                        </StackPanel>
+                    </Border>
+                    <Border Style="{StaticResource Kpi}">
+                        <StackPanel>
+                            <TextBlock Text="{l:T 'Маржа'}" Style="{StaticResource KpiLabel}"/>
+                            <TextBlock Text="{Binding SalesMargin, StringFormat={}{0:0.#} %}" Style="{StaticResource KpiValue}"/>
+                        </StackPanel>
+                    </Border>
+                </WrapPanel>
+                <Border Style="{StaticResource Card}">
+                    <DockPanel>
+                        <ContentControl DockPanel.Dock="Top" Content="{Binding}" ContentTemplate="{StaticResource Toolbar}" Focusable="False"/>
+                        <DockPanel DockPanel.Dock="Bottom">
+                            <TextBlock DockPanel.Dock="Left" Text="{l:T 'ABC: A — 80% выручки, B — 15%, C — 5%'}" Style="{StaticResource Muted}" VerticalAlignment="Center"
+                                       Margin="0,10,24,0" Visibility="{Binding ShowAbc, Converter={StaticResource BoolToVis}}"/>
+                            <ContentControl Content="{Binding SalesPager}" ContentTemplate="{StaticResource Pager}" Focusable="False"/>
+                        </DockPanel>
+                        <DataGrid ItemsSource="{Binding SalesPager.Items}" l:Ui.RowNumberOffset="{Binding SalesPager.FirstNumber}">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="{l:T 'Наименование'}" Binding="{Binding Product}" Width="*" MinWidth="180"/>
+                                <DataGridTextColumn Header="{l:T 'Кол-во'}" Binding="{Binding Quantity, StringFormat={}{0:0.###}}" Width="90" ElementStyle="{StaticResource RightCell}"
+                                                    Visibility="{Binding Data.IsProductGrouping, Source={StaticResource Proxy}, Converter={StaticResource BoolToVis}}"/>
+                                <DataGridTextColumn Header="{l:T 'Ед.'}" Binding="{Binding Unit}" Width="50"
+                                                    Visibility="{Binding Data.IsProductGrouping, Source={StaticResource Proxy}, Converter={StaticResource BoolToVis}}"/>
+                                <DataGridTextColumn Header="{l:T 'Чеков'}" Binding="{Binding Documents}" Width="70" ElementStyle="{StaticResource RightCell}"/>
+                                <DataGridTextColumn Header="{l:T 'Выручка'}" Binding="{Binding Revenue, Converter={StaticResource Money}}" Width="140" ElementStyle="{StaticResource RightCell}"/>
+                                <DataGridTextColumn Header="{l:T 'Себестоимость'}" Binding="{Binding Cost, Converter={StaticResource Money}}" Width="140" ElementStyle="{StaticResource RightCell}"/>
+                                <DataGridTextColumn Header="{l:T 'Прибыль'}" Binding="{Binding Profit, Converter={StaticResource Money}}" Width="140" ElementStyle="{StaticResource RightCell}"/>
+                                <DataGridTextColumn Header="{l:T 'Маржа, %'}" Binding="{Binding MarginPercent}" Width="80" ElementStyle="{StaticResource RightCell}"/>
+                                <DataGridTextColumn Header="{l:T 'Доля, %'}" Binding="{Binding SharePercent}" Width="75" ElementStyle="{StaticResource RightCell}"/>
+                                <DataGridTextColumn Header="ABC" Binding="{Binding Abc}" Width="50"
+                                                    Visibility="{Binding Data.ShowAbc, Source={StaticResource Proxy}, Converter={StaticResource BoolToVis}}"/>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </DockPanel>
+                </Border>
+            </DockPanel>
+        </TabItem>
+
+        <!-- ═══ Закупки ═══ -->
+        <TabItem Header="{l:T 'Закупки'}">
+            <DockPanel>
+                <WrapPanel Style="{StaticResource KpiRow}">
+                    <Border Style="{StaticResource Kpi}">
+                        <StackPanel>
+                            <TextBlock Text="{l:T 'Закуплено'}" Style="{StaticResource KpiLabel}"/>
+                            <TextBlock Text="{Binding PurchasesTotal, Converter={StaticResource Money}}" Style="{StaticResource KpiValue}"/>
+                        </StackPanel>
+                    </Border>
+                    <Border Style="{StaticResource Kpi}">
+                        <StackPanel>
+                            <TextBlock Text="{l:T 'Оплачено'}" Style="{StaticResource KpiLabel}"/>
+                            <TextBlock Text="{Binding PurchasesPaid, Converter={StaticResource Money}}" Style="{StaticResource KpiValue}"/>
+                        </StackPanel>
+                    </Border>
+                    <Border Style="{StaticResource Kpi}">
+                        <StackPanel>
+                            <TextBlock Text="{l:T 'Долг за период'}" Style="{StaticResource KpiLabel}"/>
+                            <TextBlock Text="{Binding PurchasesDebt, Converter={StaticResource Money}}" Style="{StaticResource KpiValue}" Foreground="{DynamicResource WarningBrush}"/>
+                        </StackPanel>
+                    </Border>
+                </WrapPanel>
+                <Border Style="{StaticResource Card}">
+                    <DockPanel>
+                        <ContentControl DockPanel.Dock="Top" Content="{Binding}" ContentTemplate="{StaticResource Toolbar}" Focusable="False"/>
+                        <ContentControl DockPanel.Dock="Bottom" Content="{Binding PurchasesPager}" ContentTemplate="{StaticResource Pager}" Focusable="False"/>
+                        <DataGrid ItemsSource="{Binding PurchasesPager.Items}" l:Ui.RowNumberOffset="{Binding PurchasesPager.FirstNumber}">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="{l:T 'Поставщик'}" Binding="{Binding Supplier}" Width="*"/>
+                                <DataGridTextColumn Header="{l:T 'Документов'}" Binding="{Binding Documents}" Width="100" ElementStyle="{StaticResource RightCell}"/>
+                                <DataGridTextColumn Header="{l:T 'Сумма'}" Binding="{Binding Total, Converter={StaticResource Money}}" Width="160" ElementStyle="{StaticResource RightCell}"/>
+                                <DataGridTextColumn Header="{l:T 'Оплачено'}" Binding="{Binding Paid, Converter={StaticResource Money}}" Width="160" ElementStyle="{StaticResource RightCell}"/>
+                                <DataGridTextColumn Header="{l:T 'Долг'}" Binding="{Binding Debt, Converter={StaticResource Money}}" Width="160" ElementStyle="{StaticResource RightCell}"/>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </DockPanel>
+                </Border>
+            </DockPanel>
+        </TabItem>
+
+        <!-- ═══ Прибыль ═══ -->
+        <TabItem Header="{l:T 'Прибыль'}">
+            <DockPanel>
+                <WrapPanel Style="{StaticResource KpiRow}">
+                    <Border Style="{StaticResource Kpi}">
+                        <StackPanel>
+                            <TextBlock Text="{l:T 'Чистая выручка'}" Style="{StaticResource KpiLabel}"/>
+                            <TextBlock Text="{Binding Profit.NetRevenue, Converter={StaticResource Money}}" Style="{StaticResource KpiValue}"/>
+                        </StackPanel>
+                    </Border>
+                    <Border Style="{StaticResource Kpi}">
+                        <StackPanel>
+                            <TextBlock Text="{l:T 'Валовая прибыль'}" Style="{StaticResource KpiLabel}"/>
+                            <TextBlock Text="{Binding Profit.GrossProfit, Converter={StaticResource Money}}" Style="{StaticResource KpiValue}"/>
+                        </StackPanel>
+                    </Border>
+                    <Border Style="{StaticResource Kpi}">
+                        <StackPanel>
+                            <TextBlock Text="{l:T 'Операционные расходы'}" Style="{StaticResource KpiLabel}"/>
+                            <TextBlock Text="{Binding Profit.Expenses, Converter={StaticResource Money}}" Style="{StaticResource KpiValue}" Foreground="{DynamicResource DangerBrush}"/>
+                        </StackPanel>
+                    </Border>
+                    <Border Style="{StaticResource Kpi}">
+                        <StackPanel>
+                            <TextBlock Text="{l:T 'Чистая прибыль'}" Style="{StaticResource KpiLabel}"/>
+                            <TextBlock Text="{Binding Profit.NetProfit, Converter={StaticResource Money}}" Style="{StaticResource KpiValue}" Foreground="{DynamicResource SuccessBrush}"/>
+                        </StackPanel>
+                    </Border>
+                </WrapPanel>
+                <Border Style="{StaticResource Card}">
+                    <DockPanel>
+                        <ContentControl DockPanel.Dock="Top" Content="{Binding}" ContentTemplate="{StaticResource Toolbar}" Focusable="False"/>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="420"/>
+                                <ColumnDefinition Width="16"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                                <StackPanel>
+                                    <Grid>
+                                        <Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="32"/><RowDefinition Height="32"/><RowDefinition Height="32"/><RowDefinition Height="32"/>
+                                            <RowDefinition Height="32"/><RowDefinition Height="32"/><RowDefinition Height="12"/><RowDefinition Height="40"/>
+                                        </Grid.RowDefinitions>
+                                        <TextBlock Text="{l:T 'Выручка'}" Style="{StaticResource ProfitLabel}"/>
+                                        <TextBlock Grid.Column="1" Text="{Binding Profit.Revenue, Converter={StaticResource Money}}" Style="{StaticResource ProfitValue}"/>
+                                        <TextBlock Grid.Row="1" Text="{l:T '− Возвраты покупателей'}" Style="{StaticResource Muted}" VerticalAlignment="Center"/>
+                                        <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding Profit.Returns, Converter={StaticResource Money}}" Style="{StaticResource ProfitValue}"/>
+                                        <TextBlock Grid.Row="2" Text="{l:T '= Чистая выручка'}" Style="{StaticResource ProfitLabel}"/>
+                                        <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding Profit.NetRevenue, Converter={StaticResource Money}}" Style="{StaticResource ProfitValue}"/>
+                                        <TextBlock Grid.Row="3" Text="{l:T '− Себестоимость продаж'}" Style="{StaticResource Muted}" VerticalAlignment="Center"/>
+                                        <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding Profit.CostOfSales, Converter={StaticResource Money}}" Style="{StaticResource ProfitValue}"/>
+                                        <TextBlock Grid.Row="4" Text="{l:T '= Валовая прибыль'}" FontWeight="SemiBold" Style="{StaticResource ProfitLabel}"/>
+                                        <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding Profit.GrossProfit, Converter={StaticResource Money}}" FontWeight="SemiBold" Style="{StaticResource ProfitValue}"/>
+                                        <TextBlock Grid.Row="5" Text="{l:T '− Операционные расходы'}" Style="{StaticResource Muted}" VerticalAlignment="Center"/>
+                                        <TextBlock Grid.Row="5" Grid.Column="1" Text="{Binding Profit.Expenses, Converter={StaticResource Money}}" Style="{StaticResource ProfitValue}"/>
+                                        <Border Grid.Row="6" Grid.ColumnSpan="2" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,0,0,1" Margin="0,0,0,6"/>
+                                        <TextBlock Grid.Row="7" Text="{l:T 'Чистая прибыль'}" FontSize="17" FontWeight="Bold" Style="{StaticResource ProfitLabel}"/>
+                                        <TextBlock Grid.Row="7" Grid.Column="1" Text="{Binding Profit.NetProfit, Converter={StaticResource Money}}" FontSize="17" FontWeight="Bold" Style="{StaticResource ProfitValue}" Foreground="{DynamicResource SuccessBrush}"/>
+                                    </Grid>
+                                    <Border BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,1,0,0" Margin="0,12,0,0" Padding="0,8,0,0">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition Height="30"/><RowDefinition Height="30"/><RowDefinition Height="30"/><RowDefinition Height="30"/><RowDefinition Height="30"/>
+                                            </Grid.RowDefinitions>
+                                            <TextBlock Text="{l:T 'Чеков'}" Style="{StaticResource ProfitLabel}"/>
+                                            <TextBlock Grid.Column="1" Text="{Binding Profit.Checks}" Style="{StaticResource ProfitValue}"/>
+                                            <TextBlock Grid.Row="1" Text="{l:T 'Средний чек'}" Style="{StaticResource ProfitLabel}"/>
+                                            <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding Profit.AverageCheck, Converter={StaticResource Money}}" Style="{StaticResource ProfitValue}"/>
+                                            <TextBlock Grid.Row="2" Text="{l:T 'Возвратов'}" Style="{StaticResource ProfitLabel}"/>
+                                            <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding Profit.ReturnsCount}" Style="{StaticResource ProfitValue}"/>
+                                            <TextBlock Grid.Row="3" Text="{l:T 'Валовая маржа'}" Style="{StaticResource ProfitLabel}"/>
+                                            <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding Profit.GrossMarginPercent, StringFormat={}{0:0.#} %}" Style="{StaticResource ProfitValue}"/>
+                                            <TextBlock Grid.Row="4" Text="{l:T 'Рентабельность продаж'}" Style="{StaticResource ProfitLabel}"/>
+                                            <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding Profit.NetMarginPercent, StringFormat={}{0:0.#} %}" Style="{StaticResource ProfitValue}"/>
+                                        </Grid>
+                                    </Border>
+                                </StackPanel>
+                            </ScrollViewer>
+                            <DockPanel Grid.Column="2">
+                                <TextBlock DockPanel.Dock="Top" Text="{l:T 'Расходы по статьям'}" Style="{StaticResource SectionTitle}"/>
+                                <TextBlock DockPanel.Dock="Bottom" Text="{l:T 'Изъятие наличных не считается расходом бизнеса.'}" Style="{StaticResource Muted}" Margin="0,8,0,0"/>
+                                <DataGrid ItemsSource="{Binding Profit.ExpenseItems}">
+                                    <DataGrid.Columns>
+                                        <DataGridTextColumn Header="{l:T 'Статья'}" Binding="{Binding Category}" Width="*"/>
+                                        <DataGridTextColumn Header="{l:T 'Сумма'}" Binding="{Binding Amount, Converter={StaticResource Money}}" Width="160" ElementStyle="{StaticResource RightCell}"/>
+                                    </DataGrid.Columns>
+                                </DataGrid>
+                            </DockPanel>
+                        </Grid>
+                    </DockPanel>
+                </Border>
+            </DockPanel>
+        </TabItem>
+
+        <!-- ═══ Движение денег ═══ -->
+        <TabItem Header="{l:T 'Движение денег'}">
+            <DockPanel>
+                <WrapPanel Style="{StaticResource KpiRow}">
+                    <Border Style="{StaticResource Kpi}">
+                        <StackPanel>
+                            <TextBlock Text="{l:T 'На начало периода'}" Style="{StaticResource KpiLabel}"/>
+                            <TextBlock Text="{Binding CashFlow.Opening, Converter={StaticResource Money}}" Style="{StaticResource KpiValue}"/>
+                        </StackPanel>
+                    </Border>
+                    <Border Style="{StaticResource Kpi}">
+                        <StackPanel>
+                            <TextBlock Text="{l:T 'Приход'}" Style="{StaticResource KpiLabel}"/>
+                            <TextBlock Text="{Binding CashFlow.Income, Converter={StaticResource Money}}" Style="{StaticResource KpiValue}" Foreground="{DynamicResource SuccessBrush}"/>
+                        </StackPanel>
+                    </Border>
+                    <Border Style="{StaticResource Kpi}">
+                        <StackPanel>
+                            <TextBlock Text="{l:T 'Расход'}" Style="{StaticResource KpiLabel}"/>
+                            <TextBlock Text="{Binding CashFlow.Expense, Converter={StaticResource Money}}" Style="{StaticResource KpiValue}" Foreground="{DynamicResource DangerBrush}"/>
+                        </StackPanel>
+                    </Border>
+                    <Border Style="{StaticResource Kpi}">
+                        <StackPanel>
+                            <TextBlock Text="{l:T 'На конец периода'}" Style="{StaticResource KpiLabel}"/>
+                            <TextBlock Text="{Binding CashFlow.Closing, Converter={StaticResource Money}}" Style="{StaticResource KpiValue}"/>
+                        </StackPanel>
+                    </Border>
+                </WrapPanel>
+                <Border Style="{StaticResource Card}">
+                    <DockPanel>
+                        <ContentControl DockPanel.Dock="Top" Content="{Binding}" ContentTemplate="{StaticResource Toolbar}" Focusable="False"/>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="16"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <DockPanel>
+                                <TextBlock DockPanel.Dock="Top" Text="{l:T 'По кассам'}" Style="{StaticResource SectionTitle}"/>
+                                <DataGrid ItemsSource="{Binding CashRows}">
+                                    <DataGrid.Columns>
+                                        <DataGridTextColumn Header="{l:T 'Касса'}" Binding="{Binding CashRegister}" Width="*" MinWidth="120"/>
+                                        <DataGridTextColumn Header="{l:T 'На начало'}" Binding="{Binding Opening, Converter={StaticResource Money}}" Width="120" ElementStyle="{StaticResource RightCell}"/>
+                                        <DataGridTextColumn Header="{l:T 'Приход'}" Binding="{Binding Income, Converter={StaticResource Money}}" Width="120" ElementStyle="{StaticResource RightCell}"/>
+                                        <DataGridTextColumn Header="{l:T 'Расход'}" Binding="{Binding Expense, Converter={StaticResource Money}}" Width="120" ElementStyle="{StaticResource RightCell}"/>
+                                        <DataGridTextColumn Header="{l:T 'На конец'}" Binding="{Binding Closing, Converter={StaticResource Money}}" Width="120" ElementStyle="{StaticResource RightCell}"/>
+                                    </DataGrid.Columns>
+                                </DataGrid>
+                            </DockPanel>
+                            <DockPanel Grid.Column="2">
+                                <TextBlock DockPanel.Dock="Top" Text="{l:T 'По статьям'}" Style="{StaticResource SectionTitle}"/>
+                                <DataGrid ItemsSource="{Binding CashCategories}">
+                                    <DataGrid.RowStyle>
+                                        <Style TargetType="DataGridRow" BasedOn="{StaticResource {x:Type DataGridRow}}">
+                                            <Setter Property="Foreground" Value="{DynamicResource DangerBrush}"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsIncome}" Value="True">
+                                                    <Setter Property="Foreground" Value="{DynamicResource SuccessBrush}"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </DataGrid.RowStyle>
+                                    <DataGrid.Columns>
+                                        <DataGridTextColumn Header="{l:T 'Статья'}" Binding="{Binding Category}" Width="*"/>
+                                        <DataGridTextColumn Header="{l:T 'Операций'}" Binding="{Binding Operations}" Width="90" ElementStyle="{StaticResource RightCell}"/>
+                                        <DataGridTextColumn Header="{l:T 'Сумма'}" Binding="{Binding Amount, Converter={StaticResource Money}}" Width="140" ElementStyle="{StaticResource RightCell}"/>
+                                    </DataGrid.Columns>
+                                </DataGrid>
+                            </DockPanel>
+                        </Grid>
+                    </DockPanel>
+                </Border>
+            </DockPanel>
+        </TabItem>
+
+        <!-- ═══ Остатки ═══ -->
+        <TabItem Header="{l:T 'Остатки'}">
+            <DockPanel>
+                <WrapPanel Style="{StaticResource KpiRow}">
+                    <Border Style="{StaticResource Kpi}">
+                        <StackPanel>
+                            <TextBlock Text="{l:T 'По себестоимости'}" Style="{StaticResource KpiLabel}"/>
+                            <TextBlock Text="{Binding StockCost, Converter={StaticResource Money}}" Style="{StaticResource KpiValue}"/>
+                        </StackPanel>
+                    </Border>
+                    <Border Style="{StaticResource Kpi}">
+                        <StackPanel>
+                            <TextBlock Text="{l:T 'По ценам продажи'}" Style="{StaticResource KpiLabel}"/>
+                            <TextBlock Text="{Binding StockSale, Converter={StaticResource Money}}" Style="{StaticResource KpiValue}"/>
+                        </StackPanel>
+                    </Border>
+                    <Border Style="{StaticResource Kpi}">
+                        <StackPanel>
+                            <TextBlock Text="{l:T 'Потенциальная наценка'}" Style="{StaticResource KpiLabel}"/>
+                            <TextBlock Text="{Binding StockMarkup, Converter={StaticResource Money}}" Style="{StaticResource KpiValue}" Foreground="{DynamicResource SuccessBrush}"/>
+                        </StackPanel>
+                    </Border>
+                    <Border Style="{StaticResource Kpi}">
+                        <StackPanel>
+                            <TextBlock Text="{l:T 'Ниже минимума'}" Style="{StaticResource KpiLabel}"/>
+                            <TextBlock Text="{Binding StockLowCount}" Style="{StaticResource KpiValue}" Foreground="{DynamicResource DangerBrush}"/>
+                        </StackPanel>
+                    </Border>
+                </WrapPanel>
+                <Border Style="{StaticResource Card}">
+                    <DockPanel>
+                        <ContentControl DockPanel.Dock="Top" Content="{Binding}" ContentTemplate="{StaticResource Toolbar}" Focusable="False"/>
+                        <ContentControl DockPanel.Dock="Bottom" Content="{Binding StockPager}" ContentTemplate="{StaticResource Pager}" Focusable="False"/>
+                        <DataGrid ItemsSource="{Binding StockPager.Items}" l:Ui.RowNumberOffset="{Binding StockPager.FirstNumber}">
+                            <DataGrid.RowStyle>
+                                <Style TargetType="DataGridRow" BasedOn="{StaticResource {x:Type DataGridRow}}">
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsLow}" Value="True">
+                                            <Setter Property="Foreground" Value="{DynamicResource DangerBrush}"/>
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding IsNegative}" Value="True">
+                                            <Setter Property="Foreground" Value="{DynamicResource DangerBrush}"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </DataGrid.RowStyle>
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="{l:T 'Товар'}" Binding="{Binding Product}" Width="*" MinWidth="160"/>
+                                <DataGridTextColumn Header="{l:T 'Артикул'}" Binding="{Binding Sku}" Width="100"/>
+                                <DataGridTextColumn Header="{l:T 'Категория'}" Binding="{Binding Category}" Width="120"/>
+                                <DataGridTextColumn Header="{l:T 'Склад'}" Binding="{Binding Warehouse}" Width="130"/>
+                                <DataGridTextColumn Header="{l:T 'Кол-во'}" Binding="{Binding Quantity, StringFormat={}{0:0.###}}" Width="80" ElementStyle="{StaticResource RightCell}"/>
+                                <DataGridTextColumn Header="{l:T 'Ед.'}" Binding="{Binding Unit}" Width="45"/>
+                                <DataGridTextColumn Header="{l:T 'Мин.'}" Binding="{Binding MinStock, StringFormat={}{0:0.###}}" Width="65" ElementStyle="{StaticResource RightCell}"/>
+                                <DataGridTextColumn Header="{l:T 'Себест.'}" Binding="{Binding AvgCost, StringFormat={}{0:N2}}" Width="90" ElementStyle="{StaticResource RightCell}"/>
+                                <DataGridTextColumn Header="{l:T 'Сумма (себест.)'}" Binding="{Binding CostValue, Converter={StaticResource Money}}" Width="140" ElementStyle="{StaticResource RightCell}"/>
+                                <DataGridTextColumn Header="{l:T 'Сумма (продажа)'}" Binding="{Binding SaleValue, Converter={StaticResource Money}}" Width="140" ElementStyle="{StaticResource RightCell}"/>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </DockPanel>
+                </Border>
+            </DockPanel>
+        </TabItem>
+    </TabControl>
+</UserControl>

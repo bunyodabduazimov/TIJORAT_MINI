@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <RootNamespace>MiniTrade.Desktop</RootNamespace>
+    <AssemblyName>MiniTrade</AssemblyName>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <!-- Иконка tijorat.pro (из Resources/logo-mark.png) -->
+    <ApplicationIcon>Resources/app.ico</ApplicationIcon>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.14" />
+    <PackageReference Include="Microsoft.Extensions.Http" Version="10.0.14" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\MiniTrade.Core\MiniTrade.Core.csproj" />
+    <ProjectReference Include="..\MiniTrade.Licensing.Shared\MiniTrade.Licensing.Shared.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Resources\logo-mark.png;Resources\logo-full.png" />
+    <!-- Шрифт иконок Material Design Icons (@mdi/font 7.4.47, лицензия Apache-2.0 — Resources/Fonts/LICENSE) -->
+    <Resource Include="Resources\Fonts\materialdesignicons-webfont.ttf" />
+    <EmbeddedResource Include="Resources\license-public.pem" LogicalName="MiniTrade.LicensePublicKey" />
+    <None Update="appsettings.json" CopyToOutputDirectory="PreserveNewest" />
+    <!-- Переводы интерфейса: Languages/<код>.json рядом с программой (новый язык — новый файл, без перекомпиляции) -->
+    <None Include="Languages\*.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+</Project>

@@ -1,0 +1,68 @@
+<UserControl x:Class="MiniTrade.Desktop.Views.AuditLogView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:l="clr-namespace:MiniTrade.Desktop.Infrastructure"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:MiniTrade.Desktop.ViewModels"
+             xmlns:inf="clr-namespace:MiniTrade.Desktop.Infrastructure"
+             mc:Ignorable="d" d:DataContext="{d:DesignInstance vm:AuditLogViewModel}">
+    <Border Style="{StaticResource Card}">
+        <DockPanel>
+            <!-- Период и фильтры -->
+            <WrapPanel DockPanel.Dock="Top" Margin="0,0,0,10" Orientation="Horizontal">
+                <TextBlock Text="{l:T 'Период:'}" Style="{StaticResource Muted}" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                <DatePicker SelectedDate="{Binding From}" Width="130"/>
+                <TextBlock Text="—" VerticalAlignment="Center" Margin="6,0"/>
+                <DatePicker SelectedDate="{Binding To}" Width="130"/>
+                <Button Content="{l:T 'Сегодня'}" Style="{StaticResource SmallButton}" Margin="8,0,0,0" Command="{Binding SetPeriodCommand}" CommandParameter="today"/>
+                <Button Content="{l:T 'Неделя'}" Style="{StaticResource SmallButton}" Margin="4,0,0,0" Command="{Binding SetPeriodCommand}" CommandParameter="week"/>
+                <Button Content="{l:T 'Месяц'}" Style="{StaticResource SmallButton}" Margin="4,0,0,0" Command="{Binding SetPeriodCommand}" CommandParameter="month"/>
+                <Button Style="{StaticResource InputAddonButton}" Content="&#xF0450;" ToolTip="{l:T 'Показать'}" Command="{Binding LoadRowsCommand}" Margin="8,0,0,0"/>
+                <ComboBox ItemsSource="{Binding Users}" SelectedItem="{Binding SelectedUser}" Width="170" Margin="12,0,0,0" ToolTip="{l:T 'Пользователь'}"/>
+                <ComboBox ItemsSource="{Binding Actions}" SelectedItem="{Binding SelectedAction}" Width="150" Margin="8,0,0,0" ToolTip="{l:T 'Действие'}"/>
+                <TextBox Text="{Binding Search, UpdateSourceTrigger=PropertyChanged, Delay=200}" Style="{StaticResource TableSearch}" Margin="8,0,0,0"
+                         inf:Ui.Placeholder="{l:T 'Поиск: пользователь, объект, подробности'}"/>
+                <Button Content="{l:T 'Экспорт CSV'}" Style="{StaticResource SecondaryButton}" Margin="8,0,0,0" Command="{Binding ExportCommand}"/>
+            </WrapPanel>
+
+            <DockPanel DockPanel.Dock="Bottom" Margin="0,10,0,0">
+                <ContentControl DockPanel.Dock="Right" Content="{Binding Pager}" ContentTemplate="{StaticResource PagerBar}" Focusable="False" Margin="20,0,0,0"/>
+                <TextBlock Text="{Binding Pager.PageInfo}" Style="{StaticResource Muted}" VerticalAlignment="Center"/>
+            </DockPanel>
+
+            <!-- Щелчок по строке — окно с подробностями записи -->
+            <DataGrid ItemsSource="{Binding Pager.Items}" inf:Ui.RowNumberOffset="{Binding Pager.FirstNumber}" SelectedItem="{Binding Selected}" IsReadOnly="True"
+                      PreviewMouseLeftButtonUp="OnRowClick" PreviewKeyDown="OnGridKeyDown">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="{l:T 'Дата'}" Binding="{Binding Log.Date, StringFormat={}{0:dd.MM.yyyy HH:mm:ss}}" Width="150"/>
+                    <DataGridTextColumn Header="{l:T 'Пользователь'}" Binding="{Binding Log.UserName}" Width="150"/>
+                    <DataGridTemplateColumn Header="{l:T 'Действие'}" Width="110" SortMemberPath="ActionName">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding ActionName}" FontWeight="SemiBold" VerticalAlignment="Center">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsDelete}" Value="True">
+                                                    <Setter Property="Foreground" Value="{DynamicResource DangerBrush}"/>
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding IsCreate}" Value="True">
+                                                    <Setter Property="Foreground" Value="{DynamicResource SuccessBrush}"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+                    <DataGridTextColumn Header="{l:T 'Объект'}" Binding="{Binding ObjectType}" Width="140"/>
+                    <DataGridTextColumn Header="{l:T 'Название'}" Binding="{Binding Log.EntityName}" Width="180"/>
+                    <DataGridTextColumn Header="{l:T 'Подробности'}" Binding="{Binding Log.Details}" Width="*" MinWidth="200"/>
+                    <DataGridTextColumn Header="{l:T 'Компьютер'}" Binding="{Binding Log.Machine}" Width="120"/>
+                </DataGrid.Columns>
+            </DataGrid>
+        </DockPanel>
+    </Border>
+</UserControl>

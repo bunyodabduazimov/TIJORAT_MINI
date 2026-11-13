@@ -1,0 +1,33 @@
+@page "/admin/devices"
+@model DevicesModel
+@{ ViewData["Title"] = "Устройства"; }
+<div class="toolbar">
+    <h1 style="margin:0">Устройства и установки</h1>
+    <form method="get" class="actions"><input name="q" value="@Model.Q" placeholder="Компьютер, ID установки, IP" style="width:300px" /><button class="btn btn-light">Найти</button></form>
+</div>
+<div class="card">
+    <table>
+        <tr><th>Компьютер</th><th>ID установки</th><th>Отпечаток</th><th>Версия</th><th>Лицензия</th><th>Впервые</th><th>Последний раз</th></tr>
+        @foreach (var d in Model.Items)
+        {
+            var act = d.Activations.Where(a => a.IsActive).OrderByDescending(a => a.Id).FirstOrDefault();
+            <tr>
+                <td><b>@d.MachineName</b><div class="muted">@d.LastIp</div></td>
+                <td class="mono muted">@d.InstallationId</td>
+                <td class="mono muted" title="@d.Fingerprint">@(d.Fingerprint.Length > 12 ? d.Fingerprint[..12] + "…" : d.Fingerprint)</td>
+                <td>@d.AppVersion</td>
+                <td>
+                    @if (act?.License is { } l)
+                    {
+                        <a class="key" href="/admin/licenses/@l.Id">@l.Key</a>
+                        <div class="muted">@l.Customer?.FullName · @LicenseDefaults.TypeName(l.Type)</div>
+                    }
+                    else { <span class="muted">нет активной</span> }
+                </td>
+                <td>@Fmt.Date(d.FirstSeenAt)</td>
+                <td>@Fmt.DateTime(d.LastSeenAt)</td>
+            </tr>
+        }
+        @if (Model.Items.Count == 0) { <tr><td colspan="7" class="muted">Устройства не найдены</td></tr> }
+    </table>
+</div>

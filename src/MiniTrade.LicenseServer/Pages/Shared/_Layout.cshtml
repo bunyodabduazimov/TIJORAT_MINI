@@ -1,0 +1,46 @@
+@{
+    var path = Context.Request.Path.Value ?? "";
+    string Active(string prefix, bool exact = false) =>
+        (exact ? path.Equals(prefix, StringComparison.OrdinalIgnoreCase) : path.StartsWith(prefix, StringComparison.OrdinalIgnoreCase)) ? "active" : "";
+    var authenticated = User.Identity?.IsAuthenticated == true;
+}
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>@ViewData["Title"] — TIJORAT MINI Лицензии</title>
+    <link rel="icon" href="~/favicon.ico" />
+    <link rel="stylesheet" href="~/css/admin.css" asp-append-version="true" />
+</head>
+<body class="@(authenticated ? "" : "auth")">
+@if (authenticated)
+{
+    <aside class="sidebar">
+        <div class="brand"><img class="logo" src="~/img/logo-mark.png" alt="tijorat.pro" /><div><b>TIJORAT MINI</b><small>Лицензирование</small></div></div>
+        <nav>
+            <a class="@Active("/admin", true)" href="/admin">Обзор</a>
+            <a class="@Active("/admin/customers")" href="/admin/customers">Клиенты</a>
+            <a class="@Active("/admin/licenses")" href="/admin/licenses">Лицензии и ключи</a>
+            <a class="@Active("/admin/devices")" href="/admin/devices">Устройства</a>
+            <a class="@Active("/admin/events")" href="/admin/events">Журнал активаций</a>
+        </nav>
+        <form method="post" action="/admin/logout" class="logout">
+            <span>@User.Identity?.Name</span>
+            <button class="btn btn-ghost" type="submit">Выйти</button>
+        </form>
+    </aside>
+}
+<main class="content">
+    @if (TempData["Message"] is string msg)
+    {
+        <div class="alert alert-ok">@msg</div>
+    }
+    @if (TempData["Error"] is string err)
+    {
+        <div class="alert alert-err">@err</div>
+    }
+    @RenderBody()
+</main>
+</body>
+</html>

@@ -1,0 +1,100 @@
+@page "/admin/licenses/{id:int}"
+@model LicenseModel
+@{
+    var l = Model.License;
+    ViewData["Title"] = l.Key;
+}
+<div class="toolbar">
+    <div>
+        <h1 style="margin:0" class="key">@l.Key</h1>
+        <div class="muted">Клиент: <a href="/admin/customers/@l.CustomerId">@l.Customer?.FullName</a> @l.Customer?.Company · @l.Customer?.Phone</div>
+    </div>
+    <partial name="_Badges" model="l" />
+</div>
+<div class="grid grid-2">
+    <div class="card">
+        <h2>Параметры</h2>
+        <div class="kv">
+            <div>Тип</div><div>@LicenseDefaults.TypeName(l.Type)</div>
+            <div>Создана</div><div>@Fmt.DateTime(l.CreatedAt)</div>
+            <div>Действует до</div><div>@(l.ExpiresAt is null ? "Бессрочно" : Fmt.DateTime(l.ExpiresAt))</div>
+            <div>Устройств</div><div>@l.Activations.Count(a => a.IsActive) из @l.MaxDevices</div>
+            <div>Статус</div><div>@(l.Status == LicenseStatus.Blocked ? $"Заблокирована: {l.BlockReason}" : "Активна")</div>
+            <div>Примечание</div><div>@(l.Notes ?? "—")</div>
+        </div>
+    </div>
+    <div class="card">
+        <h2>Управление</h2>
+        <form method="post" asp-page-handler="Extend" class="actions" style="margin-bottom:14px">
+            <div style="flex:1"><label>Продлить</label>
+                <select name="days">
+                    <option value="30">на 30 дней</option>
+                    <option value="90">на 90 дней</option>
+                    <option value="365" selected>на 1 год</option>
+                </select>
+            </div>
+            <button class="btn btn-success" type="submit">Продлить</button>
+        </form>
+        <form method="post" asp-page-handler="Update" class="actions" style="margin-bottom:14px">
+            <div style="flex:1"><label>Тип</label>
+                <select name="type">
+                    <option value="Trial" selected="@(l.Type == LicenseType.Trial)">Пробная</option>
+                    <option value="Annual" selected="@(l.Type == LicenseType.Annual)">Годовая</option>
+                    <option value="Perpetual" selected="@(l.Type == LicenseType.Perpetual)">Бессрочная</option>
+                </select>
+            </div>
+            <div style="flex:1"><label>Действует до</label><input type="date" name="expires" value="@(l.ExpiresAt?.ToString("yyyy-MM-dd"))" /></div>
+            <div style="width:90px"><label>Устройств</label><input type="number" name="maxDevices" min="1" max="100" value="@l.MaxDevices" /></div>
+            <button class="btn btn-light" type="submit">Сохранить</button>
+        </form>
+        @if (l.Status == LicenseStatus.Blocked)
+        {
+            <form method="post" asp-page-handler="Unblock"><button class="btn btn-success" type="submit">Разблокировать</button></form>
+        }
+        else
+        {
+            <form method="post" asp-page-handler="Block" class="actions">
+                <div style="flex:1"><label>Причина блокировки</label><input name="reason" placeholder="Например: неоплата" /></div>
+                <button class="btn btn-danger" type="submit" onclick="return confirm('Заблокировать лицензию?')">Заблокировать</button>
+            </form>
+        }
+        <p class="muted" style="margin-bottom:0">Изменения применяются на устройствах при следующей онлайн-проверке (при запуске программы или не позднее @LicenseDefaults.OfflineDays дней работы офлайн).</p>
+    </div>
+</div>
+<div class="card">
+    <h2>Активации на устройствах</h2>
+    <table>
+        <tr><th>Компьютер</th><th>ID установки</th><th>Версия</th><th>Активирована</th><th>Последняя проверка</th><th>Статус</th><th></th></tr>
+        @foreach (var a in l.Activations.OrderByDescending(x => x.Id))
+        {
+            <tr>
+                <td>@a.Device?.MachineName<div class="muted">@a.Device?.LastIp</div></td>
+                <td class="mono muted">@a.Device?.InstallationId</td>
+                <td>@a.Device?.AppVersion</td>
+                <td>@Fmt.DateTime(a.ActivatedAt)</td>
+                <td>@Fmt.DateTime(a.LastCheckAt)</td>
+                <td>@if (a.IsActive) { <span class="badge badge-green">Активна</span> } else { <span class="badge badge-gray">Отозвана @Fmt.Date(a.DeactivatedAt)</span> }</td>
+                <td style="text-align:right">
+                    @if (a.IsActive)
+                    {
+                        <form method="post" asp-page-handler="Deactivate" class="inline">
+                            <input type="hidden" name="activationId" value="@a.Id" />
+                            <button class="btn btn-light btn-sm" type="submit" onclick="return confirm('Отвязать устройство? Ключ можно будет активировать на другом компьютере.')">Отвязать</button>
+                        </form>
+                    }
+                </td>
+            </tr>
+        }
+        @if (l.Activations.Count == 0) { <tr><td colspan="7" class="muted">Ключ ещё не активирован</td></tr> }
+    </table>
+</div>
+<div class="card">
+    <h2>История</h2>
+    <table>
+        <tr><th>Время</th><th>Событие</th><th>Детали</th><th>IP</th></tr>
+        @foreach (var e in Model.Events)
+        {
+            <tr><td>@Fmt.DateTime(e.At)</td><td>@EventsModel.ActionName(e.Action)</td><td>@e.Details</td><td class="muted">@e.Ip</td></tr>
+        }
+    </table>
+</div>
