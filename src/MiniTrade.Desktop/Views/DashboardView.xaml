@@ -312,7 +312,9 @@
                                 <TextBlock Text="{l:T 'Долг поставщикам'}" Style="{StaticResource KpiLabel}"/>
                             </StackPanel>
                             <TextBlock Text="{Binding Summary.SupplierDebt, Converter={StaticResource Money}}" Style="{StaticResource KpiValue}" Foreground="{DynamicResource WarningBrush}"/>
-                            <TextBlock Text="{l:T 'Неоплаченные закупы'}" Style="{StaticResource KpiHint}"/>
+                            <TextBlock Style="{StaticResource KpiHint}">
+                                <Run Text="{l:T 'Нам должны: '}"/><Run Text="{Binding Summary.CustomerDebt, Mode=OneWay, Converter={StaticResource Money}}"/>
+                            </TextBlock>
                         </StackPanel>
                     </DockPanel>
                 </Button>

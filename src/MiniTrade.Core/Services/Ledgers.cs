@@ -40,7 +40,7 @@ internal static class StockLedger
         if (await IsServiceAsync(db, productId, ct)) return;
         var balance = await GetOrCreateAsync(db, productId, warehouseId, ct);
         AddToBalance(balance, qty, unitCost);
-        await AddLotAsync(db, balance, qty, unitCost, date, type, documentId, ct);
+        await AddLotAsync(db, balance, unitCost, date, type, documentId, ct);
 
         db.StockMovements.Add(new StockMovement
         {
@@ -133,8 +133,7 @@ internal static class StockLedger
             left -= part;
         }
         AddToBalance(balance, qty, unitCost);
-        if (left > 0) await AddLotAsync(db, balance, left, unitCost, date, type, documentId, ct);
-        else if (await MethodAsync(db, ct) == CostingMethod.Fifo) SyncAverage(balance, await LotsAsync(db, productId, warehouseId, ct));
+        await AddLotAsync(db, balance, unitCost, date, type, documentId, ct);
     }
 
     private static void AddToBalance(StockBalance balance, decimal qty, decimal unitCost)
@@ -147,17 +146,30 @@ internal static class StockLedger
         balance.Quantity = Money.RoundQty(newQty);
     }
 
-    private static async Task AddLotAsync(TradeDbContext db, StockBalance balance, decimal qty, decimal unitCost, DateTime date,
+    /// <summary>
+    /// Выравнивает партии по остатку (вызывается после увеличения остатка). Если склад был в минусе, часть прихода
+    /// покрывает уже проданное без партий — новая партия создаётся только на реально лежащее количество,
+    /// а возвращённое в старые партии сверх остатка (сторно продажи при минусе) списывается с ранних партий.
+    /// Иначе остались бы «лишние» партии и FIFO списывал бы по ним неверную себестоимость.
+    /// </summary>
+    private static async Task AddLotAsync(TradeDbContext db, StockBalance balance, decimal unitCost, DateTime date,
         StockMovementType type, int documentId, CancellationToken ct)
     {
         var lots = await LotsAsync(db, balance.ProductId, balance.WarehouseId, ct);
-        var lot = new StockLot
+        var qty = Money.RoundQty(Math.Max(0, balance.Quantity) - lots.Sum(l => l.Quantity));
+        if (qty > 0)
         {
-            ProductId = balance.ProductId, WarehouseId = balance.WarehouseId, Date = date, UnitCost = Money.RoundCost(unitCost),
-            InitialQuantity = qty, Quantity = qty, DocumentType = type, DocumentId = documentId
-        };
-        db.StockLots.Add(lot);
-        if (await MethodAsync(db, ct) == CostingMethod.Fifo) SyncAverage(balance, [.. lots, lot]);
+            var lot = new StockLot
+            {
+                ProductId = balance.ProductId, WarehouseId = balance.WarehouseId, Date = date, UnitCost = Money.RoundCost(unitCost),
+                InitialQuantity = qty, Quantity = qty, DocumentType = type, DocumentId = documentId
+            };
+            db.StockLots.Add(lot);
+            lots.Add(lot);
+        }
+        else if (qty < 0)
+            Consume(lots, -qty);
+        if (await MethodAsync(db, ct) == CostingMethod.Fifo) SyncAverage(balance, lots);
     }
 
     /// <summary>Непустые партии товара на складе (из базы и ещё не сохранённые), от ранних к поздним.</summary>

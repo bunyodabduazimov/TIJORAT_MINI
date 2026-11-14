@@ -612,6 +612,8 @@
     "Единица «{0}» уже есть в справочнике.": "Unit «{0}» already exists.",
     "Краткое наименование единицы — не длиннее 16 символов.": "Unit short name must be at most 16 characters.",
     "Скидка:": "Discount:",
+    "Скидка": "Discount",
+    "Сумма чека": "Receipt total",
     "Платежи": "Payments",
     "Новая оплата": "New payment",
     " (в долг)": " (on credit)",
@@ -988,6 +990,12 @@
     "Выписка": "Statement",
     "Приход: ": "Income: ",
     "Начальный остаток: ": "Opening balance: ",
-    "Конечный остаток: ": "Closing balance: "
+    "Конечный остаток: ": "Closing balance: ",
+    "Оформить возврат по {0} на сумму {1}?": "Return {0} for {1}?",
+    "Долг покупателя уменьшится на {0}. Деньги из кассы не выдаются.": "The customer's debt will decrease by {0}. No money is paid out.",
+    "Долг покупателя уменьшится на {0}, из кассы будет выдано {1}.": "The customer's debt will decrease by {0}, {1} will be paid out from the cash register.",
+    "Списание товара": "Stock write-off",
+    "Недостача по инвентаризации": "Inventory shortage",
+    "Излишки по инвентаризации": "Inventory surplus"
   }
 }

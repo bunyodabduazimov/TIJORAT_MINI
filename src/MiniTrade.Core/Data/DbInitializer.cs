@@ -94,6 +94,27 @@ public static class DbInitializer
         }
 
         await db.SaveChangesAsync(ct);
+        await LinkSaleReturnRefundsAsync(db, ct);
+    }
+
+    /// <summary>
+    /// Возврат покупателя учитывается во взаиморасчётах: сумма возврата уменьшает его долг, а выданные деньги — увеличивают.
+    /// В базах до этого изменения выплаты по возвратам не были привязаны к покупателю — привязываем (без записи в журнал).
+    /// Операция идемпотентна: при следующем запуске подходящих записей уже нет.
+    /// </summary>
+    private static async Task LinkSaleReturnRefundsAsync(TradeDbContext db, CancellationToken ct)
+    {
+        var refunds = await db.CashTransactions
+            .Where(t => t.Kind == CashOperationKind.SaleReturn && t.CounterpartyId == null && t.DocumentId != null)
+            .Join(db.SaleReturns, t => t.DocumentId, r => r.Id, (t, r) => new { Tx = t, r.Sale!.CustomerId })
+            .Where(x => x.CustomerId != null)
+            .ToListAsync(ct);
+        if (refunds.Count == 0) return;
+        foreach (var x in refunds) x.Tx.CounterpartyId = x.CustomerId;
+        var audit = db.AuditEnabled;
+        db.AuditEnabled = false;
+        try { await db.SaveChangesAsync(ct); }
+        finally { db.AuditEnabled = audit; }
     }
 
     /// <summary>

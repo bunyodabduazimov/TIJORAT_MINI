@@ -417,17 +417,36 @@ public partial class SaleReturnViewModel : ObservableObject, ICloseRequest
         foreach (var i in sale.Items.Where(i => i.Quantity - i.ReturnedQuantity > 0))
         {
             var line = new ReturnLineViewModel(i);
-            line.PropertyChanged += (_, _) => OnPropertyChanged(nameof(Total));
+            line.PropertyChanged += (_, _) => { OnPropertyChanged(nameof(Total)); OnPropertyChanged(nameof(Refund)); OnPropertyChanged(nameof(Hint)); };
             Lines.Add(line);
         }
+        _ = LoadDebtLimitAsync();
     }
+
+    /// <summary>Сколько из возврата можно зачесть в долг покупателя по этой продаже (продажа в долг).</summary>
+    private decimal _debtLimit;
+
+    private async Task LoadDebtLimitAsync()
+    {
+        try { _debtLimit = await _sales.GetReturnDebtOffsetLimitAsync(_sale.Id); }
+        catch (Exception ex) { ErrorLog.Write(ex, GetType().Name); _debtLimit = 0; }
+        OnPropertyChanged(nameof(Refund));
+        OnPropertyChanged(nameof(Hint));
+    }
+
+    /// <summary>Часть возврата, которая уменьшит долг покупателя (деньги не выдаются).</summary>
+    public decimal DebtOffset => Math.Min(Total, _debtLimit);
+    /// <summary>Сколько выдать покупателю из кассы.</summary>
+    public decimal Refund => Total - DebtOffset;
 
     public string Title => L.F("Возврат по продаже {0}", _sale.Number);
     public string Subtitle => L.F("от {0:dd.MM.yyyy HH:mm} · {1} · {2}", _sale.Date, _sale.Customer?.Name ?? L.T("Розничный покупатель"),
         Core.Common.Money.Format(_sale.Total));
     public double DialogWidth => 640;
     public string CashLabel => L.T("Касса выдачи денег");
-    public string? Hint => null;
+    public string? Hint => Total <= 0 || DebtOffset <= 0 ? null
+        : Refund <= 0 ? L.F("Долг покупателя уменьшится на {0}. Деньги из кассы не выдаются.", Core.Common.Money.Format(Total))
+        : L.F("Долг покупателя уменьшится на {0}, из кассы будет выдано {1}.", Core.Common.Money.Format(DebtOffset), Core.Common.Money.Format(Refund));
     public event EventHandler<bool>? CloseRequested;
 
     public List<ReturnLineViewModel> Lines { get; } = new();
@@ -449,8 +468,11 @@ public partial class SaleReturnViewModel : ObservableObject, ICloseRequest
         if (CashRegister is null) { _dialogs.Error(L.T("Выберите кассу.")); return; }
         var lines = Lines.Where(l => l.ReturnQuantity > 0).Select(l => new ReturnLine(l.SaleItemId, l.ReturnQuantity)).ToList();
         if (lines.Count == 0) { _dialogs.Error(L.T("Укажите количество к возврату.")); return; }
-        if (!_dialogs.Confirm(L.F("Оформить возврат по {0} на сумму {1}?\nДеньги будут выданы из кассы «{2}».",
-                _sale.Number, Core.Common.Money.Format(Total), CashRegister.Name))) return;
+        var question = Hint is { } hint
+            ? L.F("Оформить возврат по {0} на сумму {1}?", _sale.Number, Core.Common.Money.Format(Total)) + "\n" + hint
+            : L.F("Оформить возврат по {0} на сумму {1}?\nДеньги будут выданы из кассы «{2}».",
+                _sale.Number, Core.Common.Money.Format(Total), CashRegister.Name);
+        if (!_dialogs.Confirm(question)) return;
         try
         {
             await _sales.CreateReturnAsync(new SaleReturnRequest(_sale.Id, CashRegister.Id, lines, Reason));

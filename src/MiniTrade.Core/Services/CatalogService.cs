@@ -66,24 +66,11 @@ public class CatalogService(IDbContextFactory<TradeDbContext> factory)
             }
         }
 
-        // Баланс контрагентов текущей страницы:
-        // − неоплаченные закупки (наш долг) ± прочие платежи (выдали контрагенту — он должен нам, получили — наоборот)
+        // Баланс контрагентов текущей страницы — тот же регистр, что в выписках и на главной (+ должен нам, − мы должны)
         if (items is List<Counterparty> parties && parties.Count > 0)
         {
-            var ids = parties.Select(c => c.Id).ToList();
-            var debts = (await db.Purchases.AsNoTracking().Where(p => ids.Contains(p.SupplierId))
-                    .Select(p => new { p.SupplierId, p.Total, p.PaidAmount }).ToListAsync(ct))
-                .GroupBy(p => p.SupplierId).ToDictionary(g => g.Key, g => g.Sum(p => p.Total - p.PaidAmount));
-            // Продажи в долг: покупатель должен нам
-            var credit = (await db.Sales.AsNoTracking().Where(s => s.CustomerId != null && ids.Contains(s.CustomerId.Value))
-                    .Select(s => new { Id = s.CustomerId!.Value, s.Total, s.PaidAmount }).ToListAsync(ct))
-                .GroupBy(s => s.Id).ToDictionary(g => g.Key, g => g.Sum(s => s.Total - s.PaidAmount));
-            var payments = (await db.CashTransactions.AsNoTracking()
-                    .Where(t => (t.Kind == CashOperationKind.CounterpartyPayment || t.Kind == CashOperationKind.CounterpartyAccrual) && t.CounterpartyId != null && ids.Contains(t.CounterpartyId.Value))
-                    .Select(t => new { Id = t.CounterpartyId!.Value, t.Direction, t.Amount }).ToListAsync(ct))
-                .GroupBy(t => t.Id).ToDictionary(g => g.Key, g => g.Sum(t => t.Direction == CashDirection.Expense ? t.Amount : -t.Amount));
-            foreach (var c in parties)
-                c.Balance = Money.Round(payments.GetValueOrDefault(c.Id) + credit.GetValueOrDefault(c.Id) - debts.GetValueOrDefault(c.Id));
+            var balances = await CounterpartyLedger.BalancesAsync(db, parties.Select(c => c.Id).ToList(), null, ct);
+            foreach (var c in parties) c.Balance = balances.GetValueOrDefault(c.Id);
         }
         return new PagedResult<T>(items, total);
     }

@@ -293,6 +293,9 @@ public class ReportService(IDbContextFactory<TradeDbContext> factory)
 
         // Расходы не привязаны к складу и товарам: при таком фильтре они не учитываются
         var expenseRows = new List<ExpenseRow>();
+        // Потери склада (списания, недостачи/излишки инвентаризации) привязаны к складу, но не к пользователю/контрагенту
+        if (!filter.ByItems && filter.UserId is null && filter.CounterpartyId is null)
+            expenseRows.AddRange(await StockLossesAsync(db, f, t, filter.WarehouseId, ct));
         if (filter.WarehouseId is null && !filter.ByItems)
         {
             var expQ = db.CashTransactions.AsNoTracking()
@@ -301,12 +304,12 @@ public class ReportService(IDbContextFactory<TradeDbContext> factory)
             if (filter.UserId is { } u) expQ = expQ.Where(x => x.UserId == u);
             if (filter.CounterpartyId is { } c) expQ = expQ.Where(x => x.CounterpartyId == c);
             var expenses = await expQ.Select(x => new { x.Category, x.Amount }).ToListAsync(ct);
-            expenseRows = expenses.GroupBy(e => e.Category).Select(g => new ExpenseRow(g.Key, g.Sum(x => x.Amount)))
-                .OrderByDescending(r => r.Amount).ToList();
-            var totalExp = expenseRows.Sum(r => r.Amount);
-            if (totalExp != 0)
-                expenseRows = expenseRows.Select(r => r with { Share = Math.Round(r.Amount / totalExp * 100, 1) }).ToList();
+            expenseRows.AddRange(expenses.GroupBy(e => e.Category).Select(g => new ExpenseRow(g.Key, g.Sum(x => x.Amount))));
         }
+        expenseRows = expenseRows.OrderByDescending(r => r.Amount).ToList();
+        var totalExp = expenseRows.Where(r => r.Amount > 0).Sum(r => r.Amount);
+        if (totalExp != 0)
+            expenseRows = expenseRows.Select(r => r with { Share = Math.Round(r.Amount / totalExp * 100, 1) }).ToList();
 
         return new ProfitReport(
             Revenue: revenue,
@@ -363,6 +366,34 @@ public class ReportService(IDbContextFactory<TradeDbContext> factory)
             .ToList();
 
         return new CashFlowReport(rows, categories);
+    }
+
+    public const string WriteOffArticle = "Списание товара";
+    public const string ShortageArticle = "Недостача по инвентаризации";
+    public const string SurplusArticle = "Излишки по инвентаризации";
+
+    /// <summary>
+    /// Потери склада за период по себестоимости — строки расходов для прибыли: списания, недостачи
+    /// и излишки инвентаризации (излишек — отрицательный расход, т. е. доход).
+    /// </summary>
+    internal static async Task<List<ExpenseRow>> StockLossesAsync(TradeDbContext db, DateTime from, DateTime to, int? warehouseId, CancellationToken ct)
+    {
+        var writeOffs = db.StockWriteOffs.AsNoTracking().Where(w => w.Date >= from && w.Date < to);
+        var counts = db.Set<InventoryCountItem>().AsNoTracking()
+            .Where(i => db.InventoryCounts.Any(c => c.Id == i.InventoryCountId && c.Date >= from && c.Date < to
+                                                    && (warehouseId == null || c.WarehouseId == warehouseId)));
+        if (warehouseId is { } w) writeOffs = writeOffs.Where(x => x.WarehouseId == w);
+        var writeOff = (await writeOffs.Select(x => x.CostTotal).ToListAsync(ct)).Sum();
+        var diffs = (await counts.Select(i => new { i.Difference, i.UnitCost }).ToListAsync(ct))
+            .Select(i => Money.Round(i.Difference * i.UnitCost)).ToList();
+        var shortage = -diffs.Where(d => d < 0).Sum();
+        var surplus = diffs.Where(d => d > 0).Sum();
+
+        var rows = new List<ExpenseRow>();
+        if (writeOff != 0) rows.Add(new ExpenseRow(WriteOffArticle, Money.Round(writeOff)));
+        if (shortage != 0) rows.Add(new ExpenseRow(ShortageArticle, Money.Round(shortage)));
+        if (surplus != 0) rows.Add(new ExpenseRow(SurplusArticle, -Money.Round(surplus)));
+        return rows;
     }
 
     private static string CategoryName(CashOperationKind kind, string category) =>

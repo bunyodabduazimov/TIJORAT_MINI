@@ -47,13 +47,16 @@ internal static class AuditTracker
     internal sealed record Pending(EntityEntry Entry, AuditAction Action, string? Details);
 
     /// <summary>Вызывается до сохранения: фиксирует, что и как меняется (исходные значения берутся из базы).</summary>
-    public static async Task<List<Pending>> CollectAsync(DbContext db, CancellationToken ct)
+    /// <param name="created">Записи «Создание», уже сделанные этим контекстом: документ проводится несколькими сохранениями
+    /// в одной транзакции (сначала ради Id) — его доработка обновляет запись создания, а не плодит «Изменение 0 → сумма».</param>
+    public static async Task<List<Pending>> CollectAsync(DbContext db, IReadOnlyDictionary<object, AuditLog> created, CancellationToken ct)
     {
         var result = new List<Pending>();
         var entries = db.ChangeTracker.Entries()
             .Where(e => e.State is EntityState.Added or EntityState.Modified or EntityState.Deleted && Tracked.Contains(e.Entity.GetType()))
             .ToList();
-        var newDocument = entries.Any(e => e.State == EntityState.Added && Documents.Contains(e.Entity.GetType()));
+        var newDocument = entries.Any(e => e.State == EntityState.Added && Documents.Contains(e.Entity.GetType()))
+                          || created.Keys.Any(k => Documents.Contains(k.GetType()));
 
         foreach (var e in entries)
         {
@@ -69,6 +72,9 @@ internal static class AuditTracker
                 case EntityState.Deleted:
                     result.Add(new(e, AuditAction.Delete, Summary(e.Entity)));
                     break;
+                case EntityState.Modified when created.TryGetValue(e.Entity, out var log):
+                    log.Details = Truncate(Summary(e.Entity), 4000) ?? log.Details;
+                    break;
                 case EntityState.Modified:
                     // Изменились только служебные поля (остаток кассы и т. п.) — без запроса к базе
                     if (e.Properties.All(p => !p.IsModified || Ignored.Contains(p.Metadata.Name))) break;
@@ -82,13 +88,13 @@ internal static class AuditTracker
     }
 
     /// <summary>Вызывается после сохранения (ключи новых записей уже известны).</summary>
-    public static IEnumerable<AuditLog> Build(IEnumerable<Pending> pending)
+    public static IEnumerable<(object Entity, AuditLog Log)> Build(IEnumerable<Pending> pending)
     {
         var now = DateTime.Now;
         var machine = Environment.MachineName;
         foreach (var p in pending)
         {
-            yield return new AuditLog
+            yield return (p.Entry.Entity, new AuditLog
             {
                 Date = now,
                 UserId = AuditContext.UserId,
@@ -99,7 +105,7 @@ internal static class AuditTracker
                 EntityId = KeyOf(p.Entry),
                 EntityName = Truncate(NameOf(p.Entry.Entity), 300),
                 Details = Truncate(p.Details, 4000)
-            };
+            });
         }
     }
 

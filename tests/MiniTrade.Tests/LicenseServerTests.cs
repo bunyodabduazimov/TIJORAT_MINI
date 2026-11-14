@@ -62,13 +62,13 @@ public class LicenseServerTests : IClassFixture<LicenseServerFactory>
     }
 
     [Fact]
-    public async Task Register_issues_14_day_trial_once_per_device()
+    public async Task Register_issues_trial_once_per_device()
     {
         var device = NewDevice();
         var payload = Verify(await Post("register", new RegisterRequest(device, "Иван", "ООО Тест", "+992900000000")));
         Assert.Equal(LicenseType.Trial, payload.Type);
         Assert.Equal(device.InstallationId, payload.InstallationId);
-        Assert.InRange((payload.ExpiresAtUtc!.Value - DateTime.UtcNow).TotalDays, 13.9, 14.1);
+        Assert.InRange((payload.ExpiresAtUtc!.Value - DateTime.UtcNow).TotalDays, LicenseDefaults.TrialDays - 0.1, LicenseDefaults.TrialDays + 0.1);
 
         // Переустановка на том же оборудовании продолжает тот же триал, а не начинает новый
         var reinstall = device with { InstallationId = Guid.NewGuid().ToString() };

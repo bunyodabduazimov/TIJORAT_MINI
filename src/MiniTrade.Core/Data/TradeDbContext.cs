@@ -48,6 +48,9 @@ public class TradeDbContext : DbContext
     /// <summary>Отключить журнал действий для этого контекста (служебные операции, тесты).</summary>
     public bool AuditEnabled { get; set; } = true;
 
+    /// <summary>Записи «Создание», сделанные этим контекстом (см. AuditTracker.CollectAsync).</summary>
+    private readonly Dictionary<object, AuditLog> _createdLogs = new(ReferenceEqualityComparer.Instance);
+
     public override int SaveChanges(bool acceptAllChangesOnSuccess) =>
         SaveChangesAsync(acceptAllChangesOnSuccess).GetAwaiter().GetResult();
 
@@ -56,12 +59,16 @@ public class TradeDbContext : DbContext
     {
         TouchProducts();
         if (!AuditEnabled) return await base.SaveChangesAsync(acceptAllChangesOnSuccess, ct).ConfigureAwait(false);
-        var pending = await AuditTracker.CollectAsync(this, ct).ConfigureAwait(false);
+        var pending = await AuditTracker.CollectAsync(this, _createdLogs, ct).ConfigureAwait(false);
         var count = await base.SaveChangesAsync(acceptAllChangesOnSuccess, ct).ConfigureAwait(false);
         if (pending.Count > 0)
         {
             // Записи журнала создаются после сохранения — ключи новых объектов уже известны
-            AuditLogs.AddRange(AuditTracker.Build(pending).ToList());
+            foreach (var (entity, log) in AuditTracker.Build(pending).ToList())
+            {
+                AuditLogs.Add(log);
+                if (log.Action == AuditAction.Create) _createdLogs[entity] = log;
+            }
             await base.SaveChangesAsync(acceptAllChangesOnSuccess, ct).ConfigureAwait(false);
         }
         return count;

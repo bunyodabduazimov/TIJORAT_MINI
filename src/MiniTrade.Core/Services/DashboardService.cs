@@ -12,7 +12,7 @@ public record TopProductRow(string Product, string Unit, decimal Quantity, decim
 public record DashboardSummary(
     decimal TodayRevenue, int TodaySalesCount, decimal YesterdayRevenue,
     decimal MonthRevenue, int MonthSalesCount, decimal MonthProfit, decimal MonthExpenses,
-    decimal CashTotal, decimal StockCostValue, decimal StockSaleValue, decimal SupplierDebt, int ProductsCount,
+    decimal CashTotal, decimal StockCostValue, decimal StockSaleValue, decimal SupplierDebt, decimal CustomerDebt, int ProductsCount,
     IReadOnlyList<DailyPoint> Last7Days, int LowStockCount, IReadOnlyList<StockRow> LowStock,
     IReadOnlyList<TopProductRow> TopProducts, IReadOnlyList<Sale> RecentSales)
 {
@@ -56,19 +56,23 @@ public class DashboardService(IDbContextFactory<TradeDbContext> factory)
         var monthSales = sales.Where(s => s.Date >= monthStart).ToList();
         var monthReturns = returns.Where(r => r.Date >= monthStart).ToList();
 
-        var expenses = (await db.CashTransactions.AsNoTracking()
+        // Прибыль месяца — как в отчёте «Прибыль»: ручные расходы + потери склада (списания, недостачи − излишки).
+        // В плитке «Расходы» излишки инвентаризации не вычитаются (это доход, а не уменьшение расходов).
+        var manualExpenses = (await db.CashTransactions.AsNoTracking()
                 .Where(x => x.Date >= monthStart && x.Kind == CashOperationKind.Manual
                             && x.Direction == CashDirection.Expense && x.Category != CashWithdrawal)
                 .Select(x => x.Amount).ToListAsync(ct)).Sum();
+        var stockLosses = await ReportService.StockLossesAsync(db, monthStart, tomorrow, null, ct);
+        var expenses = manualExpenses + stockLosses.Where(r => r.Amount > 0).Sum(r => r.Amount);
         var profit = new ProfitReport(monthSales.Sum(s => s.Total), monthReturns.Sum(r => r.Total),
-            monthSales.Sum(s => s.CostTotal) - monthReturns.Sum(r => r.CostTotal), expenses, []);
+            monthSales.Sum(s => s.CostTotal) - monthReturns.Sum(r => r.CostTotal), manualExpenses + stockLosses.Sum(r => r.Amount), []);
 
         var days = Enumerable.Range(0, 7).Select(i => weekStart.AddDays(i))
             .Select(d => new DailyPoint(d, Revenue(d, d.AddDays(1)))).ToList();
 
         var cash = (await db.CashRegisters.AsNoTracking().Select(c => c.Balance).ToListAsync(ct)).Sum();
-        var supplierDebt = (await db.Purchases.AsNoTracking().Select(p => new { p.Total, p.PaidAmount }).ToListAsync(ct))
-            .Sum(p => Math.Max(0, p.Total - p.PaidAmount));
+        // Долги — по регистру взаиморасчётов (учитывает авансы, начисления, возвраты, продажи в долг)
+        var (customerDebt, supplierDebt) = CounterpartyLedger.Totals((await CounterpartyLedger.BalancesAsync(db, null, null, ct)).Values);
         var products = await db.Products.CountAsync(p => p.IsActive, ct);
 
         // Остатки: только нужные поля, без загрузки категорий
@@ -96,6 +100,6 @@ public class DashboardService(IDbContextFactory<TradeDbContext> factory)
             Revenue(today, tomorrow), sales.Count(s => s.Date >= today), Revenue(yesterday, today),
             Revenue(monthStart, tomorrow), monthSales.Count, profit.NetProfit, expenses,
             cash, stock.Where(s => s.Quantity > 0).Sum(s => s.CostValue), stock.Where(s => s.Quantity > 0).Sum(s => s.SaleValue),
-            supplierDebt, products, days, low.Count, low.Take(10).ToList(), top, recent);
+            supplierDebt, customerDebt, products, days, low.Count, low.Take(10).ToList(), top, recent);
     }
 }

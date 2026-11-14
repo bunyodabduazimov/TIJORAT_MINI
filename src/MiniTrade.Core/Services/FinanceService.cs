@@ -238,12 +238,12 @@ public class FinanceService(IDbContextFactory<TradeDbContext> factory, UserSessi
         return op;
     }
 
-    /// <summary>Текущий долг перед поставщиком (сумма неоплаченных закупок).</summary>
+    /// <summary>Наш текущий долг перед контрагентом по взаиморасчётам (0 — не должны или он должен нам).</summary>
     public async Task<decimal> GetSupplierDebtAsync(int supplierId, CancellationToken ct = default)
     {
         await using var db = await factory.CreateDbContextAsync(ct);
-        var purchases = await db.Purchases.AsNoTracking().Where(p => p.SupplierId == supplierId).ToListAsync(ct);
-        return Money.Round(purchases.Where(p => p.Debt > 0).Sum(p => p.Debt));
+        var balance = (await CounterpartyLedger.BalancesAsync(db, [supplierId], null, ct)).GetValueOrDefault(supplierId);
+        return Math.Max(0, -balance);
     }
 
     public async Task<List<CashTransaction>> GetOperationsAsync(DateTime from, DateTime to, int? cashRegisterId = null, CancellationToken ct = default)

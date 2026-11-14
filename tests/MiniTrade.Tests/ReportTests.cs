@@ -37,7 +37,7 @@ public class ReportTests
         var byCustomer = await t.Reports.GetSalesAsync(DateTime.Today, DateTime.Today, SalesGrouping.Customer);
         Assert.Equal(ReportService.RetailCustomer, Assert.Single(byCustomer).Product);
 
-        var otherWarehouse = await t.Reports.GetSalesAsync(DateTime.Today, DateTime.Today, SalesGrouping.Product, warehouseId: -1);
+        var otherWarehouse = await t.Reports.GetSalesAsync(DateTime.Today, DateTime.Today, SalesGrouping.Product, new ReportFilter(WarehouseId: -1));
         Assert.Empty(otherWarehouse);
     }
 

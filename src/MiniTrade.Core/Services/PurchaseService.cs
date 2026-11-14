@@ -53,7 +53,7 @@ public class PurchaseService(IDbContextFactory<TradeDbContext> factory, UserSess
             UserId = session.UserId
         };
         db.Purchases.Add(purchase);
-        await PostAsync(db, purchase, request, lines, ct);
+        await PostAsync(db, purchase, request, lines, isNew: true, ct);
         await tx.CommitAsync(ct);
         return purchase;
     }
@@ -74,7 +74,7 @@ public class PurchaseService(IDbContextFactory<TradeDbContext> factory, UserSess
         db.PurchaseItems.RemoveRange(purchase.Items);
         purchase.Items.Clear();
         if (request.Date is { } d) purchase.Date = d;
-        await PostAsync(db, purchase, request, lines, ct);
+        await PostAsync(db, purchase, request, lines, isNew: false, ct);
         await EnsureStockNotNegativeAsync(db, touched, ct);
         // Сменился поставщик — прежние оплаты по документу относятся к новому
         foreach (var p in await LinkedPaymentsQuery(db, purchase).ToListAsync(ct)) p.CounterpartyId = purchase.SupplierId;
@@ -223,7 +223,7 @@ public class PurchaseService(IDbContextFactory<TradeDbContext> factory, UserSess
     }
 
     /// <summary>Реквизиты, приход товара, строки и оплата (документ уже добавлен в контекст).</summary>
-    private async Task PostAsync(TradeDbContext db, Purchase purchase, PurchaseRequest request, List<DocumentLine> lines, CancellationToken ct)
+    private async Task PostAsync(TradeDbContext db, Purchase purchase, PurchaseRequest request, List<DocumentLine> lines, bool isNew, CancellationToken ct)
     {
         if (!await db.Counterparties.AnyAsync(c => c.Id == request.SupplierId, ct)) throw new BusinessException("Выберите поставщика.");
         if (!await db.Warehouses.AnyAsync(w => w.Id == request.WarehouseId, ct)) throw new BusinessException("Выберите склад.");
@@ -257,7 +257,7 @@ public class PurchaseService(IDbContextFactory<TradeDbContext> factory, UserSess
         if (paid > 0)
         {
             var op = await CashLedger.PostAsync(db, request.CashRegisterId!.Value, CashDirection.Expense, CashOperationKind.SupplierPayment,
-                PaymentArticle, paid, null, DateTime.Now, purchase.Id, purchase.Number, session.UserId, ct);
+                PaymentArticle, paid, null, isNew ? purchase.Date : DateTime.Now, purchase.Id, purchase.Number, session.UserId, ct);
             op.CounterpartyId = purchase.SupplierId;
             purchase.PaidAmount = Money.Round(purchase.PaidAmount + paid);
         }
@@ -384,16 +384,25 @@ public class PurchaseService(IDbContextFactory<TradeDbContext> factory, UserSess
             .OrderBy(t => t.Date).ThenBy(t => t.Id).ToListAsync(ct);
     }
 
-    /// <summary>Расчёты по каждому поставщику за всё время (долг — сначала самые крупные).</summary>
+    /// <summary>
+    /// Расчёты по каждому поставщику за всё время (долг — сначала самые крупные).
+    /// Долг берётся из регистра взаиморасчётов (учитывает авансы, начисления, возвраты), «Оплачено» = закуплено − долг.
+    /// </summary>
     public async Task<List<SupplierDebtRow>> GetSupplierDebtsAsync(CancellationToken ct = default)
     {
         await using var db = await factory.CreateDbContextAsync(ct);
         var list = await db.Purchases.AsNoTracking()
-            .Select(p => new { p.SupplierId, p.Supplier!.Name, p.Supplier.Phone, p.Date, p.Total, p.PaidAmount })
+            .Select(p => new { p.SupplierId, p.Supplier!.Name, p.Supplier.Phone, p.Date, p.Total })
             .ToListAsync(ct);
+        var ids = list.Select(p => p.SupplierId).Distinct().ToList();
+        var balances = await CounterpartyLedger.BalancesAsync(db, ids, null, ct);
         return list.GroupBy(p => p.SupplierId)
-            .Select(g => new SupplierDebtRow(g.Key, g.First().Name, g.First().Phone, g.Count(),
-                g.Sum(x => x.Total), g.Sum(x => x.PaidAmount), g.Max(x => x.Date)))
+            .Select(g =>
+            {
+                var total = g.Sum(x => x.Total);
+                return new SupplierDebtRow(g.Key, g.First().Name, g.First().Phone, g.Count(),
+                    total, Money.Round(total + balances.GetValueOrDefault(g.Key)), g.Max(x => x.Date));
+            })
             .OrderByDescending(r => r.Debt).ThenBy(r => r.Supplier).ToList();
     }
 }

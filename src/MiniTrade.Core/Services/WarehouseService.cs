@@ -138,7 +138,8 @@ public class WarehouseService(IDbContextFactory<TradeDbContext> factory)
             if (diff > 0)
                 await StockLedger.ReceiveAsync(db, line.ProductId, warehouseId, diff, cost, StockMovementType.InventoryAdjust, doc.Id, doc.Number, date, ct);
             else if (diff < 0)
-                await StockLedger.IssueAsync(db, line.ProductId, warehouseId, -diff, StockMovementType.InventoryAdjust, doc.Id, doc.Number, date, true, ct);
+                // Недостача оценивается по фактической себестоимости списания (по FIFO — по партиям, а не по средней)
+                cost = await StockLedger.IssueAsync(db, line.ProductId, warehouseId, -diff, StockMovementType.InventoryAdjust, doc.Id, doc.Number, date, true, ct);
 
             doc.Items.Add(new InventoryCountItem
             {

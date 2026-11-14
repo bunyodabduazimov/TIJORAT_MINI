@@ -271,13 +271,45 @@ public class SalesService(IDbContextFactory<TradeDbContext> factory, UserSession
         ret.CostTotal = Money.Round(ret.Items.Sum(i => i.Quantity * i.UnitCost));
         sale.ReturnedTotal += ret.Total;
 
-        if (ret.Total > 0)
-            await CashLedger.PostAsync(db, ret.CashRegisterId, CashDirection.Expense, CashOperationKind.SaleReturn,
-                "Возврат покупателю", ret.Total, $"Возврат по {sale.Number}", date, ret.Id, ret.Number, session.UserId, ct);
+        // Продажа в долг: возврат сначала уменьшает неоплаченный долг покупателя, деньги выдаются только сверх него
+        var refund = Money.Round(ret.Total - Math.Min(ret.Total, await DebtOffsetLimitAsync(db, sale, ret.Id, ct)));
+        if (refund > 0)
+        {
+            var op = await CashLedger.PostAsync(db, ret.CashRegisterId, CashDirection.Expense, CashOperationKind.SaleReturn,
+                "Возврат покупателю", refund, $"Возврат по {sale.Number}", date, ret.Id, ret.Number, session.UserId, ct);
+            op.CounterpartyId = sale.CustomerId;
+        }
 
         await db.SaveChangesAsync(ct);
         await tx.CommitAsync(ct);
         return ret;
+    }
+
+    /// <summary>
+    /// Сколько из суммы возврата по продаже можно зачесть в долг покупателя, не выдавая денег:
+    /// неоплаченная часть продажи (за вычетом уже зачтённых возвратов), но не больше текущего долга покупателя
+    /// (если он уже расплатился платежом — деньги возвращаются из кассы).
+    /// </summary>
+    public async Task<decimal> GetReturnDebtOffsetLimitAsync(int saleId, CancellationToken ct = default)
+    {
+        await using var db = await factory.CreateDbContextAsync(ct);
+        var sale = await db.Sales.AsNoTracking().FirstOrDefaultAsync(s => s.Id == saleId, ct)
+                   ?? throw new BusinessException("Продажа не найдена.");
+        return await DebtOffsetLimitAsync(db, sale, null, ct);
+    }
+
+    private static async Task<decimal> DebtOffsetLimitAsync(TradeDbContext db, Sale sale, int? currentReturnId, CancellationToken ct)
+    {
+        if (sale.CustomerId is not { } customerId || sale.Total <= sale.PaidAmount) return 0;
+        var prior = await db.SaleReturns.AsNoTracking().Where(r => r.SaleId == sale.Id && r.Id != currentReturnId)
+            .Select(r => new { r.Id, r.Total }).ToListAsync(ct);
+        var priorIds = prior.Select(r => (int?)r.Id).ToList();
+        var priorRefunds = (await db.CashTransactions.AsNoTracking()
+            .Where(t => t.Kind == CashOperationKind.SaleReturn && priorIds.Contains(t.DocumentId))
+            .Select(t => t.Amount).ToListAsync(ct)).Sum();
+        var saleDebt = sale.Total - sale.PaidAmount - (prior.Sum(r => r.Total) - priorRefunds);
+        var customerDebt = (await CounterpartyLedger.BalancesAsync(db, [customerId], null, ct)).GetValueOrDefault(customerId);
+        return Money.Round(Math.Max(0, Math.Min(saleDebt, customerDebt)));
     }
 
     public async Task<List<Sale>> GetSalesAsync(DateTime from, DateTime to, CancellationToken ct = default)
