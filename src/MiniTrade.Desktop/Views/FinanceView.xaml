@@ -6,191 +6,307 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="clr-namespace:MiniTrade.Desktop.ViewModels"
              mc:Ignorable="d" d:DataContext="{d:DesignInstance vm:FinanceViewModel}">
-    <!-- Кассы и журнал операций. «Создать» — справа в полосе касс, «Фильтр» — перед поиском -->
-
-    <Grid>
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
-        </Grid.RowDefinitions>
-
-        <!-- Кассы: компактная полоса — итог (акцент) и остатки касс плитками -->
-        <Border Style="{StaticResource Card}" Margin="0,0,0,12" Padding="10">
-            <DockPanel>
-                <Border DockPanel.Dock="Left" CornerRadius="8" Padding="14,8" Margin="0,0,10,0" MinWidth="170" VerticalAlignment="Top">
-                    <Border.Background>
-                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-                            <GradientStop Color="#3B82F6" Offset="0"/>
-                            <GradientStop Color="#2563EB" Offset="1"/>
-                        </LinearGradientBrush>
-                    </Border.Background>
+    <!-- Вкладки: платежи (журнал операций), наличность в кассах, взаиморасчёты с контрагентами -->
+    <TabControl SelectedIndex="{Binding SelectedTab}">
+        <!-- ===================== ПЛАТЕЖИ ===================== -->
+        <TabItem Header="{l:T 'Платежи'}">
+                <Border Style="{StaticResource Card}">
                     <DockPanel>
-                        <TextBlock DockPanel.Dock="Left" Text="&#xF019B;" FontFamily="{StaticResource IconFont}" FontSize="18" Foreground="White"
-                                   VerticalAlignment="Center" Margin="0,0,12,0" Opacity="0.9"/>
-                        <StackPanel>
-                            <TextBlock Text="{l:T 'Всего в кассах'}" Foreground="White" Opacity="0.85" FontSize="11"/>
-                            <TextBlock Text="{Binding TotalCash, Converter={StaticResource Money}}" Foreground="White" FontSize="15" FontWeight="SemiBold"/>
-                        </StackPanel>
+                        <!-- Панель журнала: период слева, поиск справа -->
+                        <DockPanel DockPanel.Dock="Top" Margin="0,0,0,10">
+                            <StackPanel DockPanel.Dock="Left" Orientation="Horizontal">
+                                <TextBlock Text="{l:T 'Период:'}" Style="{StaticResource Muted}" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                <DatePicker SelectedDate="{Binding From}" Width="130"/>
+                                <TextBlock Text="—" VerticalAlignment="Center" Margin="6,0"/>
+                                <DatePicker SelectedDate="{Binding To}" Width="130"/>
+                                <Button Style="{StaticResource InputAddonButton}" Content="&#xF0450;" ToolTip="{l:T 'Обновить'}" Command="{Binding RefreshCommand}" Margin="8,0,0,0"/>
+                            </StackPanel>
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="12,0,0,0">
+                                <Button Style="{StaticResource SecondaryButton}" Command="{Binding OpenFilterCommand}" MinHeight="34" Margin="0,0,8,0">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="&#xF0236;" FontFamily="{StaticResource IconFont}" FontSize="13" VerticalAlignment="Center" Margin="0,1,8,0"/>
+                                        <TextBlock Text="{l:T 'Фильтр'}" VerticalAlignment="Center"/>
+                                        <!-- Сколько условий фильтра включено -->
+                                        <Border Background="{DynamicResource PrimaryBrush}" CornerRadius="9" MinWidth="18" Height="18" Padding="5,0" Margin="8,0,0,0"
+                                                Visibility="{Binding HasActiveFilter, Converter={StaticResource BoolToVis}}">
+                                            <TextBlock Text="{Binding ActiveFilterCount}" Foreground="White" FontSize="11" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                        </Border>
+                                    </StackPanel>
+                                </Button>
+                                <TextBox Text="{Binding Search, UpdateSourceTrigger=PropertyChanged}" Width="320"
+                                         l:Ui.Icon="&#xF0349;" l:Ui.Placeholder="{l:T 'Поиск: статья, комментарий, № документа'}"/>
+                        <Button Margin="8,0,0,0" MinHeight="34" Padding="10,0,8,0"
+                                Style="{StaticResource ButtonBase}" l:Ui.DropDownMenu="True">
+                            <Button.Background>
+                                <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                    <GradientStop Color="#3B82F6" Offset="0"/>
+                                    <GradientStop Color="#2563EB" Offset="1"/>
+                                </LinearGradientBrush>
+                            </Button.Background>
+                            <StackPanel Orientation="Horizontal">
+                                <Border Width="20" Height="20" CornerRadius="10" Background="#33FFFFFF" VerticalAlignment="Center" Margin="0,0,10,0">
+                                    <TextBlock Text="&#xF0415;" FontFamily="{StaticResource IconFont}" FontSize="13"
+                                               HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+                                <TextBlock Text="{l:T 'Создать'}" VerticalAlignment="Center"/>
+                                <Border Width="1" Height="20" Background="#40FFFFFF" Margin="12,0,6,0" VerticalAlignment="Center"/>
+                                <TextBlock Text="&#xF0140;" FontFamily="{StaticResource IconFont}" FontSize="14" VerticalAlignment="Center" Opacity="0.9"/>
+                            </StackPanel>
+                            <Button.ContextMenu>
+                                <ContextMenu Style="{StaticResource DropDownMenu}">
+                                    <MenuItem Style="{StaticResource IconMenuItem}" Visibility="{l:Can finance.income.create}" Command="{Binding IncomeCommand}" l:Ui.Icon="&#xF0415;" Tag="{DynamicResource SuccessBrush}"
+                                              Header="{l:T 'Приход'}" InputGestureText="{l:T 'Поступление денег в кассу по статье'}"/>
+                                    <MenuItem Style="{StaticResource IconMenuItem}" Visibility="{l:Can finance.expense.create}" Command="{Binding ExpenseCommand}" l:Ui.Icon="&#xF0374;" Tag="{DynamicResource DangerBrush}"
+                                              Header="{l:T 'Расход'}" InputGestureText="{l:T 'Выдача денег из кассы по статье'}"/>
+                                    <Separator Style="{StaticResource MenuSeparator}"/>
+                                    <MenuItem Style="{StaticResource IconMenuItem}" Visibility="{l:Can finance.transfer.create}" Command="{Binding TransferCommand}" l:Ui.Icon="&#xF04E1;" Tag="{DynamicResource PrimaryBrush}"
+                                              Header="{l:T 'Перемещение'}" InputGestureText="{l:T 'Перевод денег между кассами'}"/>
+                                    <Separator Style="{StaticResource MenuSeparator}"/>
+                                    <MenuItem Style="{StaticResource IconMenuItem}" Visibility="{l:Can finance.payment.create}" Command="{Binding PayToCommand}" l:Ui.Icon="&#xF0054;" Tag="{DynamicResource WarningBrush}"
+                                              Header="{l:T 'Платёж контрагенту'}" InputGestureText="{l:T 'Оплата поставщику, возврат покупателю'}"/>
+                                    <MenuItem Style="{StaticResource IconMenuItem}" Visibility="{l:Can finance.payment.create}" Command="{Binding ReceiveFromCommand}" l:Ui.Icon="&#xF004D;" Tag="{DynamicResource SuccessBrush}"
+                                              Header="{l:T 'Платёж от контрагента'}" InputGestureText="{l:T 'Оплата от покупателя, возврат от поставщика'}"/>
+                                    <Separator Style="{StaticResource MenuSeparator}"/>
+                                    <MenuItem Style="{StaticResource IconMenuItem}" Visibility="{l:Can finance.accrual.create}" Command="{Binding AccrueCommand}" l:Ui.Icon="&#xF0004;" Tag="{DynamicResource PrimaryBrush}"
+                                              Header="{l:T 'Начисление контрагенту'}" InputGestureText="{l:T 'Изменить долг контрагента без кассы'}"/>
+                                </ContextMenu>
+                            </Button.ContextMenu>
+                        </Button>
+                            </StackPanel>
+                        </DockPanel>
+                        <!-- Итоги периода и постраничный вывод -->
+                        <DockPanel DockPanel.Dock="Bottom" Margin="0,10,0,0">
+                            <ContentControl DockPanel.Dock="Right" Content="{Binding}" ContentTemplate="{StaticResource PagerBar}" Focusable="False" Margin="12,0,0,0"/>
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                <TextBlock Text="{Binding PageInfo}" Style="{StaticResource Muted}" Margin="0,0,24,0"/>
+                                <TextBlock Text="{l:T 'Доходы: '}" Style="{StaticResource Muted}"/>
+                                <TextBlock Text="{Binding PeriodIncome, Converter={StaticResource Money}}" Foreground="{DynamicResource SuccessBrush}" FontWeight="SemiBold" Margin="0,0,20,0"/>
+                                <TextBlock Text="{l:T 'Расходы: '}" Style="{StaticResource Muted}"/>
+                                <TextBlock Text="{Binding PeriodExpense, Converter={StaticResource Money}}" Foreground="{DynamicResource DangerBrush}" FontWeight="SemiBold"/>
+                            </StackPanel>
+                        </DockPanel>
+                        <!-- Нумерация строк продолжается со страницы на страницу -->
+                        <!-- Вместо номера строки — кнопка «⋯» с меню действий; двойной щелчок — изменить (или копия) -->
+                        <DataGrid ItemsSource="{Binding Operations}" HeadersVisibility="Column" l:Ui.RowNumbers="False"
+                                  l:Ui.RowDoubleClickCommand="{Binding OpenOperationCommand}">
+                            <DataGrid.Columns>
+                                <DataGridTemplateColumn Width="44" CanUserResize="False">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <Button Style="{StaticResource IconButton}" Content="&#xF0493;" FontSize="20" ToolTip="{l:T 'Действия'}" Width="28" Height="26" MinHeight="0" Padding="0"
+                                                    l:Ui.DropDownMenu="True" Tag="{Binding DataContext, RelativeSource={RelativeSource AncestorType=DataGrid}}">
+                                                <Button.ContextMenu>
+                                                    <!-- DataContext меню — строка; команды — у модели страницы (Tag кнопки) -->
+                                                    <ContextMenu Style="{StaticResource DropDownMenu}">
+                                                        <MenuItem Style="{StaticResource IconMenuItem}" Header="{l:T 'Изменить'}" l:Ui.Icon="&#xF0CB6;"
+                                                                  Visibility="{l:Can 'finance.income.edit|finance.expense.edit|finance.payment.edit|finance.accrual.edit'}" Command="{Binding PlacementTarget.Tag.EditOperationCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" CommandParameter="{Binding}"/>
+                                                        <MenuItem Style="{StaticResource IconMenuItem}" Header="{l:T 'Скопировать'}" l:Ui.Icon="&#xF018F;"
+                                                                  Visibility="{l:Can 'finance.income.create|finance.expense.create|finance.payment.create|finance.accrual.create|finance.transfer.create'}" Command="{Binding PlacementTarget.Tag.CopyOperationCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" CommandParameter="{Binding}"/>
+                                                        <MenuItem Style="{StaticResource IconMenuItem}" Header="{l:T 'Печать'}" l:Ui.Icon="&#xF1786;"
+                                                                  Command="{Binding PlacementTarget.Tag.PrintOperationCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" CommandParameter="{Binding}"/>
+                                                        <Separator Style="{StaticResource MenuSeparator}"/>
+                                                        <MenuItem Style="{StaticResource IconMenuItem}" Header="{l:T 'Удалить'}" l:Ui.Icon="&#xF09E7;" Tag="{DynamicResource DangerBrush}"
+                                                                  Visibility="{l:Can 'finance.income.delete|finance.expense.delete|finance.payment.delete|finance.accrual.delete'}" Command="{Binding PlacementTarget.Tag.DeleteOperationCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" CommandParameter="{Binding}"/>
+                                                    </ContextMenu>
+                                                </Button.ContextMenu>
+                                            </Button>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                                <DataGridTextColumn Header="{l:T 'Дата'}" Binding="{Binding Date, StringFormat={}{0:dd.MM.yyyy HH:mm}}" Width="130"/>
+                                <DataGridTextColumn Header="{l:T 'Документ'}" Binding="{Binding DocumentNumber}" Width="110"/>
+                                <DataGridTextColumn Header="{l:T 'Касса'}" Binding="{Binding CashRegister.Name}" Width="150"/>
+                                <DataGridTextColumn Header="{l:T 'Статья'}" Binding="{Binding Category}" Width="*" MinWidth="160"/>
+                                <DataGridTextColumn Header="{l:T 'Контрагент'}" Binding="{Binding CounterpartyName}" Width="*" MinWidth="140"/>
+                                <DataGridTextColumn Header="{l:T 'Комментарий'}" Binding="{Binding Comment}" Width="*" MinWidth="120"/>
+                                <DataGridTemplateColumn Header="{l:T 'Сумма'}" Width="140" SortMemberPath="SignedAmount">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <TextBlock HorizontalAlignment="Right" FontWeight="SemiBold" Text="{Binding SignedAmount, Converter={StaticResource Money}}">
+                                                <TextBlock.Style>
+                                                    <Style TargetType="TextBlock">
+                                                        <Setter Property="Foreground" Value="{DynamicResource SuccessBrush}"/>
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding Direction}" Value="Expense">
+                                                                <Setter Property="Foreground" Value="{DynamicResource DangerBrush}"/>
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </TextBlock.Style>
+                                            </TextBlock>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                            </DataGrid.Columns>
+                        </DataGrid>
                     </DockPanel>
                 </Border>
-                <!-- Меню «Создать» справа в полосе касс -->
-                <Button DockPanel.Dock="Right" Margin="10,0,0,0" MinHeight="44" Padding="12,0,10,0" VerticalAlignment="Stretch"
-                        Style="{StaticResource ButtonBase}" l:Ui.DropDownMenu="True">
-                    <Button.Background>
-                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-                            <GradientStop Color="#3B82F6" Offset="0"/>
-                            <GradientStop Color="#2563EB" Offset="1"/>
-                        </LinearGradientBrush>
-                    </Button.Background>
-                    <StackPanel Orientation="Horizontal">
-                        <Border Width="24" Height="24" CornerRadius="12" Background="#33FFFFFF" VerticalAlignment="Center" Margin="0,0,10,0">
-                            <TextBlock Text="&#xF0415;" FontFamily="{StaticResource IconFont}" FontSize="13"
-                                       HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                        </Border>
-                        <StackPanel VerticalAlignment="Center">
-                            <TextBlock Text="{l:T 'Создать'}" FontSize="13.5" LineHeight="15" LineStackingStrategy="BlockLineHeight"/>
-                            <TextBlock Text="{l:T 'платеж'}" FontSize="11" Opacity="0.85" LineHeight="13" LineStackingStrategy="BlockLineHeight"/>
-                        </StackPanel>
-                        <Border Width="1" Height="20" Background="#40FFFFFF" Margin="14,0,8,0" VerticalAlignment="Center"/>
-                        <TextBlock Text="&#xF0140;" FontFamily="{StaticResource IconFont}" FontSize="14" VerticalAlignment="Center" Opacity="0.9"/>
-                    </StackPanel>
-                    <Button.ContextMenu>
-                        <ContextMenu Style="{StaticResource DropDownMenu}">
-                            <MenuItem Style="{StaticResource IconMenuItem}" Command="{Binding IncomeCommand}" l:Ui.Icon="&#xF0415;" Tag="{DynamicResource SuccessBrush}"
-                                      Header="{l:T 'Приход'}" InputGestureText="{l:T 'Поступление денег в кассу по статье'}"/>
-                            <MenuItem Style="{StaticResource IconMenuItem}" Command="{Binding ExpenseCommand}" l:Ui.Icon="&#xF0374;" Tag="{DynamicResource DangerBrush}"
-                                      Header="{l:T 'Расход'}" InputGestureText="{l:T 'Выдача денег из кассы по статье'}"/>
-                            <Separator Style="{StaticResource MenuSeparator}"/>
-                            <MenuItem Style="{StaticResource IconMenuItem}" Command="{Binding TransferCommand}" l:Ui.Icon="&#xF04E1;" Tag="{DynamicResource PrimaryBrush}"
-                                      Header="{l:T 'Перемещение'}" InputGestureText="{l:T 'Перевод денег между кассами'}"/>
-                            <Separator Style="{StaticResource MenuSeparator}"/>
-                            <MenuItem Style="{StaticResource IconMenuItem}" Command="{Binding PayToCommand}" l:Ui.Icon="&#xF0054;" Tag="{DynamicResource WarningBrush}"
-                                      Header="{l:T 'Платёж контрагенту'}" InputGestureText="{l:T 'Оплата поставщику, возврат покупателю'}"/>
-                            <MenuItem Style="{StaticResource IconMenuItem}" Command="{Binding ReceiveFromCommand}" l:Ui.Icon="&#xF004D;" Tag="{DynamicResource SuccessBrush}"
-                                      Header="{l:T 'Платёж от контрагента'}" InputGestureText="{l:T 'Оплата от покупателя, возврат от поставщика'}"/>
-                            <Separator Style="{StaticResource MenuSeparator}"/>
-                            <MenuItem Style="{StaticResource IconMenuItem}" Command="{Binding AccrueCommand}" l:Ui.Icon="&#xF0004;" Tag="{DynamicResource PrimaryBrush}"
-                                      Header="{l:T 'Начисление контрагенту'}" InputGestureText="{l:T 'Изменить долг контрагента без кассы'}"/>
-                        </ContextMenu>
-                    </Button.ContextMenu>
-                </Button>
-                <ItemsControl ItemsSource="{Binding CashRegisters}" VerticalAlignment="Center">
-                    <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
-                    <ItemsControl.ItemTemplate>
-                        <DataTemplate>
-                            <Border Background="{DynamicResource SurfaceAltBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1"
-                                    CornerRadius="8" Padding="10,6" Margin="0,2,8,2" MinWidth="150">
-                                <DockPanel>
-                                    <Border DockPanel.Dock="Left" Width="26" Height="26" CornerRadius="13" Background="{DynamicResource PrimaryLightBrush}" Margin="0,0,10,0">
-                                        <TextBlock Text="&#xF0E80;" FontFamily="{StaticResource IconFont}" FontSize="12" Foreground="{DynamicResource PrimaryBrush}"
-                                                   HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                    </Border>
-                                    <StackPanel>
-                                        <TextBlock Text="{Binding Name}" Style="{StaticResource Muted}" FontSize="11" TextTrimming="CharacterEllipsis" MaxWidth="160"/>
-                                        <TextBlock Text="{Binding Balance, Converter={StaticResource Money}}" FontSize="14" FontWeight="SemiBold"/>
-                                    </StackPanel>
-                                </DockPanel>
-                            </Border>
-                        </DataTemplate>
-                    </ItemsControl.ItemTemplate>
-                </ItemsControl>
-            </DockPanel>
-        </Border>
+        </TabItem>
 
-        <!-- Журнал операций -->
-        <Border Grid.Row="1" Style="{StaticResource Card}">
-            <DockPanel>
-                <!-- Панель журнала: период слева, поиск справа -->
-                <DockPanel DockPanel.Dock="Top" Margin="0,0,0,10">
-                    <StackPanel DockPanel.Dock="Left" Orientation="Horizontal">
+        <!-- ===================== КАССЫ ===================== -->
+        <!-- Остатки касс на конец выбранного дня -->
+        <TabItem Header="{l:T 'Кассы'}">
+            <Border Style="{StaticResource Card}">
+                <DockPanel>
+                    <DockPanel DockPanel.Dock="Top" Margin="0,0,0,10">
+                        <StackPanel DockPanel.Dock="Left" Orientation="Horizontal">
+                            <TextBlock Text="{l:T 'На дату:'}" Style="{StaticResource Muted}" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                            <DatePicker SelectedDate="{Binding CashDate}" Width="130"/>
+                            <Button Style="{StaticResource InputAddonButton}" Content="&#xF0450;" ToolTip="{l:T 'Обновить'}" Command="{Binding ReloadCommand}" Margin="8,0,0,0"/>
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                            <TextBlock Text="{l:T 'Всего в кассах: '}" Style="{StaticResource Muted}"/>
+                            <TextBlock Text="{Binding CashDateTotal, Converter={StaticResource Money}}" FontWeight="SemiBold"/>
+                        </StackPanel>
+                    </DockPanel>
+                    <DataGrid ItemsSource="{Binding CashBalances}" HeadersVisibility="Column">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="{l:T 'Касса'}" Binding="{Binding Name}" Width="*"/>
+                            <DataGridTemplateColumn Header="{l:T 'Остаток'}" Width="180" SortMemberPath="Balance">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <TextBlock HorizontalAlignment="Right" FontWeight="SemiBold" Text="{Binding Balance, Converter={StaticResource Money}}"/>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </DockPanel>
+            </Border>
+        </TabItem>
+
+        <!-- ===================== ВЗАИМОРАСЧЁТЫ ===================== -->
+        <!-- Баланс на конец дня: + контрагент должен нам (зелёный), − мы должны (красный) -->
+        <TabItem Header="{l:T 'Взаиморасчёты'}">
+            <Border Style="{StaticResource Card}">
+                <DockPanel>
+                    <DockPanel DockPanel.Dock="Top" Margin="0,0,0,10">
+                        <StackPanel DockPanel.Dock="Left" Orientation="Horizontal" VerticalAlignment="Center">
+                            <TextBlock Text="{l:T 'На дату:'}" Style="{StaticResource Muted}" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                            <DatePicker SelectedDate="{Binding DebtDate}" Width="130"/>
+                            <Button Style="{StaticResource InputAddonButton}" Content="&#xF0450;" ToolTip="{l:T 'Обновить'}" Command="{Binding ReloadCommand}" Margin="8,0,0,0"/>
+                            <ComboBox ItemsSource="{Binding GroupChoices}" SelectedItem="{Binding DebtGroup}" Width="180" Margin="12,0,0,0"/>
+                            <CheckBox Content="{l:T 'Только с долгом'}" IsChecked="{Binding OnlyWithDebt}" VerticalAlignment="Center" Margin="12,0,0,0"/>
+                        </StackPanel>
+                        <TextBox Text="{Binding DebtSearch, UpdateSourceTrigger=PropertyChanged, Delay=200}" Width="280" HorizontalAlignment="Right" Margin="12,0,0,0"
+                                 l:Ui.Icon="&#xF0349;" l:Ui.Placeholder="{l:T 'Поиск: контрагент, телефон'}"/>
+                    </DockPanel>
+                    <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Margin="0,10,0,0">
+                        <TextBlock Text="{l:T 'Нам должны: '}" Style="{StaticResource Muted}"/>
+                        <TextBlock Text="{Binding Receivable, Converter={StaticResource Money}}" Foreground="{DynamicResource SuccessBrush}" FontWeight="SemiBold" Margin="0,0,20,0"/>
+                        <TextBlock Text="{l:T 'Мы должны: '}" Style="{StaticResource Muted}"/>
+                        <TextBlock Text="{Binding Payable, Converter={StaticResource Money}}" Foreground="{DynamicResource DangerBrush}" FontWeight="SemiBold"/>
+                    </StackPanel>
+                    <DataGrid ItemsSource="{Binding CounterpartiesView}" HeadersVisibility="Column">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="{l:T 'Контрагент'}" Binding="{Binding Name}" Width="2*" MinWidth="160"/>
+                            <DataGridTextColumn Header="{l:T 'Группа'}" Binding="{Binding Group}" Width="*" MinWidth="120"/>
+                            <DataGridTextColumn Header="{l:T 'Телефон'}" Binding="{Binding Phone}" Width="150"/>
+                            <DataGridTemplateColumn Header="{l:T 'Баланс'}" Width="160" SortMemberPath="Balance">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <TextBlock HorizontalAlignment="Right" FontWeight="SemiBold" Text="{Binding Balance, Converter={StaticResource Money}}">
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock">
+                                                    <Setter Property="Foreground" Value="{DynamicResource SuccessBrush}"/>
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding BalanceSign}" Value="0">
+                                                            <Setter Property="Foreground" Value="{DynamicResource MutedBrush}"/>
+                                                        </DataTrigger>
+                                                        <DataTrigger Binding="{Binding BalanceSign}" Value="-1">
+                                                            <Setter Property="Foreground" Value="{DynamicResource DangerBrush}"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                        </TextBlock>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </DockPanel>
+            </Border>
+        </TabItem>
+
+        <!-- ===================== ВЫПИСКА ===================== -->
+        <!-- Движение по кассе или контрагенту за период: начальный остаток, приход, расход, остаток после каждой операции -->
+        <TabItem Header="{l:T 'Выписка'}">
+            <Border Style="{StaticResource Card}">
+                <DockPanel>
+                    <WrapPanel DockPanel.Dock="Top" Margin="0,0,0,10">
+                        <ComboBox ItemsSource="{Binding StatementKinds}" SelectedIndex="{Binding StatementKind}" Width="130" Margin="0,0,8,0"/>
+                        <ComboBox ItemsSource="{Binding CashRegisters}" SelectedItem="{Binding StatementCash}" DisplayMemberPath="Name" Width="240" Margin="0,0,16,0">
+                            <ComboBox.Style>
+                                <Style TargetType="ComboBox" BasedOn="{StaticResource {x:Type ComboBox}}">
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding StatementKind}" Value="1">
+                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </ComboBox.Style>
+                        </ComboBox>
+                        <ComboBox ItemsSource="{Binding AllCounterparties}" SelectedItem="{Binding StatementCounterparty}" DisplayMemberPath="Name"
+                                  IsEditable="True" IsTextSearchEnabled="True" Width="240" Margin="0,0,16,0">
+                            <ComboBox.Style>
+                                <Style TargetType="ComboBox" BasedOn="{StaticResource {x:Type ComboBox}}">
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding StatementKind}" Value="0">
+                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </ComboBox.Style>
+                        </ComboBox>
                         <TextBlock Text="{l:T 'Период:'}" Style="{StaticResource Muted}" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                        <DatePicker SelectedDate="{Binding From}" Width="130"/>
+                        <DatePicker SelectedDate="{Binding StatementFrom}" Width="130"/>
                         <TextBlock Text="—" VerticalAlignment="Center" Margin="6,0"/>
-                        <DatePicker SelectedDate="{Binding To}" Width="130"/>
-                        <Button Style="{StaticResource InputAddonButton}" Content="&#xF0450;" ToolTip="{l:T 'Обновить'}" Command="{Binding RefreshCommand}" Margin="8,0,0,0"/>
+                        <DatePicker SelectedDate="{Binding StatementTo}" Width="130"/>
+                        <Button Style="{StaticResource InputAddonButton}" Content="&#xF0450;" ToolTip="{l:T 'Обновить'}" Command="{Binding ReloadCommand}" Margin="8,0,0,0"/>
+                    </WrapPanel>
+                    <!-- Обороты и остатки периода -->
+                    <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Margin="0,10,0,0">
+                        <TextBlock Text="{l:T 'Начальный остаток: '}" Style="{StaticResource Muted}"/>
+                        <TextBlock Text="{Binding Statement.Opening, Converter={StaticResource Money}}" FontWeight="SemiBold" Margin="0,0,20,0"/>
+                        <TextBlock Text="{l:T 'Приход: '}" Style="{StaticResource Muted}"/>
+                        <TextBlock Text="{Binding Statement.Income, Converter={StaticResource Money}}" Foreground="{DynamicResource SuccessBrush}" FontWeight="SemiBold" Margin="0,0,20,0"/>
+                        <TextBlock Text="{l:T 'Расход: '}" Style="{StaticResource Muted}"/>
+                        <TextBlock Text="{Binding Statement.Expense, Converter={StaticResource Money}}" Foreground="{DynamicResource DangerBrush}" FontWeight="SemiBold" Margin="0,0,20,0"/>
+                        <TextBlock Text="{l:T 'Конечный остаток: '}" Style="{StaticResource Muted}"/>
+                        <TextBlock Text="{Binding Statement.Closing, Converter={StaticResource Money}}" FontWeight="SemiBold"/>
                     </StackPanel>
-                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="12,0,0,0">
-                        <Button Style="{StaticResource SecondaryButton}" Command="{Binding OpenFilterCommand}" MinHeight="34" Margin="0,0,8,0">
-                            <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="&#xF0236;" FontFamily="{StaticResource IconFont}" FontSize="13" VerticalAlignment="Center" Margin="0,1,8,0"/>
-                                <TextBlock Text="{l:T 'Фильтр'}" VerticalAlignment="Center"/>
-                                <!-- Сколько условий фильтра включено -->
-                                <Border Background="{DynamicResource PrimaryBrush}" CornerRadius="9" MinWidth="18" Height="18" Padding="5,0" Margin="8,0,0,0"
-                                        Visibility="{Binding HasActiveFilter, Converter={StaticResource BoolToVis}}">
-                                    <TextBlock Text="{Binding ActiveFilterCount}" Foreground="White" FontSize="11" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                </Border>
-                            </StackPanel>
-                        </Button>
-                        <TextBox Text="{Binding Search, UpdateSourceTrigger=PropertyChanged}" Width="320"
-                                 l:Ui.Icon="&#xF0349;" l:Ui.Placeholder="{l:T 'Поиск: статья, комментарий, № документа'}"/>
-                    </StackPanel>
+                    <DataGrid ItemsSource="{Binding StatementRows}" HeadersVisibility="Column">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="{l:T 'Дата'}" Binding="{Binding Date, StringFormat={}{0:dd.MM.yyyy HH:mm}}" Width="130"/>
+                            <DataGridTextColumn Header="{l:T 'Документ'}" Binding="{Binding Document}" Width="110"/>
+                            <DataGridTextColumn Header="{l:T 'Операция'}" Binding="{Binding Operation}" Width="*" MinWidth="160"/>
+                            <DataGridTextColumn Header="{l:T 'Комментарий'}" Binding="{Binding Comment}" Width="*" MinWidth="140"/>
+                            <DataGridTemplateColumn Header="{l:T 'Приход'}" Width="130" SortMemberPath="Income">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <TextBlock HorizontalAlignment="Right" Foreground="{DynamicResource SuccessBrush}" Text="{Binding Income, Converter={StaticResource Money}}"/>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                            <DataGridTemplateColumn Header="{l:T 'Расход'}" Width="130" SortMemberPath="Expense">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <TextBlock HorizontalAlignment="Right" Foreground="{DynamicResource DangerBrush}" Text="{Binding Expense, Converter={StaticResource Money}}"/>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                            <DataGridTemplateColumn Header="{l:T 'Остаток'}" Width="140" SortMemberPath="Balance">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <TextBlock HorizontalAlignment="Right" FontWeight="SemiBold" Text="{Binding Balance, Converter={StaticResource Money}}"/>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                        </DataGrid.Columns>
+                    </DataGrid>
                 </DockPanel>
-                <!-- Итоги периода и постраничный вывод -->
-                <DockPanel DockPanel.Dock="Bottom" Margin="0,10,0,0">
-                    <ContentControl DockPanel.Dock="Right" Content="{Binding}" ContentTemplate="{StaticResource PagerBar}" Focusable="False" Margin="12,0,0,0"/>
-                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                        <TextBlock Text="{Binding PageInfo}" Style="{StaticResource Muted}" Margin="0,0,24,0"/>
-                        <TextBlock Text="{l:T 'Доходы: '}" Style="{StaticResource Muted}"/>
-                        <TextBlock Text="{Binding PeriodIncome, Converter={StaticResource Money}}" Foreground="{DynamicResource SuccessBrush}" FontWeight="SemiBold" Margin="0,0,20,0"/>
-                        <TextBlock Text="{l:T 'Расходы: '}" Style="{StaticResource Muted}"/>
-                        <TextBlock Text="{Binding PeriodExpense, Converter={StaticResource Money}}" Foreground="{DynamicResource DangerBrush}" FontWeight="SemiBold"/>
-                    </StackPanel>
-                </DockPanel>
-                <!-- Нумерация строк продолжается со страницы на страницу -->
-                <!-- Вместо номера строки — кнопка «⋯» с меню действий; двойной щелчок — изменить (или копия) -->
-                <DataGrid ItemsSource="{Binding Operations}" HeadersVisibility="Column" l:Ui.RowNumbers="False"
-                          l:Ui.RowDoubleClickCommand="{Binding OpenOperationCommand}">
-                    <DataGrid.Columns>
-                        <DataGridTemplateColumn Width="44" CanUserResize="False">
-                            <DataGridTemplateColumn.CellTemplate>
-                                <DataTemplate>
-                                    <Button Style="{StaticResource IconButton}" Content="&#xF0493;" FontSize="20" ToolTip="{l:T 'Действия'}" Width="28" Height="26" MinHeight="0" Padding="0"
-                                            l:Ui.DropDownMenu="True" Tag="{Binding DataContext, RelativeSource={RelativeSource AncestorType=DataGrid}}">
-                                        <Button.ContextMenu>
-                                            <!-- DataContext меню — строка; команды — у модели страницы (Tag кнопки) -->
-                                            <ContextMenu Style="{StaticResource DropDownMenu}">
-                                                <MenuItem Style="{StaticResource IconMenuItem}" Header="{l:T 'Изменить'}" l:Ui.Icon="&#xF0CB6;"
-                                                          Command="{Binding PlacementTarget.Tag.EditOperationCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" CommandParameter="{Binding}"/>
-                                                <MenuItem Style="{StaticResource IconMenuItem}" Header="{l:T 'Скопировать'}" l:Ui.Icon="&#xF018F;"
-                                                          Command="{Binding PlacementTarget.Tag.CopyOperationCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" CommandParameter="{Binding}"/>
-                                                <MenuItem Style="{StaticResource IconMenuItem}" Header="{l:T 'Печать'}" l:Ui.Icon="&#xF1786;"
-                                                          Command="{Binding PlacementTarget.Tag.PrintOperationCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" CommandParameter="{Binding}"/>
-                                                <Separator Style="{StaticResource MenuSeparator}"/>
-                                                <MenuItem Style="{StaticResource IconMenuItem}" Header="{l:T 'Удалить'}" l:Ui.Icon="&#xF09E7;" Tag="{DynamicResource DangerBrush}"
-                                                          Command="{Binding PlacementTarget.Tag.DeleteOperationCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" CommandParameter="{Binding}"/>
-                                            </ContextMenu>
-                                        </Button.ContextMenu>
-                                    </Button>
-                                </DataTemplate>
-                            </DataGridTemplateColumn.CellTemplate>
-                        </DataGridTemplateColumn>
-                        <DataGridTextColumn Header="{l:T 'Дата'}" Binding="{Binding Date, StringFormat={}{0:dd.MM.yyyy HH:mm}}" Width="130"/>
-                        <DataGridTextColumn Header="{l:T 'Документ'}" Binding="{Binding DocumentNumber}" Width="110"/>
-                        <DataGridTextColumn Header="{l:T 'Касса'}" Binding="{Binding CashRegister.Name}" Width="150"/>
-                        <DataGridTextColumn Header="{l:T 'Статья'}" Binding="{Binding Category}" Width="*" MinWidth="160"/>
-                        <DataGridTextColumn Header="{l:T 'Контрагент'}" Binding="{Binding CounterpartyName}" Width="*" MinWidth="140"/>
-                        <DataGridTextColumn Header="{l:T 'Комментарий'}" Binding="{Binding Comment}" Width="*" MinWidth="120"/>
-                        <DataGridTemplateColumn Header="{l:T 'Сумма'}" Width="140" SortMemberPath="SignedAmount">
-                            <DataGridTemplateColumn.CellTemplate>
-                                <DataTemplate>
-                                    <TextBlock HorizontalAlignment="Right" FontWeight="SemiBold" Text="{Binding SignedAmount, Converter={StaticResource Money}}">
-                                        <TextBlock.Style>
-                                            <Style TargetType="TextBlock">
-                                                <Setter Property="Foreground" Value="{DynamicResource SuccessBrush}"/>
-                                                <Style.Triggers>
-                                                    <DataTrigger Binding="{Binding Direction}" Value="Expense">
-                                                        <Setter Property="Foreground" Value="{DynamicResource DangerBrush}"/>
-                                                    </DataTrigger>
-                                                </Style.Triggers>
-                                            </Style>
-                                        </TextBlock.Style>
-                                    </TextBlock>
-                                </DataTemplate>
-                            </DataGridTemplateColumn.CellTemplate>
-                        </DataGridTemplateColumn>
-                    </DataGrid.Columns>
-                </DataGrid>
-            </DockPanel>
-        </Border>
-    </Grid>
+            </Border>
+        </TabItem>
+    </TabControl>
 </UserControl>

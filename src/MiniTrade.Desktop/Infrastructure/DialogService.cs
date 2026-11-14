@@ -7,19 +7,21 @@ namespace MiniTrade.Desktop.Infrastructure;
 /// <summary>Абстракция диалогов, чтобы ViewModel не зависели от окон.</summary>
 public interface IDialogService
 {
-    void Info(string message, string title = "TIJORAT MINI");
+    void Info(string message, string title = "TIJORAT.PRO");
     void Error(string message, string title = "Ошибка");
     bool Confirm(string message, string title = "Подтверждение");
     string? SaveFile(string defaultName, string filter);
     string? OpenFile(string filter, string? initialDirectory = null);
     string? PickFolder(string? initialDirectory = null);
+    /// <summary>Запросить строку; null — отмена.</summary>
+    string? Prompt(string message, string title, string? initial = null);
 }
 
 public sealed class DialogService : IDialogService
 {
     private static Window? Owner => Application.Current?.Windows.OfType<Window>().FirstOrDefault(w => w.IsActive);
 
-    public void Info(string message, string title = "TIJORAT MINI") => Show(message, title, MessageKind.Info);
+    public void Info(string message, string title = "TIJORAT.PRO") => Show(message, title, MessageKind.Info);
 
     public void Error(string message, string title = "Ошибка") => Show(message, title, MessageKind.Warning);
 
@@ -42,6 +44,9 @@ public sealed class DialogService : IDialogService
         var dlg = new OpenFolderDialog { InitialDirectory = initialDirectory ?? "" };
         return dlg.ShowDialog(Owner) == true ? dlg.FolderName : null;
     }
+
+    public string? Prompt(string message, string title, string? initial = null) =>
+        MessageWindow.Prompt(L.T(message), L.T(title), initial);
 
     // Заголовки по умолчанию («Ошибка», «Подтверждение») — константы, поэтому переводятся здесь;
     // уже переведённый текст через L.T проходит без изменений

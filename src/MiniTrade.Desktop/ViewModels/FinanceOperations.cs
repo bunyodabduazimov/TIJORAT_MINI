@@ -40,7 +40,8 @@ public abstract partial class OperationViewModel : ObservableObject, ICloseReque
     /// <summary>Заполнить форму по операции журнала: для «Изменить» (asEdit) или «Скопировать».</summary>
     public void FillFrom(CashTransaction t, bool asEdit)
     {
-        if (asEdit) { EditingId = t.Id; EditingNumber = t.DocumentNumber; }
+        if (asEdit) { EditingId = t.Id; EditingNumber = t.DocumentNumber; _originalDate = t.Date; }
+        OperationDate = asEdit ? t.Date.Date : DateTime.Today;
         CashRegister = CashRegisters.FirstOrDefault(c => c.Id == t.CashRegisterId) ?? CashRegister;
         Amount = t.Amount;
         Comment = t.Comment;
@@ -65,12 +66,40 @@ public abstract partial class OperationViewModel : ObservableObject, ICloseReque
     [ObservableProperty] private CashRegister? _cashRegister;
     [ObservableProperty] private decimal _amount;
     [ObservableProperty] private string? _comment;
+
+    /// <summary>Дата проводки: операцию можно провести задним числом.</summary>
+    [ObservableProperty] private DateTime? _operationDate = DateTime.Today;
+    private DateTime? _originalDate;
+
+    /// <summary>Показывать ли поле даты (у оплаты закупки дата — текущая).</summary>
+    public virtual bool ShowDate => true;
+
+    /// <summary>Выбранный день + текущее время; при правке без смены дня исходное время сохраняется.</summary>
+    protected DateTime PostingDate
+    {
+        get
+        {
+            var day = (OperationDate ?? DateTime.Today).Date;
+            if (_originalDate is { } o && o.Date == day) return o;
+            return day == DateTime.Today ? DateTime.Now : day + DateTime.Now.TimeOfDay;
+        }
+    }
     [ObservableProperty] private string? _errorMessage;
     [ObservableProperty]
     [NotifyCanExecuteChangedFor(nameof(SubmitCommand))]
     private bool _isBusy;
 
     public virtual Task InitAsync() => Task.CompletedTask;
+
+    /// <summary>Изменить выбранную статью справочника; вернуть новое имя (null — отмена, "" — статья ушла в другое направление).</summary>
+    protected async Task<string?> EditArticleInAsync(ObservableCollection<FinanceArticle> articles, string? name, CashDirection direction)
+    {
+        if (articles.FirstOrDefault(a => a.Name == name) is not { } current) return null;
+        var r = await CatalogDialogs.EditAsync(articles, current);
+        if (r?.Saved is not { } a) return null;
+        if (a.Direction != direction) { articles.Remove(a); return ""; }
+        return a.Name;
+    }
 
     protected abstract Task PostAsync();
 
@@ -84,6 +113,8 @@ public abstract partial class OperationViewModel : ObservableObject, ICloseReque
         try
         {
             if (RequiresCashRegister && CashRegister is null) throw new BusinessException("Выберите кассу.");
+            if (ShowDate && OperationDate is null) throw new BusinessException("Укажите дату проводки.");
+            if (ShowDate && OperationDate!.Value.Date > DateTime.Today) throw new BusinessException("Дата проводки не может быть в будущем.");
             await PostAsync();
             Posted = true;
             CloseRequested?.Invoke(this, true);
@@ -126,9 +157,15 @@ public partial class CashOperationViewModel(
         Article = a.Name;
     }
 
+    [RelayCommand]
+    private async Task EditArticleAsync()
+    {
+        if (await EditArticleInAsync(Articles, Article, Direction) is { } name) Article = name;
+    }
+
     protected override Task PostAsync() => EditingId is { } id
-        ? Finance.UpdateOperationAsync(id, CashRegister!.Id, Article, Amount, Comment)
-        : Finance.AddOperationAsync(CashRegister!.Id, Direction, Article, Amount, Comment);
+        ? Finance.UpdateOperationAsync(id, CashRegister!.Id, Article, Amount, Comment, date: PostingDate)
+        : Finance.AddOperationAsync(CashRegister!.Id, Direction, Article, Amount, Comment, PostingDate);
 }
 
 /// <summary>Перемещение денег между кассами.</summary>
@@ -157,7 +194,7 @@ public partial class TransferViewModel : OperationViewModel
     protected override Task PostAsync()
     {
         if (TargetCash is null) throw new BusinessException("Выберите кассы.");
-        return Finance.TransferAsync(CashRegister!.Id, TargetCash.Id, Amount, string.IsNullOrWhiteSpace(Comment) ? L.T("Перемещение") : Comment);
+        return Finance.TransferAsync(CashRegister!.Id, TargetCash.Id, Amount, string.IsNullOrWhiteSpace(Comment) ? L.T("Перемещение") : Comment, PostingDate);
     }
 }
 
@@ -180,6 +217,7 @@ public partial class PurchasePaymentViewModel : OperationViewModel
     protected override string NewSubmitText => L.T("Оплатить");
     public override string Icon => "\U000F019B";
     public override bool IsExpenseLike => true;
+    public override bool ShowDate => false;
 
     protected override Task PostAsync()
     {
@@ -222,6 +260,12 @@ public partial class CounterpartyPaymentViewModel(
         if (r?.Saved is not { } a) return;
         if (a.Direction != Direction) { Articles.Remove(a); return; }
         Article = a.Name;
+    }
+
+    [RelayCommand]
+    private async Task EditArticleAsync()
+    {
+        if (await EditArticleInAsync(Articles, Article, Direction) is { } name) Article = name;
     }
     public override string Icon => Direction == CashDirection.Expense ? "\U000F0054" : "\U000F004D";
     public override bool IsExpenseLike => Direction == CashDirection.Expense;
@@ -278,9 +322,9 @@ public partial class CounterpartyPaymentViewModel(
     {
         if (Counterparty is null) throw new BusinessException("Выберите контрагента.");
         if (EditingId is { } id)
-            return Finance.UpdateOperationAsync(id, CashRegister!.Id, string.IsNullOrWhiteSpace(Article) ? NewTitle : Article, Amount, Comment, Counterparty.Id);
+            return Finance.UpdateOperationAsync(id, CashRegister!.Id, string.IsNullOrWhiteSpace(Article) ? NewTitle : Article, Amount, Comment, Counterparty.Id, PostingDate);
         return Finance.CounterpartyPaymentAsync(new CounterpartyPaymentRequest(Direction, CashRegister!.Id,
-            Counterparty.Id, Amount, Article, Comment));
+            Counterparty.Id, Amount, Article, Comment, PostingDate));
     }
 }
 
@@ -310,9 +354,15 @@ public partial class CounterpartyAccrualViewModel(
 
     public bool TheyOweUs { get => !WeOwe; set => WeOwe = !value; }
 
+    /// <summary>Статьи справочника: «мы должны» — расходные (услуги, работа), «должен нам» — приходные (штраф).</summary>
+    public ObservableCollection<FinanceArticle> Articles { get; } = new();
+    private CashDirection ArticleDirection => WeOwe ? CashDirection.Expense : CashDirection.Income;
+    private string DefaultArticle => L.T("Начисление контрагенту");
+
     protected override void FillDetails(CashTransaction t)
     {
         WeOwe = t.Direction == CashDirection.Income;
+        EnsureArticle(t.Category);
         Article = t.Category;
         Counterparty = Counterparties.FirstOrDefault(c => c.Id == t.CounterpartyId);
     }
@@ -320,6 +370,51 @@ public partial class CounterpartyAccrualViewModel(
     public override async Task InitAsync()
     {
         foreach (var c in await catalog.GetAllAsync<Counterparty>(true)) Counterparties.Add(c);
+        await LoadArticlesAsync();
+    }
+
+    partial void OnWeOweChanged(bool value) => _ = LoadArticlesAsync();
+
+    private async Task LoadArticlesAsync()
+    {
+        var list = await Finance.GetArticlesAsync(ArticleDirection);
+        var keep = Article;
+        Articles.Clear();
+        foreach (var a in list) Articles.Add(a);
+        EnsureArticle(DefaultArticle);
+        // При правке сохраняем статью документа; при смене вида — статья другого направления сбрасывается
+        if (!IsNew) EnsureArticle(keep);
+        Article = !string.IsNullOrWhiteSpace(keep) && Articles.Any(a => a.Name == keep) ? keep : DefaultArticle;
+    }
+
+    /// <summary>Статья, которой нет в справочнике (по умолчанию, старые записи), — добавить в список.</summary>
+    private void EnsureArticle(string? name)
+    {
+        if (string.IsNullOrWhiteSpace(name) || Articles.Any(a => a.Name == name)) return;
+        Articles.Insert(0, new FinanceArticle { Name = name, Direction = ArticleDirection });
+    }
+
+    [RelayCommand]
+    private async Task AddArticleAsync()
+    {
+        var dir = ArticleDirection;
+        var r = await CatalogDialogs.EditAsync(Articles, new FinanceArticle { Direction = dir });
+        if (r?.Saved is not { } a) return;
+        if (a.Direction != dir) { Articles.Remove(a); return; }
+        Article = a.Name;
+    }
+
+    [RelayCommand]
+    private async Task EditArticleAsync()
+    {
+        if (await EditArticleInAsync(Articles, Article, ArticleDirection) is { } name) Article = name;
+    }
+
+    [RelayCommand]
+    private async Task EditCounterpartyAsync()
+    {
+        if (Counterparty is null) return;
+        if (await CatalogDialogs.EditAsync(Counterparties, Counterparty) is { } r) Counterparty = r.Saved;
     }
 
     [RelayCommand]
@@ -333,7 +428,7 @@ public partial class CounterpartyAccrualViewModel(
         if (Counterparty is null) throw new BusinessException("Выберите контрагента.");
         var article = string.IsNullOrWhiteSpace(Article) ? NewTitle : Article;
         if (EditingId is { } id)
-            return Finance.UpdateOperationAsync(id, null, article, Amount, Comment, Counterparty.Id);
-        return Finance.AccrueAsync(WeOwe ? CashDirection.Income : CashDirection.Expense, Counterparty.Id, Amount, article, Comment);
+            return Finance.UpdateOperationAsync(id, null, article, Amount, Comment, Counterparty.Id, PostingDate);
+        return Finance.AccrueAsync(WeOwe ? CashDirection.Income : CashDirection.Expense, Counterparty.Id, Amount, article, Comment, PostingDate);
     }
 }

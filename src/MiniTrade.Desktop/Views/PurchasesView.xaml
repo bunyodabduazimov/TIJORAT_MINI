@@ -9,7 +9,7 @@
     <TabControl SelectedIndex="{Binding SelectedTab}">
 
         <!-- ══ Оформление / изменение закупки ══ -->
-        <TabItem Header="{Binding EditorTabTitle}">
+        <TabItem Header="{Binding EditorTabTitle}" Visibility="{l:Can purchases.create|purchases.edit}">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
@@ -60,9 +60,9 @@
                             <StackPanel Grid.Column="1" Margin="0,0,8,0">
                                 <TextBlock Text="{l:T 'Товар'}" Style="{StaticResource FieldLabel}"/>
                                 <DockPanel>
-                                    <Button DockPanel.Dock="Right" Style="{StaticResource InputAddonButton}" Content="&#xF0CB6;" ToolTip="{l:T 'Изменить выбранный товар'}" Command="{Binding EditProductCommand}" Visibility="{Binding SelectedProduct, Converter={StaticResource BoolToVis}}"/>
+                                    <Button DockPanel.Dock="Right" Style="{StaticResource InputAddonButton}" Content="&#xF03EB;" ToolTip="{l:T 'Изменить выбранный товар'}" Command="{Binding EditProductCommand}" Visibility="{Binding SelectedProduct, Converter={StaticResource BoolToVis}}"/>
                                     <Button DockPanel.Dock="Right" Style="{StaticResource InputAddonButton}" Content="&#xF0415;" ToolTip="{l:T 'Новый товар'}" Command="{Binding AddProductCommand}" Visibility="{Binding SelectedProduct, Converter={StaticResource InvBoolToVis}}"/>
-                                    <ComboBox ItemsSource="{Binding Products}" SelectedItem="{Binding SelectedProduct}" DisplayMemberPath="Name"/>
+                                    <ComboBox ItemsSource="{Binding Products}" SelectedItem="{Binding SelectedProduct}" DisplayMemberPath="Name" l:Ui.Clearable="True"/>
                                 </DockPanel>
                             </StackPanel>
                             <StackPanel Grid.Column="2" Margin="0,0,8,0">
@@ -130,9 +130,9 @@
                             <TextBlock Text="{l:T 'Оформление'}" Style="{StaticResource SectionTitle}"/>
                             <TextBlock Text="{l:T 'Поставщик *'}" Style="{StaticResource FieldLabel}"/>
                             <DockPanel>
-                                <Button DockPanel.Dock="Right" Style="{StaticResource InputAddonButton}" Content="&#xF0CB6;" ToolTip="{l:T 'Изменить поставщика'}" Command="{Binding EditSupplierCommand}" Visibility="{Binding Supplier, Converter={StaticResource BoolToVis}}"/>
+                                <Button DockPanel.Dock="Right" Style="{StaticResource InputAddonButton}" Content="&#xF03EB;" ToolTip="{l:T 'Изменить поставщика'}" Command="{Binding EditSupplierCommand}" Visibility="{Binding Supplier, Converter={StaticResource BoolToVis}}"/>
                                 <Button DockPanel.Dock="Right" Style="{StaticResource InputAddonButton}" Content="&#xF0415;" ToolTip="{l:T 'Новый поставщик'}" Command="{Binding AddSupplierCommand}" Visibility="{Binding Supplier, Converter={StaticResource InvBoolToVis}}"/>
-                                <ComboBox ItemsSource="{Binding Suppliers}" SelectedItem="{Binding Supplier}" DisplayMemberPath="Name"/>
+                                <ComboBox ItemsSource="{Binding Suppliers}" SelectedItem="{Binding Supplier}" DisplayMemberPath="Name" l:Ui.Clearable="True"/>
                             </DockPanel>
                             <TextBlock Text="{l:T 'Склад прихода *'}" Style="{StaticResource FieldLabel}"/>
                             <DockPanel>
@@ -189,7 +189,7 @@
         </TabItem>
 
         <!-- ══ Журнал закупок: период, фильтр, поиск, страницы; на всю ширину ══ -->
-        <TabItem Header="{l:T 'История закупок'}">
+        <TabItem Header="{l:T 'История закупок'}" Visibility="{l:Can purchases.history.view}">
             <Grid>
                 <Border Style="{StaticResource Card}">
                     <DockPanel>
@@ -243,16 +243,16 @@
                                                 <Button.ContextMenu>
                                                     <ContextMenu Style="{StaticResource DropDownMenu}">
                                                         <MenuItem Style="{StaticResource IconMenuItem}" Header="{l:T 'Изменить'}" l:Ui.Icon="&#xF0CB6;"
-                                                                  Command="{Binding PlacementTarget.Tag.EditPurchaseCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" CommandParameter="{Binding}"/>
+                                                                  Visibility="{l:Can purchases.edit}" Command="{Binding PlacementTarget.Tag.EditPurchaseCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" CommandParameter="{Binding}"/>
                                                         <MenuItem Style="{StaticResource IconMenuItem}" Header="{l:T 'Новая по образцу'}" l:Ui.Icon="&#xF018F;"
-                                                                  Command="{Binding PlacementTarget.Tag.CopyPurchaseCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" CommandParameter="{Binding}"/>
+                                                                  Visibility="{l:Can purchases.create}" Command="{Binding PlacementTarget.Tag.CopyPurchaseCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" CommandParameter="{Binding}"/>
                                                         <MenuItem Style="{StaticResource IconMenuItem}" Header="{l:T 'Оплатить долг'}" l:Ui.Icon="&#xF019B;"
-                                                                  Command="{Binding PlacementTarget.Tag.PayPurchaseCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" CommandParameter="{Binding}"/>
+                                                                  Visibility="{l:Can purchases.pay}" Command="{Binding PlacementTarget.Tag.PayPurchaseCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" CommandParameter="{Binding}"/>
                                                         <MenuItem Style="{StaticResource IconMenuItem}" Header="{l:T 'Возврат поставщику'}" l:Ui.Icon="&#xF054C;" Tag="{DynamicResource WarningBrush}"
-                                                                  Command="{Binding PlacementTarget.Tag.ReturnPurchaseCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" CommandParameter="{Binding}"/>
+                                                                  Visibility="{l:Can purchases.return}" Command="{Binding PlacementTarget.Tag.ReturnPurchaseCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" CommandParameter="{Binding}"/>
                                                         <Separator Style="{StaticResource MenuSeparator}"/>
                                                         <MenuItem Style="{StaticResource IconMenuItem}" Header="{l:T 'Удалить'}" l:Ui.Icon="&#xF09E7;" Tag="{DynamicResource DangerBrush}"
-                                                                  Command="{Binding PlacementTarget.Tag.DeletePurchaseCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" CommandParameter="{Binding}"/>
+                                                                  Visibility="{l:Can purchases.delete}" Command="{Binding PlacementTarget.Tag.DeletePurchaseCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" CommandParameter="{Binding}"/>
                                                     </ContextMenu>
                                                 </Button.ContextMenu>
                                             </Button>
@@ -292,8 +292,41 @@
             </Grid>
         </TabItem>
 
+        <!-- ══ Журнал возвратов поставщикам ══ -->
+        <TabItem Header="{l:T 'Возвраты'}" Visibility="{l:Can purchases.history.view}">
+            <Border Style="{StaticResource Card}">
+                <DockPanel>
+                    <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,0,0,10">
+                        <TextBlock Text="{l:T 'Период:'}" Style="{StaticResource Muted}" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                        <DatePicker SelectedDate="{Binding ReturnsFrom}" Width="130"/>
+                        <TextBlock Text="—" VerticalAlignment="Center" Margin="6,0"/>
+                        <DatePicker SelectedDate="{Binding ReturnsTo}" Width="130"/>
+                        <Button Style="{StaticResource InputAddonButton}" Content="&#xF0450;" ToolTip="{l:T 'Обновить'}" Command="{Binding LoadReturnsCommand}" Margin="8,0,0,0"/>
+                    </StackPanel>
+                    <WrapPanel DockPanel.Dock="Bottom" Margin="0,10,0,0">
+                        <TextBlock Text="{l:T 'Возвращено: '}" Style="{StaticResource Muted}"/>
+                        <TextBlock Text="{Binding ReturnsTotal, Converter={StaticResource Money}}" Foreground="{DynamicResource DangerBrush}" FontWeight="SemiBold" Margin="0,0,16,0"/>
+                        <TextBlock Text="{l:T 'Получено денег: '}" Style="{StaticResource Muted}"/>
+                        <TextBlock Text="{Binding ReturnsRefund, Converter={StaticResource Money}}" Foreground="{DynamicResource SuccessBrush}" FontWeight="SemiBold"/>
+                    </WrapPanel>
+                    <DataGrid ItemsSource="{Binding Returns}">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="{l:T 'Номер'}" Binding="{Binding Number}" Width="110"/>
+                            <DataGridTextColumn Header="{l:T 'Дата'}" Binding="{Binding Date, StringFormat={}{0:dd.MM.yyyy HH:mm}}" Width="140"/>
+                            <DataGridTextColumn Header="{l:T 'Закупка'}" Binding="{Binding Purchase.Number}" Width="110"/>
+                            <DataGridTextColumn Header="{l:T 'Поставщик'}" Binding="{Binding Purchase.Supplier.Name}" Width="*" MinWidth="140"/>
+                            <DataGridTextColumn Header="{l:T 'Касса'}" Binding="{Binding CashRegister.Name}" Width="140"/>
+                            <DataGridTextColumn Header="{l:T 'Причина'}" Binding="{Binding Reason}" Width="*"/>
+                            <DataGridTextColumn Header="{l:T 'Сумма'}" Binding="{Binding Total, Converter={StaticResource Money}}" Width="130" ElementStyle="{StaticResource RightCell}"/>
+                            <DataGridTextColumn Header="{l:T 'Получено'}" Binding="{Binding RefundAmount, Converter={StaticResource Money}}" Width="130" ElementStyle="{StaticResource RightCell}"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </DockPanel>
+            </Border>
+        </TabItem>
+
         <!-- ══ Поставщики и долги: расчёты за всё время, оплата по FIFO ══ -->
-        <TabItem Header="{l:T 'Поставщики и долги'}">
+        <TabItem Header="{l:T 'Поставщики и долги'}" Visibility="{l:Can purchases.debts.view}">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
@@ -342,12 +375,12 @@
                             <TextBlock Style="{StaticResource Muted}"><Run Text="{l:T 'Долг: '}"/><Run Text="{Binding SelectedDebt.Debt, Mode=OneWay, Converter={StaticResource Money}}" Foreground="{DynamicResource WarningBrush}"/></TextBlock>
                             <TextBlock Text="{l:T 'Касса'}" Style="{StaticResource FieldLabel}"/>
                             <ComboBox ItemsSource="{Binding CashRegisters}" SelectedItem="{Binding DebtCashRegister}" DisplayMemberPath="Name"/>
-                            <TextBlock Text="{l:T 'Сумма, TJS'}" Style="{StaticResource FieldLabel}"/>
+                            <TextBlock Text="{l:T 'Сумма'}" Style="{StaticResource FieldLabel}"/>
                             <TextBox l:Ui.Numeric="True" Text="{Binding DebtPayAmount, Converter={StaticResource Dec}, UpdateSourceTrigger=PropertyChanged}"/>
                             <TextBlock Text="{l:T 'Комментарий'}" Style="{StaticResource FieldLabel}"/>
                             <TextBox Text="{Binding DebtComment, UpdateSourceTrigger=PropertyChanged}"/>
                             <TextBlock Text="{l:T 'Оплата гасит закупки поставщика начиная с самых старых.'}" Style="{StaticResource Muted}" FontSize="12" TextWrapping="Wrap" Margin="0,8,0,0"/>
-                            <Button Content="{l:T 'Оплатить'}" Style="{StaticResource SuccessButton}" Margin="0,12,0,0" MinHeight="36" Command="{Binding PaySupplierCommand}"/>
+                            <Button Content="{l:T 'Оплатить'}" Style="{StaticResource SuccessButton}" Margin="0,12,0,0" MinHeight="36" Visibility="{l:Can purchases.pay}" Command="{Binding PaySupplierCommand}"/>
                         </StackPanel>
                         <Button Content="{l:T 'Закупки поставщика'}" Style="{StaticResource SecondaryButton}" Margin="0,8,0,0"
                                 Command="{Binding ShowSupplierPurchasesCommand}" CommandParameter="{Binding SelectedDebt}"/>

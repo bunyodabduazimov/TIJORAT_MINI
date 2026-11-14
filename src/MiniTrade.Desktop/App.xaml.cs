@@ -24,7 +24,11 @@ public partial class App : Application
     /// Пересоздаёт главное окно (после смены языка): тексты берутся заново, вход повторно не нужен.
     /// Открывает страницу <typeparamref name="TPage"/>.
     /// </summary>
-    public static void ReloadMainWindow<TPage>(Action<TPage>? configure = null) where TPage : PageViewModel
+    public static void ReloadMainWindow<TPage>(Action<TPage>? configure = null) where TPage : PageViewModel =>
+        ReloadMainWindow().Navigate<TPage>(configure);
+
+    /// <summary>Новое главное окно на странице «после входа» из настроек интерфейса.</summary>
+    public static MainViewModel ReloadMainWindow()
     {
         var app = (App)Current;
         var old = app.MainWindow;
@@ -43,7 +47,7 @@ public partial class App : Application
         main.Show();
         old?.Close();
         (old?.DataContext as IDisposable)?.Dispose();
-        vm.Navigate<TPage>(configure);
+        return vm;
     }
 
     /// <summary>Выход из аккаунта: главное окно прячется, показывается вход; после входа — новое главное окно.</summary>
@@ -55,7 +59,7 @@ public partial class App : Application
         Services.GetRequiredService<UserSession>().SignOut();
         app.MainWindow?.Hide();
         var login = new LoginWindow { DataContext = Services.GetRequiredService<LoginViewModel>() };
-        if (login.ShowDialog() == true) ReloadMainWindow<DashboardViewModel>();
+        if (login.ShowDialog() == true) ReloadMainWindow();
         else app.Shutdown();
     }
 
@@ -64,9 +68,12 @@ public partial class App : Application
     private static bool _started;
 
     /// <summary>Перезапуск программы (после восстановления базы).</summary>
+    private static Mutex? _instance;
+
     public static void Restart()
     {
         SkipAutoBackup = true;
+        try { _instance?.ReleaseMutex(); } catch (ApplicationException) { }
         if (Environment.ProcessPath is { } exe) System.Diagnostics.Process.Start(exe);
         Current.Shutdown();
     }
@@ -104,6 +111,14 @@ public partial class App : Application
     protected override async void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
+        TabAccess.Register(); // скрытая правами вкладка не остаётся выбранной
+        // Одна копия программы: вторая (двойной щелчок) могла одновременно создавать базу и падать на UNIQUE.
+        // Ожидание — чтобы Restart() успел дождаться выхода прежнего процесса.
+        _instance = new Mutex(false, @"Local\TIJORAT.PRO.MiniTrade");
+        bool owned;
+        try { owned = _instance.WaitOne(TimeSpan.FromSeconds(10)); }
+        catch (AbandonedMutexException) { owned = true; }
+        if (!owned) { Shutdown(); return; }
         Infrastructure.Ui.RegisterNumericFocus();
         // Числа и суммы — в формате ru-RU (сомони); язык интерфейса — отдельно, из настроек
         var culture = CultureInfo.GetCultureInfo("ru-RU");
@@ -136,7 +151,7 @@ public partial class App : Application
             {
                 // Сервер недоступен — предложить работать с локальной базой этого компьютера
                 if (MessageWindow.Show(L.F("Не удалось подключиться к серверу базы данных:\n{0}\n\n{1}\n\nПереключиться на локальную базу этого компьютера?", connection.Display, reason),
-                        "TIJORAT MINI", MessageKind.Question))
+                        "TIJORAT.PRO", MessageKind.Question))
                 {
                     DatabaseSettings.Save(connection with { Provider = DatabaseProvider.Sqlite });
                     Restart();
@@ -144,7 +159,7 @@ public partial class App : Application
                 }
             }
             else
-                MessageWindow.Show(L.F("Не удалось открыть базу данных:\n{0}\n\n{1}", connection.Display, reason), "TIJORAT MINI", MessageKind.Error);
+                MessageWindow.Show(L.F("Не удалось открыть базу данных:\n{0}\n\n{1}", connection.Display, reason), "TIJORAT.PRO", MessageKind.Error);
             Shutdown(1);
             return;
         }
@@ -177,6 +192,10 @@ public partial class App : Application
             return;
         }
 
+        // Пустая база: предложить демо-компанию выбранного направления
+        await DemoDataWindow.OfferAsync(Services.GetRequiredService<IDbContextFactory<TradeDbContext>>(),
+            Services.GetRequiredService<UserSession>());
+
         // Нагрузочные тестовые данные: MiniTrade.Desktop.exe --seed-demo
         if (e.Args.Contains("--seed-demo", StringComparer.OrdinalIgnoreCase))
         {
@@ -186,11 +205,11 @@ public partial class App : Application
                 await DemoDataGenerator.RunAsync(Services.GetRequiredService<IDbContextFactory<TradeDbContext>>(),
                     Services.GetRequiredService<UserSession>(),
                     progress: new Progress<string>(s => System.Diagnostics.Debug.WriteLine(s)));
-                MessageWindow.Show($"Тестовые данные созданы за {sw.Elapsed:mm\\:ss}", "TIJORAT MINI", MessageKind.Info);
+                MessageWindow.Show($"Тестовые данные созданы за {sw.Elapsed:mm\\:ss}", "TIJORAT.PRO", MessageKind.Info);
             }
             catch (Exception ex)
             {
-                MessageWindow.Show($"Ошибка генерации тестовых данных:\n{ex.InnerException?.Message ?? ex.Message}", "TIJORAT MINI", MessageKind.Error);
+                MessageWindow.Show($"Ошибка генерации тестовых данных:\n{ex.InnerException?.Message ?? ex.Message}", "TIJORAT.PRO", MessageKind.Error);
             }
         }
 
@@ -212,11 +231,14 @@ public partial class App : Application
         // Бизнес-сервисы ядра
         services.AddSingleton<UserSession>();
         services.AddTransient<CatalogService>();
+        services.AddTransient<ScaleSyncService>();
         services.AddTransient<CatalogTransferService>();
         services.AddTransient<SalesService>();
         services.AddTransient<PurchaseService>();
         services.AddTransient<WarehouseService>();
+        services.AddTransient<ProductionService>();
         services.AddTransient<FinanceService>();
+        services.AddTransient<StatementService>();
         services.AddTransient<ReportService>();
         services.AddTransient<DashboardService>();
         services.AddTransient<SettingsService>();
@@ -243,6 +265,7 @@ public partial class App : Application
         services.AddTransient<SalesViewModel>();
         services.AddTransient<PurchasesViewModel>();
         services.AddTransient<WarehouseViewModel>();
+        services.AddTransient<ProductionViewModel>();
         services.AddTransient<CatalogViewModel>();
         services.AddTransient<ReportsViewModel>();
         services.AddTransient<SettingsViewModel>();
@@ -252,7 +275,7 @@ public partial class App : Application
 
     private void OnUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)
     {
-        MessageWindow.Show(L.F("Непредвиденная ошибка:\n{0}", e.Exception.Message), "TIJORAT MINI", MessageKind.Error);
+        MessageWindow.Show(L.F("Непредвиденная ошибка:\n{0}", e.Exception.Message), "TIJORAT.PRO", MessageKind.Error);
         e.Handled = true;
     }
 }

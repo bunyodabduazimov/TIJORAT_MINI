@@ -23,6 +23,9 @@ public sealed class UiSettings
     /// <summary>Страница, открываемая после входа (имя типа ViewModel; пусто — «Главная»).</summary>
     public string? StartPage { get; set; }
 
+    /// <summary>Пользователь отказался от демо-данных для пустой базы — больше не предлагать.</summary>
+    public bool DemoDataDeclined { get; set; }
+
     /// <summary>Сообщает открытым окнам, что масштаб изменился.</summary>
     public static event Action? ScaleChanged;
     public static void RaiseScaleChanged() => ScaleChanged?.Invoke();
@@ -38,6 +41,9 @@ public sealed class UiSettings
     /// <summary>Вид чека, накладной и этикеток, предпросмотр, принтер этикеток.</summary>
     public Printing.PrintOptions Print { get; set; } = new();
 
+    /// <summary>Фискальный принтер (ККТ) Fiscat этого компьютера.</summary>
+    public Core.Services.FiscalSettings Fiscal { get; set; } = new();
+
     // Резервное копирование
     /// <summary>Автоматическая копия базы при выходе из программы.</summary>
     public bool AutoBackup { get; set; } = true;
@@ -45,7 +51,20 @@ public sealed class UiSettings
     public string? BackupFolder { get; set; }
     /// <summary>Сколько последних автокопий хранить.</summary>
     public int BackupKeep { get; set; } = 10;
+    /// <summary>Сколько дней хранить резервные копии (0 — бессрочно).</summary>
+    public int BackupKeepDays { get; set; } = 30;
+
+    // Касса (вкладка «Новая продажа») — параметры витрины
+    public int? PosWarehouseId { get; set; }
+    public int? PosCategoryId { get; set; }
+    public bool PosShowTable { get; set; }
+    public bool PosOnlyInStock { get; set; }
+    public bool PosShowCategories { get; set; } = true;
+    /// <summary>Масштаб карточек товаров на витрине (1 — обычный).</summary>
+    public double PosTileScale { get; set; } = 1;
     public DateTime? LastBackupAt { get; set; }
+    /// <summary>Был ли хотя бы один успешный вход — скрывает подсказку «admin / admin».</summary>
+    public bool HasLoggedIn { get; set; }
 
     private static readonly JsonSerializerOptions Json = new()
     {

@@ -14,6 +14,8 @@ public class TradeDbContext : DbContext
     public DbSet<Counterparty> Counterparties => Set<Counterparty>();
     public DbSet<CounterpartyGroup> CounterpartyGroups => Set<CounterpartyGroup>();
     public DbSet<Warehouse> Warehouses => Set<Warehouse>();
+    public DbSet<MeasureUnit> MeasureUnits => Set<MeasureUnit>();
+    public DbSet<ScaleDevice> Scales => Set<ScaleDevice>();
     public DbSet<CashRegister> CashRegisters => Set<CashRegister>();
     public DbSet<FinanceArticle> FinanceArticles => Set<FinanceArticle>();
     public DbSet<ProductPhoto> ProductPhotos => Set<ProductPhoto>();
@@ -32,7 +34,13 @@ public class TradeDbContext : DbContext
     public DbSet<PurchaseReturnItem> PurchaseReturnItems => Set<PurchaseReturnItem>();
     public DbSet<StockTransfer> StockTransfers => Set<StockTransfer>();
     public DbSet<InventoryCount> InventoryCounts => Set<InventoryCount>();
+    public DbSet<StockWriteOff> StockWriteOffs => Set<StockWriteOff>();
+    public DbSet<Recipe> Recipes => Set<Recipe>();
+    public DbSet<RecipeItem> RecipeItems => Set<RecipeItem>();
+    public DbSet<ProductionOrder> ProductionOrders => Set<ProductionOrder>();
+    public DbSet<ProductionItem> ProductionItems => Set<ProductionItem>();
     public DbSet<User> Users => Set<User>();
+    public DbSet<AccessRole> AccessRoles => Set<AccessRole>();
     public DbSet<CompanySettings> CompanySettings => Set<CompanySettings>();
     public DbSet<DocumentSequence> DocumentSequences => Set<DocumentSequence>();
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
@@ -46,6 +54,7 @@ public class TradeDbContext : DbContext
     /// <summary>Сохраняет изменения и записывает их в журнал действий (<see cref="AuditLog"/>).</summary>
     public override async Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken ct = default)
     {
+        TouchProducts();
         if (!AuditEnabled) return await base.SaveChangesAsync(acceptAllChangesOnSuccess, ct).ConfigureAwait(false);
         var pending = await AuditTracker.CollectAsync(this, ct).ConfigureAwait(false);
         var count = await base.SaveChangesAsync(acceptAllChangesOnSuccess, ct).ConfigureAwait(false);
@@ -56,6 +65,23 @@ public class TradeDbContext : DbContext
             await base.SaveChangesAsync(acceptAllChangesOnSuccess, ct).ConfigureAwait(false);
         }
         return count;
+    }
+
+    private static readonly string[] ScaleFields =
+        [nameof(Product.Name), nameof(Product.Barcode), nameof(Product.SalePrice), nameof(Product.IsWeighted), nameof(Product.IsActive), nameof(Product.IsDeleted)];
+
+    /// <summary>Дата изменения товара — при создании или правке полей, которые уходят в весы.</summary>
+    private void TouchProducts()
+    {
+        var now = DateTime.Now;
+        foreach (var e in ChangeTracker.Entries<Product>())
+        {
+            if (e.State == EntityState.Added
+                // Update() целиком помечает все поля — дату тогда выставляет вызывающий код (CatalogService)
+                || (e.State == EntityState.Modified && !e.Property(nameof(Product.UpdatedAt)).IsModified
+                    && ScaleFields.Any(f => e.Property(f).IsModified)))
+                e.Entity.UpdatedAt = now;
+        }
     }
 
     protected override void OnModelCreating(ModelBuilder b)
@@ -95,7 +121,25 @@ public class TradeDbContext : DbContext
             e.Ignore(x => x.BalanceSign);
             e.HasOne(x => x.Group).WithMany().HasForeignKey(x => x.GroupId).OnDelete(DeleteBehavior.Restrict);
         });
-        b.Entity<Warehouse>(e => e.Property(x => x.Name).HasMaxLength(200).IsRequired());
+        b.Entity<Warehouse>(e =>
+        {
+            e.Property(x => x.Name).HasMaxLength(200).IsRequired();
+            e.Ignore(x => x.StockCost);
+            e.Ignore(x => x.StockSaleValue);
+        });
+        b.Entity<MeasureUnit>(e =>
+        {
+            e.Property(x => x.Name).HasMaxLength(16).IsRequired();
+            e.Property(x => x.Description).HasMaxLength(100);
+        });
+        b.Entity<ScaleDevice>(e =>
+        {
+            e.ToTable("Scales");
+            e.Property(x => x.Name).HasMaxLength(200).IsRequired();
+            e.Property(x => x.Ip).HasMaxLength(64).IsRequired();
+            e.Property(x => x.FilePath).HasMaxLength(260);
+            e.Ignore(x => x.IsFileBased);
+        });
         b.Entity<CashRegister>(e => e.Property(x => x.Name).HasMaxLength(200).IsRequired());
         b.Entity<FinanceArticle>(e =>
         {
@@ -196,6 +240,34 @@ public class TradeDbContext : DbContext
             e.HasMany(x => x.Items).WithOne().HasForeignKey(x => x.InventoryCountId).OnDelete(DeleteBehavior.Cascade);
         });
         b.Entity<InventoryCountItem>(e => e.HasOne(x => x.Product).WithMany().HasForeignKey(x => x.ProductId).OnDelete(DeleteBehavior.Restrict));
+        b.Entity<StockWriteOff>(e =>
+        {
+            e.HasIndex(x => x.Number).IsUnique();
+            e.HasOne(x => x.Warehouse).WithMany().HasForeignKey(x => x.WarehouseId).OnDelete(DeleteBehavior.Restrict);
+            e.HasMany(x => x.Items).WithOne().HasForeignKey(x => x.StockWriteOffId).OnDelete(DeleteBehavior.Cascade);
+        });
+        b.Entity<StockWriteOffItem>(e => e.HasOne(x => x.Product).WithMany().HasForeignKey(x => x.ProductId).OnDelete(DeleteBehavior.Restrict));
+
+        // Производство
+        b.Entity<Recipe>(e =>
+        {
+            e.Property(x => x.Name).HasMaxLength(200).IsRequired();
+            e.Property(x => x.Comment).HasMaxLength(500);
+            e.HasOne(x => x.Product).WithMany().HasForeignKey(x => x.ProductId).OnDelete(DeleteBehavior.Restrict);
+            e.HasMany(x => x.Items).WithOne().HasForeignKey(x => x.RecipeId).OnDelete(DeleteBehavior.Cascade);
+        });
+        b.Entity<RecipeItem>(e => e.HasOne(x => x.Product).WithMany().HasForeignKey(x => x.ProductId).OnDelete(DeleteBehavior.Restrict));
+        b.Entity<ProductionOrder>(e =>
+        {
+            e.HasIndex(x => x.Number).IsUnique();
+            e.HasIndex(x => x.Date);
+            e.Property(x => x.Comment).HasMaxLength(500);
+            e.HasOne(x => x.Warehouse).WithMany().HasForeignKey(x => x.WarehouseId).OnDelete(DeleteBehavior.Restrict);
+            e.HasOne(x => x.Product).WithMany().HasForeignKey(x => x.ProductId).OnDelete(DeleteBehavior.Restrict);
+            e.HasOne(x => x.Recipe).WithMany().HasForeignKey(x => x.RecipeId).OnDelete(DeleteBehavior.SetNull);
+            e.HasMany(x => x.Items).WithOne().HasForeignKey(x => x.ProductionOrderId).OnDelete(DeleteBehavior.Cascade);
+        });
+        b.Entity<ProductionItem>(e => e.HasOne(x => x.Product).WithMany().HasForeignKey(x => x.ProductId).OnDelete(DeleteBehavior.Restrict));
 
         // Система
         b.Entity<User>(e =>
@@ -205,7 +277,15 @@ public class TradeDbContext : DbContext
             e.Property(x => x.Phone).HasMaxLength(64);
             e.Property(x => x.Note).HasMaxLength(500);
             e.Property(x => x.LastLoginMachine).HasMaxLength(100);
-            e.Ignore(x => x.EffectivePermissions);
+            e.Ignore(x => x.IsAdmin);
+            e.HasOne(x => x.AccessRole).WithMany().HasForeignKey(x => x.AccessRoleId).OnDelete(DeleteBehavior.Restrict);
+        });
+        b.Entity<AccessRole>(e =>
+        {
+            e.ToTable("Roles");
+            e.Property(x => x.Name).HasMaxLength(100).IsRequired();
+            e.Property(x => x.Description).HasMaxLength(500);
+            e.Property(x => x.Permissions).HasMaxLength(4000);
         });
         b.Entity<DocumentSequence>(e => e.HasKey(x => x.Key));
         b.Entity<AuditLog>(e =>

@@ -21,7 +21,8 @@ public partial class PurchasesViewModel(PurchaseService purchases, FinanceServic
     public ObservableCollection<CashRegister> CashRegisters { get; } = new();
 
     /// <summary>Открытая вкладка: 0 — оформление, 1 — журнал, 2 — поставщики и долги.</summary>
-    [ObservableProperty] private int _selectedTab;
+    // Без права оформления открываем сразу историю (вкладка оформления скрыта)
+    [ObservableProperty] private int _selectedTab = Core.Services.Access.Can(Core.Domain.Perm.PurchasesCreate) || Core.Services.Access.Can(Core.Domain.Perm.PurchasesEdit) ? 0 : 1;
 
     protected override decimal DefaultPrice(Product product) => product.PurchasePrice;
 
@@ -37,6 +38,7 @@ public partial class PurchasesViewModel(PurchaseService purchases, FinanceServic
         CashRegister ??= CashRegisters.FirstOrDefault();
         DebtCashRegister ??= CashRegisters.FirstOrDefault();
         await LoadHistoryCore();
+        await LoadReturnsCore();
         await LoadDebtsCore();
         _loaded = true;
     });
@@ -403,8 +405,30 @@ public partial class PurchasesViewModel(PurchaseService purchases, FinanceServic
         var vm = new PurchaseReturnViewModel(full, purchases, Dialogs, CashRegisters);
         ModalHost.ShowDialog(new SaleReturnWindow { DataContext = vm });
         if (!vm.Posted) return;
-        await RunAsync(async () => { await LoadHistoryCore(); await LoadDebtsCore(); });
+        await RunAsync(async () => { await LoadHistoryCore(); await LoadReturnsCore(); await LoadDebtsCore(); });
         await LoadDetailsAsync(SelectedPurchase);
+    }
+
+    // ══ Журнал возвратов поставщикам ══
+
+    public ObservableCollection<PurchaseReturn> Returns { get; } = new();
+
+    [ObservableProperty] private DateTime _returnsFrom = DateTime.Today.AddDays(-30);
+    [ObservableProperty] private DateTime _returnsTo = DateTime.Today;
+    [ObservableProperty] private decimal _returnsTotal;
+    [ObservableProperty] private decimal _returnsRefund;
+    partial void OnReturnsFromChanged(DateTime value) { if (_loaded) _ = RunAsync(LoadReturnsCore); }
+    partial void OnReturnsToChanged(DateTime value) { if (_loaded) _ = RunAsync(LoadReturnsCore); }
+
+    [RelayCommand]
+    private Task LoadReturnsAsync() => RunAsync(LoadReturnsCore);
+
+    private async Task LoadReturnsCore()
+    {
+        var list = await purchases.GetReturnsAsync(ReturnsFrom, ReturnsTo);
+        Fill(Returns, list);
+        ReturnsTotal = list.Sum(r => r.Total);
+        ReturnsRefund = list.Sum(r => r.RefundAmount);
     }
 
     [RelayCommand]

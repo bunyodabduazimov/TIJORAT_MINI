@@ -65,6 +65,7 @@ public class CatalogTransferService(IDbContextFactory<TradeDbContext> factory)
 
     public async Task<ImportResult> ImportProductsAsync(string text, CancellationToken ct = default)
     {
+        Access.Demand(Perm.CatalogProductsImport);
         var (header, rows) = Parse(text);
         var col = MapColumns(header, ProductColumns);
         if (col["Наименование"] < 0) throw new BusinessException("В файле нет колонки «Наименование».");
@@ -135,6 +136,7 @@ public class CatalogTransferService(IDbContextFactory<TradeDbContext> factory)
 
     public async Task<ImportResult> ImportCounterpartiesAsync(string text, CancellationToken ct = default)
     {
+        Access.Demand(Perm.CatalogCounterpartiesImport);
         var (header, rows) = Parse(text);
         var col = MapColumns(header, CounterpartyColumns);
         if (col["Наименование"] < 0) throw new BusinessException("В файле нет колонки «Наименование».");

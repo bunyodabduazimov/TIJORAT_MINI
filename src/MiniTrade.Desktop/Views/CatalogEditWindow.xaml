@@ -60,6 +60,15 @@
                     </UniformGrid>
                 </StackPanel>
 
+            <!-- Тип позиции: услуга продаётся без учёта остатков на складе -->
+            <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,0,0,12">
+                <TextBlock Text="{l:T 'Тип:'}" Style="{StaticResource FieldLabel}" VerticalAlignment="Center" Margin="0,0,14,0"/>
+                <RadioButton Content="{l:T 'Товар'}" GroupName="ProductKind" IsChecked="{Binding IsService, Converter={StaticResource Not}}" Margin="0,0,18,0"/>
+                <RadioButton x:Name="ServiceKind" Content="{l:T 'Услуга (без учёта остатков)'}" GroupName="ProductKind" IsChecked="{Binding IsService}"/>
+                <CheckBox Content="{l:T 'Весовой товар'}" IsChecked="{Binding IsWeighted}" Margin="28,0,0,0" VerticalAlignment="Center"
+                          ToolTip="{l:T 'Продаётся по штрихкоду весов: штрихкод товара — 5-значный код на весах'}"
+                          Visibility="{Binding IsChecked, ElementName=ServiceKind, Converter={StaticResource InvBoolToVis}}"/>
+            </StackPanel>
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition/>
@@ -79,9 +88,14 @@
                     <TextBlock Text="{l:T 'Категория'}" Style="{StaticResource FieldLabel}" Margin="0,0,0,4"/>
                     <DockPanel>
                         <Button DockPanel.Dock="Right" Style="{StaticResource InputAddonButton}" Content="&#xF0415;" ToolTip="{l:T 'Новая категория'}"
+                                Visibility="{Binding DataContext.SelectedCategory, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource InvBoolToVis}}"
                                 Command="{Binding DataContext.AddCategoryCommand, RelativeSource={RelativeSource AncestorType=Window}}"/>
+                        <Button DockPanel.Dock="Right" Style="{StaticResource InputAddonButton}" Content="&#xF03EB;" ToolTip="{l:T 'Изменить категорию'}"
+                                Visibility="{Binding DataContext.SelectedCategory, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource BoolToVis}}"
+                                Command="{Binding DataContext.EditCategoryCommand, RelativeSource={RelativeSource AncestorType=Window}}"/>
                         <ComboBox ItemsSource="{Binding DataContext.Categories, RelativeSource={RelativeSource AncestorType=Window}}"
-                                  SelectedItem="{Binding DataContext.SelectedCategory, RelativeSource={RelativeSource AncestorType=Window}}"
+                                  SelectedItem="{Binding DataContext.SelectedCategory, RelativeSource={RelativeSource AncestorType=Window}}" l:Ui.Clearable="True"
+                                  l:Ui.Placeholder="{l:T 'Без категории'}"
                                   DisplayMemberPath="Name"/>
                     </DockPanel>
                 </StackPanel>
@@ -92,24 +106,38 @@
                 </StackPanel>
                 <StackPanel Grid.Row="1" Grid.Column="2">
                     <TextBlock Text="{l:T 'Штрихкод'}" Style="{StaticResource FieldLabel}"/>
-                    <TextBox Text="{Binding Barcode, UpdateSourceTrigger=PropertyChanged}"/>
+                    <DockPanel>
+                        <Button DockPanel.Dock="Right" Style="{StaticResource InputAddonButton}" Content="&#xF0068;" Click="OnGenerateBarcode"
+                                ToolTip="{l:T 'Сгенерировать штрихкод (весовой — свободный код весов 1–99999, иначе EAN-13)'}"/>
+                        <TextBox Text="{Binding Barcode, UpdateSourceTrigger=PropertyChanged}"/>
+                    </DockPanel>
                 </StackPanel>
 
                 <StackPanel Grid.Row="2">
-                    <TextBlock Text="{l:T 'Цена закупки, TJS'}" Style="{StaticResource FieldLabel}"/>
+                    <TextBlock Text="{l:T 'Цена закупки'}" Style="{StaticResource FieldLabel}"/>
                     <TextBox l:Ui.Numeric="True" Text="{Binding PurchasePrice, Converter={StaticResource Dec}, UpdateSourceTrigger=PropertyChanged}"/>
                 </StackPanel>
                 <StackPanel Grid.Row="2" Grid.Column="2">
-                    <TextBlock Text="{l:T 'Цена продажи, TJS'}" Style="{StaticResource FieldLabel}"/>
+                    <TextBlock Text="{l:T 'Цена продажи'}" Style="{StaticResource FieldLabel}"/>
                     <TextBox l:Ui.Numeric="True" Text="{Binding SalePrice, Converter={StaticResource Dec}, UpdateSourceTrigger=PropertyChanged}"/>
                 </StackPanel>
 
                 <StackPanel Grid.Row="3">
                     <TextBlock Text="{l:T 'Ед. измерения'}" Style="{StaticResource FieldLabel}"/>
-                    <ComboBox Text="{Binding Unit, UpdateSourceTrigger=PropertyChanged}"
-                              ItemsSource="{Binding DataContext.Units, RelativeSource={RelativeSource AncestorType=Window}}"/>
+                    <DockPanel>
+                        <Button DockPanel.Dock="Right" Style="{StaticResource InputAddonButton}" Content="&#xF0415;" ToolTip="{l:T 'Новая единица измерения'}"
+                                Visibility="{Binding DataContext.SelectedUnit, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource InvBoolToVis}}"
+                                Command="{Binding DataContext.AddUnitCommand, RelativeSource={RelativeSource AncestorType=Window}}"/>
+                        <Button DockPanel.Dock="Right" Style="{StaticResource InputAddonButton}" Content="&#xF03EB;" ToolTip="{l:T 'Изменить единицу измерения'}"
+                                Visibility="{Binding DataContext.SelectedUnit, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource BoolToVis}}"
+                                Command="{Binding DataContext.EditUnitCommand, RelativeSource={RelativeSource AncestorType=Window}}"/>
+                        <ComboBox ItemsSource="{Binding DataContext.Units, RelativeSource={RelativeSource AncestorType=Window}}"
+                                  SelectedItem="{Binding DataContext.SelectedUnit, RelativeSource={RelativeSource AncestorType=Window}}" l:Ui.Clearable="True"
+                                  DisplayMemberPath="Name"/>
+                    </DockPanel>
                 </StackPanel>
-                <StackPanel Grid.Row="3" Grid.Column="2">
+                <StackPanel Grid.Row="3" Grid.Column="2"
+                            Visibility="{Binding IsChecked, ElementName=ServiceKind, Converter={StaticResource InvBoolToVis}}">
                     <TextBlock Text="{l:T 'Мин. остаток'}" Style="{StaticResource FieldLabel}"/>
                     <TextBox l:Ui.Numeric="True" Text="{Binding MinStock, Converter={StaticResource Dec}, UpdateSourceTrigger=PropertyChanged}"/>
                 </StackPanel>
@@ -188,9 +216,13 @@
                 <TextBlock Text="{l:T 'Группа'}" Style="{StaticResource FieldLabel}"/>
                 <DockPanel>
                     <Button DockPanel.Dock="Right" Style="{StaticResource InputAddonButton}" Content="&#xF0415;" ToolTip="{l:T 'Новая группа контрагентов'}"
+                            Visibility="{Binding DataContext.SelectedGroup, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource InvBoolToVis}}"
                             Command="{Binding DataContext.AddGroupCommand, RelativeSource={RelativeSource AncestorType=Window}}"/>
+                    <Button DockPanel.Dock="Right" Style="{StaticResource InputAddonButton}" Content="&#xF03EB;" ToolTip="{l:T 'Изменить группу'}"
+                            Visibility="{Binding DataContext.SelectedGroup, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource BoolToVis}}"
+                            Command="{Binding DataContext.EditGroupCommand, RelativeSource={RelativeSource AncestorType=Window}}"/>
                     <ComboBox ItemsSource="{Binding DataContext.Groups, RelativeSource={RelativeSource AncestorType=Window}}"
-                              SelectedItem="{Binding DataContext.SelectedGroup, RelativeSource={RelativeSource AncestorType=Window}}"
+                              SelectedItem="{Binding DataContext.SelectedGroup, RelativeSource={RelativeSource AncestorType=Window}}" l:Ui.Clearable="True"
                               DisplayMemberPath="Name"/>
                 </DockPanel>
                 <TextBlock Text="{l:T 'Телефон'}" Style="{StaticResource FieldLabel}"/>
@@ -200,6 +232,69 @@
                 <TextBlock Text="{l:T 'Примечание'}" Style="{StaticResource FieldLabel}"/>
                 <TextBox Text="{Binding Note, UpdateSourceTrigger=PropertyChanged}"/>
                 <CheckBox Content="{l:T 'Активен'}" IsChecked="{Binding IsActive}" Margin="0,14,0,0"/>
+            </StackPanel>
+        </DataTemplate>
+
+        <DataTemplate DataType="{x:Type dom:MeasureUnit}">
+            <StackPanel>
+                <TextBlock Text="{l:T 'Краткое наименование *'}" Style="{StaticResource FieldLabel}" Margin="0,0,0,4"/>
+                <TextBox Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}" MaxLength="16" l:Ui.Placeholder="{l:T 'шт, кг, л…'}"/>
+                <TextBlock Text="{l:T 'Полное наименование'}" Style="{StaticResource FieldLabel}"/>
+                <TextBox Text="{Binding Description, UpdateSourceTrigger=PropertyChanged}" l:Ui.Placeholder="{l:T 'Штука, килограмм, литр…'}"/>
+                <CheckBox Content="{l:T 'Активна'}" IsChecked="{Binding IsActive}" Margin="0,14,0,0"/>
+            </StackPanel>
+        </DataTemplate>
+
+        <DataTemplate DataType="{x:Type dom:ScaleDevice}">
+            <StackPanel>
+                <TextBlock Text="{l:T 'Наименование *'}" Style="{StaticResource FieldLabel}" Margin="0,0,0,4"/>
+                <TextBox Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}" l:Ui.Placeholder="{l:T 'Весы мясного отдела'}"/>
+                <TextBlock Text="{l:T 'Тип весов'}" Style="{StaticResource FieldLabel}"/>
+                <StackPanel Orientation="Horizontal" Margin="0,2,0,0">
+                    <RadioButton Content="TMA" GroupName="scaleType" Margin="0,0,20,0" Tag="4001" Click="OnScaleTypeClick"
+                                 IsChecked="{Binding Type, Converter={StaticResource Equals}, ConverterParameter=Tma}"/>
+                    <RadioButton Content="CAS" GroupName="scaleType" Margin="0,0,20,0" Tag="20304" Click="OnScaleTypeClick"
+                                 IsChecked="{Binding Type, Converter={StaticResource Equals}, ConverterParameter=Cas}"/>
+                    <RadioButton x:Name="RongtaRadio" Content="Rongta" GroupName="scaleType" Click="OnRongtaClick"
+                                 IsChecked="{Binding Type, Converter={StaticResource Equals}, ConverterParameter=Rongta}"/>
+                </StackPanel>
+                <!-- Rongta: файл PLU для программы RLS1000 вместо сети -->
+                <StackPanel Visibility="{Binding IsChecked, ElementName=RongtaRadio, Converter={StaticResource BoolToVis}}">
+                    <TextBlock Text="{l:T 'Файл PLU (программа RLS1000)'}" Style="{StaticResource FieldLabel}"/>
+                    <TextBox x:Name="ScaleFileBox" Text="{Binding FilePath, UpdateSourceTrigger=PropertyChanged}" l:Ui.Placeholder="C:\RLS1000\plu.Txp"/>
+                    <TextBlock Text="{l:T 'Программа запишет в этот файл товары, а программа весов RLS1000 загрузит их в весы. Пусто — C:\\RLS1000\\plu.Txp.'}"
+                               Opacity="0.6" Margin="0,4,0,0" TextWrapping="Wrap"/>
+                </StackPanel>
+                <StackPanel Visibility="{Binding IsChecked, ElementName=RongtaRadio, Converter={StaticResource InvBoolToVis}}">
+                <TextBlock Text="{l:T 'IP-адрес *'}" Style="{StaticResource FieldLabel}"/>
+                <TextBox Text="{Binding Ip, UpdateSourceTrigger=PropertyChanged}" l:Ui.Placeholder="192.168.1.50"/>
+                <TextBlock Text="{l:T 'Порт *'}" Style="{StaticResource FieldLabel}"/>
+                <TextBox x:Name="ScalePortBox" Text="{Binding Port, UpdateSourceTrigger=PropertyChanged}"/>
+                <TextBlock Text="{l:T 'Обычно: TMA — 4001, CAS — 20304.'}" Opacity="0.6" Margin="0,4,0,0" TextWrapping="Wrap"/>
+                <DockPanel Margin="0,12,0,0">
+                    <Button DockPanel.Dock="Left" Style="{StaticResource SmallButton}" Content="{l:T 'Проверить связь'}"
+                            Command="{Binding DataContext.TestConnectionCommand, RelativeSource={RelativeSource AncestorType=Window}}"/>
+                    <TextBlock VerticalAlignment="Center" Margin="10,0,0,0" TextWrapping="Wrap"
+                               Text="{Binding DataContext.TestMessage, RelativeSource={RelativeSource AncestorType=Window}}">
+                        <TextBlock.Style>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="Opacity" Value="0.7"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding DataContext.TestOk, RelativeSource={RelativeSource AncestorType=Window}}" Value="True">
+                                        <Setter Property="Foreground" Value="{DynamicResource SuccessBrush}"/>
+                                        <Setter Property="Opacity" Value="1"/>
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding DataContext.TestOk, RelativeSource={RelativeSource AncestorType=Window}}" Value="False">
+                                        <Setter Property="Foreground" Value="{DynamicResource DangerBrush}"/>
+                                        <Setter Property="Opacity" Value="1"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBlock.Style>
+                    </TextBlock>
+                </DockPanel>
+                </StackPanel>
+                <CheckBox Content="{l:T 'Активны'}" IsChecked="{Binding IsActive}" Margin="0,14,0,0"/>
             </StackPanel>
         </DataTemplate>
 
@@ -237,6 +332,8 @@
                 <TextBlock Text="{l:T 'Остаток'}" Style="{StaticResource FieldLabel}"/>
                 <TextBox Text="{Binding Balance, Converter={StaticResource Money}, Mode=OneWay}" IsReadOnly="True" Focusable="False"/>
                 <TextBlock Text="{l:T 'Остаток меняется только операциями в разделе «Финансы».'}" Style="{StaticResource Muted}" FontSize="11" Margin="0,4,0,0"/>
+                <CheckBox Content="{l:T 'Безналичная касса (карта, перевод)'}" IsChecked="{Binding IsCashless}" Margin="0,14,0,0"/>
+                <TextBlock Text="{l:T 'Оплата в эту кассу пробивается на ККТ как безналичная.'}" Style="{StaticResource Muted}" FontSize="11" Margin="0,4,0,0" TextWrapping="Wrap"/>
                 <CheckBox Content="{l:T 'Активна'}" IsChecked="{Binding IsActive}" Margin="0,14,0,0"/>
             </StackPanel>
         </DataTemplate>

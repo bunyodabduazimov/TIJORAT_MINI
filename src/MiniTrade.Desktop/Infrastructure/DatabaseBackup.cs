@@ -38,10 +38,26 @@ public static class DatabaseBackup
         }
         ui.LastBackupAt = DateTime.Now;
         ui.Save();
+        DeleteExpired(ui);
         return path;
     }
 
-    /// <summary>Проверка, что файл — база TIJORAT MINI.</summary>
+    /// <summary>Удаляет копии программы (minitrade_*.db / *.sql) старше заданного числа дней.</summary>
+    public static void DeleteExpired(UiSettings ui)
+    {
+        if (ui.BackupKeepDays <= 0) return;
+        var folder = FolderOf(ui);
+        if (!Directory.Exists(folder)) return;
+        var limit = DateTime.Now.AddDays(-ui.BackupKeepDays);
+        var dir = new DirectoryInfo(folder);
+        foreach (var f in dir.GetFiles("minitrade_*.db").Concat(dir.GetFiles("minitrade_*.sql")))
+        {
+            if (f.LastWriteTime >= limit) continue;
+            try { f.Delete(); } catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { }
+        }
+    }
+
+    /// <summary>Проверка, что файл — база TIJORAT.PRO.</summary>
     public static void Validate(string path)
     {
         try
@@ -54,7 +70,7 @@ public static class DatabaseBackup
         }
         catch (Exception ex) when (ex is SqliteException or InvalidDataException)
         {
-            throw new InvalidDataException(L.T("Файл не является резервной копией базы TIJORAT MINI."));
+            throw new InvalidDataException(L.T("Файл не является резервной копией базы TIJORAT.PRO."));
         }
     }
 

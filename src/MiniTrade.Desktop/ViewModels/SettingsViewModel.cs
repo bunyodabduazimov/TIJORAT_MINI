@@ -1,4 +1,5 @@
 ﻿using System.Collections.ObjectModel;
+using MiniTrade.Core.Common;
 using System.IO;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -11,18 +12,9 @@ using MiniTrade.Desktop.Infrastructure.Printing;
 using MiniTrade.Desktop.Licensing;
 using MiniTrade.Desktop.Views;
 using MiniTrade.Licensing;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace MiniTrade.Desktop.ViewModels;
-
-public sealed record RoleOption(UserRole Role, string Name);
-
-/// <summary>Флажок права доступа к разделу.</summary>
-public sealed partial class PermissionOption(Permission value, string name) : ObservableObject
-{
-    public Permission Value { get; } = value;
-    public string Name { get; } = name;
-    [ObservableProperty] private bool _isChecked;
-}
 
 /// <summary>Значение для выпадающего списка с подписью.</summary>
 public sealed record Choice<T>(T Value, string Name);
@@ -40,90 +32,13 @@ public partial class SettingsViewModel(
 {
     public override string Title => L.T("Настройки");
 
-    public IReadOnlyList<RoleOption> Roles { get; } =
-    [
-        new(UserRole.Admin, L.T("Администратор")),
-        new(UserRole.Manager, L.T("Менеджер")),
-        new(UserRole.Cashier, L.T("Кассир"))
-    ];
-
     public bool IsAdmin => session.IsAdmin;
+    public bool CanManageUsers => session.Can(Perm.SettingsUsers);
+    public bool CanManageRoles => session.Can(Perm.SettingsRoles);
+    public bool CanManageDatabase => session.Can(Perm.SettingsDatabase);
+    public bool CanEditCompany => session.Can(Perm.SettingsCompany);
 
-    /// <summary>Номер вкладки «Интерфейс» (последняя) — на неё возвращаемся после смены языка.</summary>
-    public const int InterfaceTab = 5;
     [ObservableProperty] private int _selectedTab;
-
-    // Интерфейс: тема применяется сразу, язык — пересозданием главного окна
-    [ObservableProperty] private AppTheme _theme = App.Ui.Theme;
-    public IReadOnlyList<LanguageInfo> Languages { get; } = L.Available();
-    [ObservableProperty] private LanguageInfo? _language = L.Available().FirstOrDefault(l => l.Code == L.Current.Code);
-
-    public IReadOnlyList<Choice<double>> Scales { get; } =
-        [new(0.8, "80%"), new(0.9, "90%"), new(1.0, "100%"), new(1.1, "110%"), new(1.25, "125%"), new(1.5, "150%")];
-    [ObservableProperty] private Choice<double>? _scale;
-
-    public IReadOnlyList<Choice<string>> StartPages { get; } =
-    [
-        new(nameof(DashboardViewModel), L.T("Главная")),
-        new(nameof(FinanceViewModel), L.T("Финансы")),
-        new(nameof(SalesViewModel), L.T("Продажи")),
-        new(nameof(PurchasesViewModel), L.T("Закуп")),
-        new(nameof(WarehouseViewModel), L.T("Склад")),
-        new(nameof(CatalogViewModel), L.T("Справочники")),
-        new(nameof(ReportsViewModel), L.T("Отчёты")),
-    ];
-    [ObservableProperty] private Choice<string>? _startPage;
-
-    [ObservableProperty] private bool _menuCollapsedOnStart = App.Ui.MenuCollapsed;
-
-    partial void OnScaleChanged(Choice<double>? value)
-    {
-        if (value is null || Math.Abs(value.Value - App.Ui.Scale) < 0.001) return;
-        App.Ui.Scale = value.Value;
-        App.Ui.Save();
-        UiSettings.RaiseScaleChanged();
-    }
-
-    partial void OnStartPageChanged(Choice<string>? value)
-    {
-        if (value is null) return;
-        App.Ui.StartPage = value.Value;
-        App.Ui.Save();
-    }
-
-    partial void OnMenuCollapsedOnStartChanged(bool value)
-    {
-        App.Ui.MenuCollapsed = value;
-        App.Ui.Save();
-        if (System.Windows.Application.Current.MainWindow?.DataContext is MainViewModel main)
-            main.IsMenuCollapsed = value;
-    }
-
-    private void InitInterfaceChoices()
-    {
-        Scale ??= Scales.OrderBy(s => Math.Abs(s.Value - App.Ui.Scale)).First();
-        StartPage ??= StartPages.FirstOrDefault(p => p.Value == App.Ui.StartPage) ?? StartPages[0];
-        MenuCollapsedOnStart = App.Ui.MenuCollapsed;
-    }
-
-    partial void OnThemeChanged(AppTheme value)
-    {
-        App.Ui.Theme = value;
-        App.Ui.Save();
-        ThemeManager.Apply(value);
-    }
-
-    partial void OnLanguageChanged(LanguageInfo? value)
-    {
-        if (value is null || value.Code == L.Current.Code) return;
-        App.Ui.Language = value.Code;
-        App.Ui.Save();
-        L.Load(value.Code);
-        // Дать ComboBox закрыться, затем пересоздать окно с новыми текстами
-        System.Windows.Application.Current.Dispatcher.BeginInvoke(
-            () => App.ReloadMainWindow<SettingsViewModel>(s => s.SelectedTab = InterfaceTab),
-            System.Windows.Threading.DispatcherPriority.Background);
-    }
 
     // Компания
     [ObservableProperty] private CompanySettings _company = new();
@@ -144,12 +59,6 @@ public partial class SettingsViewModel(
     public string InstallationId => license.Device.InstallationId;
     public string ServerUrl => config.LicenseServerUrl;
     public string DatabasePath => connection.Display;
-
-    // Мой пароль
-    public string CurrentUserName => session.CurrentUser is { } u ? $"{u.FullName} ({u.Login})" : "";
-    [ObservableProperty] private string? _oldPassword;
-    [ObservableProperty] private string? _myNewPassword;
-    [ObservableProperty] private string? _myNewPasswordRepeat;
 
     // Печать (настройки этого компьютера)
     public ObservableCollection<string> Printers { get; } = new();
@@ -304,7 +213,7 @@ public partial class SettingsViewModel(
     }
 
     /// <summary>Номер вкладки «Печать»: при переходе на неё образец обновляется (реквизиты могли измениться).</summary>
-    public const int PrintTab = 2;
+    public const int PrintTab = 3;
     partial void OnSelectedTabChanged(int value)
     {
         if (value == PrintTab && _printOptionsHooked) UpdatePrintPreview();
@@ -416,7 +325,7 @@ public partial class SettingsViewModel(
     [RelayCommand]
     private async Task SaveDatabaseAsync()
     {
-        if (!IsAdmin)
+        if (!CanManageDatabase)
         {
             Dialogs.Error(L.T("Менять подключение к базе может только администратор."));
             return;
@@ -456,6 +365,14 @@ public partial class SettingsViewModel(
     [ObservableProperty] private int _backupKeep = App.Ui.BackupKeep;
     [ObservableProperty] private string _lastBackup = FormatLastBackup();
     public IReadOnlyList<int> KeepOptions { get; } = [3, 5, 10, 20, 30, 60];
+    [ObservableProperty] private int _backupKeepDays = App.Ui.BackupKeepDays;
+
+    partial void OnBackupKeepDaysChanged(int value)
+    {
+        if (value < 0) { BackupKeepDays = 0; return; }
+        App.Ui.BackupKeepDays = value;
+        App.Ui.Save();
+    }
 
     private static string FormatLastBackup() =>
         App.Ui.LastBackupAt is { } t ? t.ToString("dd.MM.yyyy HH:mm") : L.T("ещё не создавалась");
@@ -474,66 +391,65 @@ public partial class SettingsViewModel(
 
     partial void OnSelectedUserChanged(User? value)
     {
-        EditingUser = value is null ? new User { Role = UserRole.Cashier }
+        EditingUser = value is null ? new User { AccessRoleId = RoleRows.FirstOrDefault(r => !r.Role.IsAdmin)?.Role.Id }
             : new User
             {
                 Id = value.Id, Login = value.Login, FullName = value.FullName, Role = value.Role, IsActive = value.IsActive,
-                Phone = value.Phone, Note = value.Note, Permissions = value.Permissions
+                Phone = value.Phone, Note = value.Note, AccessRoleId = value.AccessRoleId
             };
         NewPassword = null;
     }
 
-    partial void OnEditingUserChanged(User value)
-    {
-        EditingRole = value.Role;
-        LoadPermissionOptions(value.EffectivePermissions);
-    }
+    partial void OnEditingUserChanged(User value) => EditingRoleId = value.AccessRoleId;
 
-    /// <summary>Роль в форме; при смене — права сбрасываются к правам роли.</summary>
+    /// <summary>Роль в форме пользователя; права определяет роль (вкладка «Роли»).</summary>
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(CanEditPermissions))]
-    private UserRole _editingRole = UserRole.Cashier;
+    [NotifyPropertyChangedFor(nameof(EditingRoleAccess))]
+    private int? _editingRoleId;
 
-    partial void OnEditingRoleChanged(UserRole value)
-    {
-        if (EditingUser.Role == value) return;
-        EditingUser.Role = value;
-        LoadPermissionOptions(RolePermissions.Default(value));
-    }
+    partial void OnEditingRoleIdChanged(int? value) => EditingUser.AccessRoleId = value;
 
-    /// <summary>Администратору доступно всё — флажки прав для него не редактируются.</summary>
-    public bool CanEditPermissions => EditingRole != UserRole.Admin;
-
-    public ObservableCollection<PermissionOption> PermissionOptions { get; } =
-    [
-        new(Permission.Dashboard, L.T("Главная")),
-        new(Permission.Finance, L.T("Финансы")),
-        new(Permission.Sales, L.T("Продажи")),
-        new(Permission.Purchases, L.T("Закуп")),
-        new(Permission.Warehouse, L.T("Склад")),
-        new(Permission.Catalog, L.T("Справочники")),
-        new(Permission.Reports, L.T("Отчёты")),
-        new(Permission.AuditLog, L.T("Журнал действий")),
-    ];
-
-    private void LoadPermissionOptions(Permission value)
-    {
-        foreach (var o in PermissionOptions) o.IsChecked = (value & o.Value) == o.Value;
-    }
-
-    private Permission CollectPermissions() =>
-        PermissionOptions.Where(o => o.IsChecked).Aggregate(Permission.None, (acc, o) => acc | o.Value);
-
-    [RelayCommand]
-    private void ResetPermissions() => LoadPermissionOptions(RolePermissions.Default(EditingRole));
+    /// <summary>Краткое описание прав выбранной роли (только для просмотра).</summary>
+    public string EditingRoleAccess => RoleRows.FirstOrDefault(r => r.Role.Id == EditingRoleId)?.Summary ?? "";
 
     public IReadOnlyList<FilterChoice<CostingMethod>> CostingMethods { get; } =
         [new(L.T("FIFO — первым пришёл, первым ушёл"), CostingMethod.Fifo), new(L.T("Средняя себестоимость (AVG)"), CostingMethod.Average)];
 
+    /// <summary>Страны: выбор страны подставляет валюту; телефонный код — в телефон нового контрагента.</summary>
+    public IReadOnlyList<CountryInfo> CountryList { get; } = Countries.All;
+    [ObservableProperty] private CountryInfo? _country;
+    [ObservableProperty] private string? _currency;
+    partial void OnCountryChanged(CountryInfo? value) { if (value is not null) Currency = value.Currency; }
+
+    /// <summary>Валюты для выбора (только из списка).</summary>
+    public IReadOnlyList<CurrencyOption> Currencies { get; } =
+    [
+        new("TJS", L.T("TJS — сомони (Таджикистан)")),
+        new("RUB", L.T("RUB — российский рубль")),
+        new("UZS", L.T("UZS — узбекский сум")),
+        new("KZT", L.T("KZT — казахстанский тенге")),
+        new("KGS", L.T("KGS — киргизский сом")),
+        new("TMT", L.T("TMT — туркменский манат")),
+        new("AZN", L.T("AZN — азербайджанский манат")),
+        new("AMD", L.T("AMD — армянский драм")),
+        new("BYN", L.T("BYN — белорусский рубль")),
+        new("MDL", L.T("MDL — молдавский лей")),
+        new("GEL", L.T("GEL — грузинский лари")),
+        new("UAH", L.T("UAH — украинская гривна")),
+        new("AFN", L.T("AFN — афганский афгани")),
+        new("TRY", L.T("TRY — турецкая лира")),
+        new("AED", L.T("AED — дирхам ОАЭ")),
+        new("CNY", L.T("CNY — китайский юань")),
+        new("USD", L.T("USD — доллар США")),
+        new("EUR", L.T("EUR — евро")),
+    ];
+
     public override Task LoadAsync() => RunAsync(async () =>
     {
-        InitInterfaceChoices();
         Company = await settings.GetCompanyAsync();
+        Country = Countries.Find(Company.Country);
+        Currency = Company.Currency;
+        await LoadRolesCore();
         Fill(Users, await settings.GetUsersAsync());
         if (SelectedUser is null) OnSelectedUserChanged(null);
         RefreshLicenseInfo();
@@ -557,6 +473,8 @@ public partial class SettingsViewModel(
     [RelayCommand]
     private async Task SaveCompanyAsync()
     {
+        Company.Country = Country?.Code;
+        Company.Currency = Currency ?? Company.Currency;
         if (await RunAsync(() => settings.SaveCompanyAsync(Company))) Dialogs.Info(L.T("Данные компании сохранены."));
     }
 
@@ -566,8 +484,6 @@ public partial class SettingsViewModel(
     [RelayCommand]
     private async Task SaveUserAsync()
     {
-        EditingUser.Role = EditingRole;
-        EditingUser.Permissions = CollectPermissions();
         if (!await RunAsync(() => settings.SaveUserAsync(EditingUser, NewPassword))) return;
         // Сменили пароль пользователю, чей пароль запомнен на этом компьютере, — обновляем сохранённый
         if (!string.IsNullOrEmpty(NewPassword) && SavedLogin.Load() is { } saved
@@ -606,27 +522,11 @@ public partial class SettingsViewModel(
         var copy = new User
         {
             Id = user.Id, Login = user.Login, FullName = user.FullName, Role = user.Role, IsActive = !user.IsActive,
-            Phone = user.Phone, Note = user.Note, Permissions = user.Permissions
+            Phone = user.Phone, Note = user.Note, AccessRoleId = user.AccessRoleId
         };
         if (!await RunAsync(() => settings.SaveUserAsync(copy, null))) return;
         Fill(Users, await settings.GetUsersAsync());
         SelectedUser = Users.FirstOrDefault(u => u.Id == copy.Id);
-    }
-
-    [RelayCommand]
-    private async Task ChangeMyPasswordAsync()
-    {
-        if (MyNewPassword != MyNewPasswordRepeat)
-        {
-            Dialogs.Error(L.T("Новый пароль и повтор не совпадают."));
-            return;
-        }
-        if (!await RunAsync(() => settings.ChangeOwnPasswordAsync(OldPassword, MyNewPassword))) return;
-        if (SavedLogin.Load() is { } saved && session.CurrentUser is { } me
-            && string.Equals(saved.Login, me.Login, StringComparison.OrdinalIgnoreCase))
-            SavedLogin.Save(saved.Login, MyNewPassword!);
-        OldPassword = MyNewPassword = MyNewPasswordRepeat = null;
-        Dialogs.Info(L.T("Пароль изменён."));
     }
 
     [RelayCommand]
@@ -652,6 +552,98 @@ public partial class SettingsViewModel(
         }
     }
 
+    // ── Полная очистка базы ──
+    [ObservableProperty] private string? _wipePassword;
+    [ObservableProperty] private bool _wipeConfirmed;
+
+    /// <summary>
+    /// Очистка: проверка пароля администратора → обязательная резервная копия в папку копий →
+    /// удаление базы → перезапуск (база создаётся заново, вход admin/admin).
+    /// </summary>
+    [RelayCommand]
+    private async Task WipeDatabaseAsync()
+    {
+        if (!IsAdmin || !CanManageDatabase) { Dialogs.Error(L.T("Очистить базу может только администратор.")); return; }
+        if (!WipeConfirmed) { Dialogs.Error(L.T("Отметьте «Я понимаю, что все данные будут удалены».")); return; }
+        if (!await RunAsync(() => settings.VerifyAdminPasswordAsync(WipePassword))) return;
+        if (!Dialogs.Confirm(L.T("Все данные будут удалены без возможности отмены (кроме резервной копии). База станет как новая, вход — admin / admin. Продолжить?"), L.T("Очистка базы данных")))
+            return;
+
+        // Резервная копия обязательна: без неё не очищаем
+        string backup;
+        if (connection.IsRemote)
+        {
+            backup = Path.Combine(BackupFolder, $"minitrade_before_wipe_{connection.Database}_{DateTime.Now:yyyyMMdd_HHmmss}.sql");
+            if (!await DumpAsync(backup)) { Dialogs.Error(L.T("Резервная копия не создана — очистка отменена.")); return; }
+        }
+        else
+        {
+            backup = Path.Combine(BackupFolder, $"minitrade_before_wipe_{DateTime.Now:yyyyMMdd_HHmmss}.db");
+            try { DatabaseBackup.Copy(config.ResolvedDatabasePath, backup); }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or SqliteException)
+            {
+                Dialogs.Error(L.F("Резервная копия не создана — очистка отменена.\n{0}", ex.Message));
+                return;
+            }
+        }
+
+        if (!connection.IsRemote) SqliteConnection.ClearAllPools(); // освободить файл базы
+        if (!await RunAsync(() => settings.WipeDatabaseAsync(WipePassword))) return;
+        SavedLogin.Clear();
+        Dialogs.Info(L.F("База очищена. Резервная копия прежних данных:\n{0}\n\nПрограмма будет перезапущена. Вход: admin / admin.", backup));
+        App.Restart();
+    }
+
+    // ───── Демо-данные: заполнить пустую базу демо-компанией выбранного направления ─────
+
+    public IReadOnlyList<DemoDataWindow.Choice> DemoChoices { get; } = DemoIndustries.All.Select(p => new DemoDataWindow.Choice(p)).ToList();
+    [ObservableProperty] private DemoDataWindow.Choice? _selectedDemo;
+    [ObservableProperty] private string? _demoPassword;
+    [ObservableProperty] private bool _demoRunning;
+    [ObservableProperty] private double _demoProgress;
+    [ObservableProperty] private string? _demoStep;
+
+    [RelayCommand]
+    private async Task FillDemoAsync()
+    {
+        if (DemoRunning) return;
+        if (!IsAdmin) { Dialogs.Error(L.T("Заполнить демо-данные может только администратор.")); return; }
+        var choice = SelectedDemo ?? DemoChoices[0];
+        if (!await RunAsync(() => settings.VerifyAdminPasswordAsync(DemoPassword))) return;
+
+        var factory = App.Services.GetRequiredService<Microsoft.EntityFrameworkCore.IDbContextFactory<TradeDbContext>>();
+        if (!await DemoCompanySeeder.IsDatabaseEmptyAsync(factory))
+        {
+            Dialogs.Error(L.T("В базе уже есть данные. Демо-данные заполняются только в пустую базу — сначала очистите базу данных."));
+            return;
+        }
+        if (!Dialogs.Confirm(L.F("Заполнить базу демо-данными «{0}»? Будут созданы товары, клиенты, поставщики и год работы компании. Реквизиты компании заменятся демонстрационными.",
+                L.T(choice.Profile.Title)), L.T("Демо-данные")))
+            return;
+
+        DemoRunning = true;
+        var progress = new Progress<DemoProgress>(p =>
+        {
+            DemoProgress = p.Fraction;
+            var parts = p.Step.Split(':', 2);
+            DemoStep = $"{p.Fraction:P0} · {L.T(parts[0])}{(parts.Length > 1 ? ":" + parts[1] : "")}";
+        });
+        try
+        {
+            await Task.Run(() => DemoCompanySeeder.RunAsync(factory, session, choice.Profile.Industry, progress));
+        }
+        catch (Exception ex)
+        {
+            DemoRunning = false;
+            Dialogs.Error(L.F("Не удалось заполнить демо-данные:\n{0}", ex.InnerException?.Message ?? ex.Message));
+            return;
+        }
+        DemoPassword = null;
+        Dialogs.Info(L.F("Демо-данные «{0}» созданы: товары, клиенты, поставщики и год работы компании.", L.T(choice.Profile.Title))
+                     + "\n\n" + L.T("Программа будет перезапущена."));
+        App.Restart();
+    }
+
     private string DumpName() => $"minitrade_{connection.Database}_{DateTime.Now:yyyyMMdd_HHmmss}.sql";
 
     /// <summary>Ручной SQL-дамп базы на сервере MySQL.</summary>
@@ -662,6 +654,7 @@ public partial class SettingsViewModel(
             await Task.Run(() => MySqlDump.ExportAsync(connection, path));
             App.Ui.LastBackupAt = DateTime.Now;
             App.Ui.Save();
+            DatabaseBackup.DeleteExpired(App.Ui);
             LastBackup = FormatLastBackup();
             return true;
         }
@@ -679,7 +672,7 @@ public partial class SettingsViewModel(
         try { MySqlDump.Validate(path); }
         catch (Exception ex) when (ex is IOException or InvalidDataException or UnauthorizedAccessException)
         {
-            Dialogs.Error(L.T("Файл не является резервной копией базы TIJORAT MINI."));
+            Dialogs.Error(L.T("Файл не является резервной копией базы TIJORAT.PRO."));
             return;
         }
         if (!Dialogs.Confirm(L.F("Данные базы на сервере будут заменены данными из файла:\n{0}\n\nЭто затронет все компьютеры, подключённые к этой базе. Текущая база предварительно сохранится в папку резервных копий. Программа перезапустится. Продолжить?", path)))
@@ -713,6 +706,7 @@ public partial class SettingsViewModel(
             DatabaseBackup.Copy(config.ResolvedDatabasePath, path);
             App.Ui.LastBackupAt = DateTime.Now;
             App.Ui.Save();
+            DatabaseBackup.DeleteExpired(App.Ui);
             LastBackup = FormatLastBackup();
             Dialogs.Info(L.F("Резервная копия создана:\n{0}", path));
         }
@@ -725,7 +719,7 @@ public partial class SettingsViewModel(
     [RelayCommand]
     private async Task RestoreAsync()
     {
-        if (!IsAdmin)
+        if (!CanManageDatabase)
         {
             Dialogs.Error(L.T("Восстанавливать базу может только администратор."));
             return;
@@ -804,3 +798,5 @@ public sealed class PrinterNameConverter : System.Windows.Data.IValueConverter
         : L.T("Принтер Windows по умолчанию");
     public object ConvertBack(object? value, Type t, object? p, System.Globalization.CultureInfo c) => throw new NotSupportedException();
 }
+
+public sealed record CurrencyOption(string Code, string Name);

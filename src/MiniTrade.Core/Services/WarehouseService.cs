@@ -21,11 +21,14 @@ public record InventoryLine(int ProductId, decimal ActualQuantity);
 /// <summary>Склад: остатки, перемещения между складами, инвентаризация.</summary>
 public class WarehouseService(IDbContextFactory<TradeDbContext> factory)
 {
-    public async Task<List<StockRow>> GetBalancesAsync(int? warehouseId = null, bool includeZero = false, CancellationToken ct = default)
+    public async Task<List<StockRow>> GetBalancesAsync(int? warehouseId = null, bool includeZero = false, CancellationToken ct = default,
+        int? productId = null, int? categoryId = null)
     {
         await using var db = await factory.CreateDbContextAsync(ct);
         var query = db.StockBalances.AsNoTracking();
         if (warehouseId is not null) query = query.Where(b => b.WarehouseId == warehouseId);
+        if (productId is not null) query = query.Where(b => b.ProductId == productId);
+        if (categoryId is not null) query = query.Where(b => b.Product!.CategoryId == categoryId);
         // Проекция в SQL: не загружаем сущности товаров и складов целиком
         var rows = await query.Select(b => new StockRow(b.ProductId, b.Product!.Name, b.Product.Sku, b.Product.Unit,
                 b.Product.Category != null ? b.Product.Category.Name : null,
@@ -56,6 +59,7 @@ public class WarehouseService(IDbContextFactory<TradeDbContext> factory)
     public async Task<StockTransfer> TransferAsync(int fromWarehouseId, int toWarehouseId, IReadOnlyList<TransferLine> lines,
         string? comment = null, DateTime? date = null, CancellationToken ct = default)
     {
+        Access.Demand(Perm.WarehouseTransfer);
         if (fromWarehouseId == toWarehouseId) throw new BusinessException("Склады отправителя и получателя должны различаться.");
         // Повторяющиеся товары сливаем в одну строку
         var valid = lines.Where(l => l.Quantity > 0)
@@ -81,6 +85,7 @@ public class WarehouseService(IDbContextFactory<TradeDbContext> factory)
 
         foreach (var line in valid)
         {
+            await EnsureGoodsAsync(db, line.ProductId, ct);
             var qty = Money.RoundQty(line.Quantity);
             var cost = await StockLedger.IssueAsync(db, line.ProductId, fromWarehouseId, qty, StockMovementType.TransferOut,
                 doc.Id, doc.Number, docDate, allowNegative: false, ct);
@@ -97,6 +102,7 @@ public class WarehouseService(IDbContextFactory<TradeDbContext> factory)
     public async Task<InventoryCount> CreateInventoryAsync(int warehouseId, IReadOnlyList<InventoryLine> lines,
         string? comment = null, CancellationToken ct = default)
     {
+        Access.Demand(Perm.WarehouseInventory);
         if (lines.Count == 0) throw new BusinessException("Нет позиций для инвентаризации.");
         if (lines.Any(l => l.ActualQuantity < 0)) throw new BusinessException("Фактический остаток не может быть отрицательным.");
 
@@ -121,6 +127,7 @@ public class WarehouseService(IDbContextFactory<TradeDbContext> factory)
 
         foreach (var line in distinct)
         {
+            await EnsureGoodsAsync(db, line.ProductId, ct);
             var balance = await StockLedger.GetOrCreateAsync(db, line.ProductId, warehouseId, ct);
             var book = balance.Quantity;
             var actual = Money.RoundQty(line.ActualQuantity);
@@ -180,6 +187,61 @@ public class WarehouseService(IDbContextFactory<TradeDbContext> factory)
             .OrderBy(i => i.Product?.Name, StringComparer.CurrentCultureIgnoreCase).ToList();
     }
 
+    /// <summary>Списание товара со склада по себестоимости (порча, брак, истёк срок и т.п.).</summary>
+    public async Task<StockWriteOff> WriteOffAsync(int warehouseId, IReadOnlyList<TransferLine> lines, string? reason,
+        string? comment = null, DateTime? date = null, int? userId = null, CancellationToken ct = default)
+    {
+        Access.Demand(Perm.WarehouseWriteOff);
+        var valid = lines.Where(l => l.Quantity > 0)
+            .GroupBy(l => l.ProductId)
+            .Select(g => new TransferLine(g.Key, g.Sum(x => x.Quantity)))
+            .ToList();
+        if (valid.Count == 0) throw new BusinessException("Добавьте товары для списания.");
+
+        await using var db = await factory.CreateDbContextAsync(ct);
+        if (!await db.Warehouses.AnyAsync(w => w.Id == warehouseId, ct)) throw new BusinessException("Склад не найден.");
+
+        await using var tx = await db.Database.BeginTransactionAsync(ct);
+        var docDate = date ?? DateTime.Now;
+        if (docDate.Date > DateTime.Today) throw new BusinessException("Дата списания не может быть в будущем.");
+        var doc = new StockWriteOff
+        {
+            Number = await DocumentNumbers.NextAsync(db, DocumentNumbers.WriteOff, ct),
+            Date = docDate, WarehouseId = warehouseId, Reason = reason?.Trim(), Comment = comment?.Trim(), UserId = userId
+        };
+        db.StockWriteOffs.Add(doc);
+        await db.SaveChangesAsync(ct);
+
+        foreach (var line in valid)
+        {
+            await EnsureGoodsAsync(db, line.ProductId, ct);
+            var qty = Money.RoundQty(line.Quantity);
+            var cost = await StockLedger.IssueAsync(db, line.ProductId, warehouseId, qty, StockMovementType.WriteOff,
+                doc.Id, doc.Number, docDate, allowNegative: false, ct);
+            doc.Items.Add(new StockWriteOffItem { ProductId = line.ProductId, Quantity = qty, UnitCost = cost, Amount = Money.Round(qty * cost) });
+        }
+        doc.CostTotal = doc.Items.Sum(i => i.Amount);
+        await db.SaveChangesAsync(ct);
+        await tx.CommitAsync(ct);
+        return doc;
+    }
+
+    public async Task<List<StockWriteOff>> GetWriteOffsAsync(DateTime? from = null, DateTime? to = null, CancellationToken ct = default)
+    {
+        await using var db = await factory.CreateDbContextAsync(ct);
+        var q = db.StockWriteOffs.AsNoTracking().Include(t => t.Warehouse).Include(t => t.Items).AsQueryable();
+        if (from is not null) { var start = from.Value.Date; q = q.Where(t => t.Date >= start); }
+        if (to is not null) { var end = to.Value.Date.AddDays(1); q = q.Where(t => t.Date < end); }
+        return await q.OrderByDescending(t => t.Date).Take(from is null && to is null ? 500 : 5000).ToListAsync(ct);
+    }
+
+    public async Task<List<StockWriteOffItem>> GetWriteOffItemsAsync(int writeOffId, CancellationToken ct = default)
+    {
+        await using var db = await factory.CreateDbContextAsync(ct);
+        return await db.Set<StockWriteOffItem>().AsNoTracking().Include(i => i.Product)
+            .Where(i => i.StockWriteOffId == writeOffId).ToListAsync(ct);
+    }
+
     public async Task<List<StockMovement>> GetMovementsAsync(DateTime from, DateTime to, int? productId = null,
         int? warehouseId = null, StockMovementType? type = null, CancellationToken ct = default)
     {
@@ -190,5 +252,11 @@ public class WarehouseService(IDbContextFactory<TradeDbContext> factory)
         if (warehouseId is not null) q = q.Where(m => m.WarehouseId == warehouseId);
         if (type is not null) q = q.Where(m => m.Type == type);
         return await q.OrderByDescending(m => m.Date).ThenByDescending(m => m.Id).Take(5000).ToListAsync(ct);
+    }
+
+    private static async Task EnsureGoodsAsync(TradeDbContext db, int productId, CancellationToken ct)
+    {
+        if (await db.Products.FindAsync([productId], ct) is { IsService: true } p)
+            throw new BusinessException("«{0}» — услуга, она не учитывается на складе.", p.Name);
     }
 }

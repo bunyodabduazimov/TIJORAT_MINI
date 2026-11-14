@@ -16,14 +16,16 @@ public static class CatalogEntities
     {
         Product p => (T)(object)new Product
         {
-            Id = p.Id, Name = p.Name, Sku = p.Sku, Barcode = p.Barcode, Unit = p.Unit, CategoryId = p.CategoryId,
+            Id = p.Id, Name = p.Name, IsService = p.IsService, IsWeighted = p.IsWeighted, Sku = p.Sku, Barcode = p.Barcode, Unit = p.Unit, CategoryId = p.CategoryId,
             PurchasePrice = p.PurchasePrice, SalePrice = p.SalePrice, MinStock = p.MinStock, IsActive = p.IsActive
         },
+        MeasureUnit u => (T)(object)new MeasureUnit { Id = u.Id, Name = u.Name, Description = u.Description, IsActive = u.IsActive },
+        ScaleDevice s => (T)(object)new ScaleDevice { Id = s.Id, Name = s.Name, Type = s.Type, Ip = s.Ip, Port = s.Port, FilePath = s.FilePath, IsActive = s.IsActive },
         Category c => (T)(object)new Category { Id = c.Id, Name = c.Name, Description = c.Description, Image = c.Image, IsActive = c.IsActive },
         Counterparty c => (T)(object)new Counterparty { Id = c.Id, Name = c.Name, GroupId = c.GroupId, Phone = c.Phone, Address = c.Address, Note = c.Note, IsActive = c.IsActive },
         CounterpartyGroup g => (T)(object)new CounterpartyGroup { Id = g.Id, Name = g.Name, Description = g.Description, IsActive = g.IsActive },
         Warehouse w => (T)(object)new Warehouse { Id = w.Id, Name = w.Name, Address = w.Address, IsActive = w.IsActive },
-        CashRegister c => (T)(object)new CashRegister { Id = c.Id, Name = c.Name, Balance = c.Balance, IsActive = c.IsActive },
+        CashRegister c => (T)(object)new CashRegister { Id = c.Id, Name = c.Name, Balance = c.Balance, IsCashless = c.IsCashless, IsActive = c.IsActive },
         FinanceArticle a => (T)(object)new FinanceArticle { Id = a.Id, Name = a.Name, Direction = a.Direction, Description = a.Description, IsActive = a.IsActive },
         _ => throw new NotSupportedException(typeof(T).Name)
     };
@@ -46,8 +48,11 @@ public static class CatalogEntities
     {
         var (singular, isNewTitle) = e switch
         {
-            Product => (L.T("Товар"), L.T("Новый товар")),
+            Product { IsService: true } => (L.T("Услуга"), L.T("Новый товар / услуга")),
+            Product => (L.T("Товар"), L.T("Новый товар / услуга")),
             Category => (L.T("Категория"), L.T("Новая категория")),
+            MeasureUnit => (L.T("Единица измерения"), L.T("Новая единица измерения")),
+            ScaleDevice => (L.T("Весы"), L.T("Новые весы")),
             Counterparty => (L.T("Контрагент"), L.T("Новый контрагент")),
             CounterpartyGroup => (L.T("Группа контрагентов"), L.T("Новая группа контрагентов")),
             Warehouse => (L.T("Склад"), L.T("Новый склад")),
@@ -102,8 +107,13 @@ public partial class CatalogEditViewModel<T> : ObservableObject, ICloseRequest w
 
     // Только для товара
     public ObservableCollection<Category> Categories { get; } = new();
-    public IReadOnlyList<string> Units { get; } = ["шт", "кг", "г", "л", "м", "уп", "кор"];
-    [ObservableProperty] private Category? _selectedCategory;
+    public ObservableCollection<MeasureUnit> Units { get; } = new();
+    [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(EditCategoryCommand))]
+    private Category? _selectedCategory;
+    [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(EditUnitCommand))]
+    private MeasureUnit? _selectedUnit;
 
     // Только для контрагента
     public ObservableCollection<CounterpartyGroup> Groups { get; } = new();
@@ -161,6 +171,8 @@ public partial class CatalogEditViewModel<T> : ObservableObject, ICloseRequest w
         {
             foreach (var g in (await _catalog.GetAllAsync<CounterpartyGroup>()).Where(g => g.IsActive || g.Id == cp.GroupId)) Groups.Add(g);
             SelectedGroup = Groups.FirstOrDefault(g => g.Id == cp.GroupId);
+            // Новый контрагент: телефон начинается с кода страны компании
+            if (cp.Id == 0 && string.IsNullOrWhiteSpace(cp.Phone) && Countries.PhoneCode.Length > 0) cp.Phone = Countries.PhoneCode + " ";
             return;
         }
         if (Item is Category cat) { PhotoImage = PhotoProcessor.ToImage(_photo = cat.Image); return; }
@@ -168,6 +180,16 @@ public partial class CatalogEditViewModel<T> : ObservableObject, ICloseRequest w
         var all = await _catalog.GetAllAsync<Category>();
         foreach (var c in all.Where(c => c.IsActive || c.Id == product.CategoryId)) Categories.Add(c);
         SelectedCategory = Categories.FirstOrDefault(c => c.Id == product.CategoryId);
+        foreach (var u in await _catalog.GetAllAsync<MeasureUnit>(activeOnly: true)) Units.Add(u);
+        var unitName = string.IsNullOrWhiteSpace(product.Unit) ? "шт" : product.Unit;
+        SelectedUnit = Units.FirstOrDefault(u => string.Equals(u.Name, unitName, StringComparison.CurrentCultureIgnoreCase));
+        if (SelectedUnit is null && product.Id != 0)
+        {
+            // Единица товара убрана из справочника — показываем её, чтобы не потерять при сохранении
+            var legacy = new MeasureUnit { Name = unitName };
+            Units.Add(legacy);
+            SelectedUnit = legacy;
+        }
         if (product.Id != 0) PhotoImage = PhotoProcessor.ToImage(_photo = await _catalog.GetPhotoAsync(product.Id));
     }
 
@@ -180,8 +202,16 @@ public partial class CatalogEditViewModel<T> : ObservableObject, ICloseRequest w
         ErrorMessage = null;
         try
         {
-            if (Item is Product p) p.CategoryId = SelectedCategory?.Id;
-            if (Item is Counterparty c) c.GroupId = SelectedGroup?.Id;
+            if (Item is Product p)
+            {
+                p.CategoryId = SelectedCategory?.Id;
+                p.Unit = SelectedUnit?.Name ?? "шт";
+            }
+            if (Item is Counterparty c)
+            {
+                c.GroupId = SelectedGroup?.Id;
+                if (c.Phone?.Trim() == Countries.PhoneCode) c.Phone = null; // остался только код страны
+            }
             if (Item is Category cat && _photoChanged) cat.Image = _photoThumbnail;
             var saved = await _catalog.SaveAsync(Item);
             if (saved is Counterparty sc) sc.Group = SelectedGroup;
@@ -216,6 +246,46 @@ public partial class CatalogEditViewModel<T> : ObservableObject, ICloseRequest w
         finally { IsBusy = false; }
     }
 
+    // Только для весов: результат проверки связи
+    [ObservableProperty] private string? _testMessage;
+    [ObservableProperty] private bool? _testOk;
+    [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(TestConnectionCommand))]
+    private bool _isTesting;
+
+    private bool CanTest => !IsTesting;
+
+    /// <summary>Проверка связи с весами по введённым IP и порту (без сохранения).</summary>
+    [RelayCommand(CanExecute = nameof(CanTest))]
+    private async Task TestConnectionAsync()
+    {
+        if (Item is not ScaleDevice s) return;
+        var ip = s.Ip?.Trim();
+        if (string.IsNullOrEmpty(ip) || s.Port is <= 0 or > 65535)
+        {
+            TestOk = false;
+            TestMessage = L.T("Укажите IP-адрес и порт");
+            return;
+        }
+        IsTesting = true;
+        TestOk = null;
+        TestMessage = L.T("Проверка связи…");
+        try
+        {
+            var ok = await ScaleSyncService.TestConnectionAsync(ip, s.Port);
+            TestOk = ok;
+            TestMessage = ok
+                ? L.F("Весы доступны ({0}:{1})", ip, s.Port)
+                : L.F("Нет связи с {0}:{1}", ip, s.Port);
+        }
+        catch (Exception ex)
+        {
+            TestOk = false;
+            TestMessage = ex.Message;
+        }
+        finally { IsTesting = false; }
+    }
+
     /// <summary>Новая группа прямо из карточки контрагента.</summary>
     [RelayCommand]
     private async Task AddGroupAsync()
@@ -224,11 +294,62 @@ public partial class CatalogEditViewModel<T> : ObservableObject, ICloseRequest w
         if (r?.Saved is { } g) SelectedGroup = g;
     }
 
+    /// <summary>Изменить выбранную группу прямо из карточки контрагента.</summary>
+    [RelayCommand]
+    private async Task EditGroupAsync()
+    {
+        if (SelectedGroup is not { } current) return;
+        var r = await _catalogDialogs.EditAsync(Groups, current);
+        if (r is not null) SelectedGroup = r.Saved;
+    }
+
+    /// <summary>Свободный штрихкод для товара (весовой — код весов, иначе EAN-13). null — ошибка показана в окне.</summary>
+    public async Task<string?> GenerateBarcodeAsync(bool replacing)
+    {
+        if (Item is not Product p) return null;
+        if (replacing && !_dialogs.Confirm(L.T("Заменить текущий штрихкод новым?"))) return null;
+        ErrorMessage = null;
+        try { return await _catalog.GenerateBarcodeAsync(p.IsWeighted, p.Id); }
+        catch (BusinessException ex) { ErrorMessage = L.Message(ex); }
+        catch (Exception ex) { ErrorMessage = ex.Message; }
+        return null;
+    }
+
     /// <summary>Новая категория прямо из карточки товара.</summary>
     [RelayCommand]
     private async Task AddCategoryAsync()
     {
         var r = await _catalogDialogs.EditAsync(Categories);
         if (r?.Saved is { } c) SelectedCategory = c;
+    }
+
+    private bool CanEditCategory => SelectedCategory is { Id: > 0 };
+
+    /// <summary>Изменить выбранную категорию прямо из карточки товара.</summary>
+    [RelayCommand(CanExecute = nameof(CanEditCategory))]
+    private async Task EditCategoryAsync()
+    {
+        if (SelectedCategory is not { } current) return;
+        var r = await _catalogDialogs.EditAsync(Categories, current);
+        if (r is not null) SelectedCategory = r.Saved;
+    }
+
+    /// <summary>Новая единица измерения прямо из карточки товара.</summary>
+    [RelayCommand]
+    private async Task AddUnitAsync()
+    {
+        var r = await _catalogDialogs.EditAsync(Units);
+        if (r?.Saved is { } u) SelectedUnit = u;
+    }
+
+    private bool CanEditUnit => SelectedUnit is { Id: > 0 };
+
+    /// <summary>Изменить выбранную единицу (переименование обновит и товары с ней).</summary>
+    [RelayCommand(CanExecute = nameof(CanEditUnit))]
+    private async Task EditUnitAsync()
+    {
+        if (SelectedUnit is not { } current) return;
+        var r = await _catalogDialogs.EditAsync(Units, current);
+        if (r is not null) SelectedUnit = r.Saved;
     }
 }

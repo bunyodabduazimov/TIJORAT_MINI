@@ -18,12 +18,13 @@ internal static class AuditTracker
     private static readonly HashSet<Type> Tracked =
     [
         typeof(Category), typeof(Product), typeof(ProductPhoto), typeof(CounterpartyGroup), typeof(Counterparty),
-        typeof(Warehouse), typeof(CashRegister), typeof(FinanceArticle),
-        typeof(Sale), typeof(SaleReturn), typeof(Purchase), typeof(PurchaseReturn), typeof(StockTransfer), typeof(InventoryCount),
+        typeof(Warehouse), typeof(CashRegister), typeof(FinanceArticle), typeof(MeasureUnit), typeof(ScaleDevice),
+        typeof(Sale), typeof(SaleReturn), typeof(Purchase), typeof(PurchaseReturn), typeof(StockTransfer), typeof(InventoryCount), typeof(StockWriteOff),
+        typeof(Recipe), typeof(ProductionOrder), typeof(AccessRole),
         typeof(CashTransaction), typeof(User), typeof(CompanySettings)
     ];
 
-    private static readonly Type[] Documents = [typeof(Sale), typeof(SaleReturn), typeof(Purchase), typeof(PurchaseReturn), typeof(StockTransfer), typeof(InventoryCount)];
+    private static readonly Type[] Documents = [typeof(Sale), typeof(SaleReturn), typeof(Purchase), typeof(PurchaseReturn), typeof(StockTransfer), typeof(InventoryCount), typeof(StockWriteOff), typeof(ProductionOrder)];
 
     /// <summary>Поля, которые меняются автоматически при проведении документов, — не шум в журнале.</summary>
     private static readonly HashSet<string> Ignored = ["Id", "Balance", "CostTotal", "ReturnedTotal", "UpdatedAt", "Currency", "CreatedAt", "Thumbnail",
@@ -36,11 +37,11 @@ internal static class AuditTracker
         ["MinStock"] = "Мин. остаток", ["IsActive"] = "Активен", ["IsDeleted"] = "В архиве", ["Phone"] = "Телефон",
         ["Address"] = "Адрес", ["Note"] = "Примечание", ["Description"] = "Описание", ["GroupId"] = "Группа",
         ["Login"] = "Логин", ["FullName"] = "ФИО", ["Role"] = "Роль", ["Permissions"] = "Права",["PasswordHash"] = "Пароль",
-        ["TaxId"] = "ИНН", ["Email"] = "Email", ["ReceiptFooter"] = "Текст чека", ["AllowNegativeStock"] = "Продажа в минус",
+        ["TaxId"] = "ИНН", ["Email"] = "Email", ["ReceiptFooter"] = "Текст чека", ["AllowNegativeStock"] = "Продажа в минус", ["ScalePrefix"] = "Код весов", ["IsWeighted"] = "Весовой", ["IsService"] = "Услуга",
         ["Direction"] = "Направление", ["Amount"] = "Сумма", ["Comment"] = "Комментарий", ["Date"] = "Дата",
         ["Total"] = "Сумма", ["PaidAmount"] = "Оплачено", ["CustomerId"] = "Покупатель", ["SupplierId"] = "Поставщик",
         ["WarehouseId"] = "Склад", ["CashRegisterId"] = "Касса", ["Category"] = "Статья", ["CounterpartyId"] = "Контрагент",
-        ["Image"] = "Картинка", ["Data"] = "Фото", ["Number"] = "Номер", ["DifferenceAmount"] = "Расхождение"
+        ["IsCashless"] = "Безналичная", ["Ip"] = "IP-адрес", ["Port"] = "Порт", ["Type"] = "Тип", ["Image"] = "Картинка", ["Data"] = "Фото", ["Number"] = "Номер", ["DifferenceAmount"] = "Расхождение"
     };
 
     internal sealed record Pending(EntityEntry Entry, AuditAction Action, string? Details);
@@ -159,6 +160,8 @@ internal static class AuditTracker
         SaleReturn r => $"Сумма возврата: {Format(r.Total)}",
         Purchase p => $"Сумма: {Format(p.Total)}; оплачено: {Format(p.PaidAmount)}",
         InventoryCount i => $"Расхождение: {Format(i.DifferenceAmount)}",
+        StockWriteOff w => $"Сумма списания: {Format(w.CostTotal)}" + (string.IsNullOrWhiteSpace(w.Reason) ? "" : $"; {w.Reason}"),
+        ProductionOrder o => $"Выпуск: {o.Quantity:0.###}; себестоимость: {Format(o.TotalCost)}",
         CashTransaction t => $"{Format(t.Direction)} {Format(t.Amount)}; {t.Category}" + (string.IsNullOrWhiteSpace(t.Comment) ? "" : $"; {t.Comment}"),
         User u => $"Логин: {u.Login}; роль: {Format(u.Role)}",
         _ => null
@@ -172,6 +175,10 @@ internal static class AuditTracker
         Purchase p => p.Number,
         StockTransfer t => t.Number,
         InventoryCount i => i.Number,
+        StockWriteOff w => w.Number,
+        ProductionOrder o => o.Number,
+        Recipe r => r.Name,
+        AccessRole r => r.Name,
         CashTransaction t => t.DocumentNumber ?? t.Category,
         User u => string.IsNullOrWhiteSpace(u.FullName) ? u.Login : u.FullName,
         CompanySettings c => c.Name,

@@ -1,0 +1,368 @@
+<UserControl x:Class="MiniTrade.Desktop.Views.ProductionView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:l="clr-namespace:MiniTrade.Desktop.Infrastructure"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:MiniTrade.Desktop.ViewModels"
+             xmlns:inf="clr-namespace:MiniTrade.Desktop.Infrastructure"
+             mc:Ignorable="d" d:DataContext="{d:DesignInstance vm:ProductionViewModel}">
+    <TabControl SelectedIndex="{Binding SelectedTab}">
+        <!-- ===================== ВЫПУСК ПРОДУКЦИИ ===================== -->
+        <TabItem Header="{l:T 'Выпуск продукции'}">
+          <Grid>
+            <Grid Visibility="{Binding IsOrderEditorOpen, Converter={StaticResource InvBoolToVis}}">
+            <!-- ===== Реестр документов ===== -->
+            <Border Style="{StaticResource Card}" Visibility="{Binding IsOrderDetailOpen, Converter={StaticResource InvBoolToVis}}">
+                <DockPanel>
+                    <DockPanel DockPanel.Dock="Top" Margin="0,0,0,10">
+                        <StackPanel DockPanel.Dock="Left" Orientation="Horizontal" VerticalAlignment="Center">
+                            <Button Content="{l:T '+ Создать'}" MinHeight="34" Margin="0,0,16,0" Visibility="{l:Can production.produce}" Command="{Binding CreateOrderCommand}"/>
+                            <TextBlock Text="{l:T 'Период:'}" Style="{StaticResource Muted}" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                            <DatePicker SelectedDate="{Binding PeriodFrom}" Width="130"/>
+                            <TextBlock Text="—" VerticalAlignment="Center" Margin="6,0"/>
+                            <DatePicker SelectedDate="{Binding PeriodTo}" Width="130"/>
+                            <Button Style="{StaticResource InputAddonButton}" Content="&#xF0E18;" ToolTip="{l:T 'Быстрый период'}" Margin="8,0,0,0" inf:Ui.DropDownMenu="True">
+                                <Button.ContextMenu>
+                                    <ContextMenu Style="{StaticResource DropDownMenu}">
+                                        <MenuItem Header="{l:T 'Сегодня'}" Command="{Binding SetPeriodCommand}" CommandParameter="today"/>
+                                        <MenuItem Header="{l:T '7 дней'}" Command="{Binding SetPeriodCommand}" CommandParameter="week"/>
+                                        <MenuItem Header="{l:T 'Месяц'}" Command="{Binding SetPeriodCommand}" CommandParameter="month"/>
+                                        <MenuItem Header="{l:T 'Прошлый месяц'}" Command="{Binding SetPeriodCommand}" CommandParameter="prevmonth"/>
+                                        <MenuItem Header="{l:T 'Год'}" Command="{Binding SetPeriodCommand}" CommandParameter="year"/>
+                                        <MenuItem Header="{l:T 'Все'}" Command="{Binding SetPeriodCommand}" CommandParameter="all"/>
+                                    </ContextMenu>
+                                </Button.ContextMenu>
+                            </Button>
+                            <Button Style="{StaticResource InputAddonButton}" Content="&#xF0450;" ToolTip="{l:T 'Обновить'}" Command="{Binding LoadOrdersCommand}" Margin="8,0,0,0"/>
+                        </StackPanel>
+                        <TextBox HorizontalAlignment="Right" Text="{Binding OrderSearch, UpdateSourceTrigger=PropertyChanged, Delay=200}" Style="{StaticResource TableSearch}"
+                                 inf:Ui.Placeholder="{l:T 'Поиск: номер, продукция, склад'}"/>
+                    </DockPanel>
+                    <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Margin="0,8,0,0">
+                        <TextBlock Text="{l:T 'Документов: '}" Style="{StaticResource Muted}"/>
+                        <TextBlock Text="{Binding OrdersCount}" FontWeight="SemiBold" Margin="0,0,20,0"/>
+                        <TextBlock Text="{l:T 'Себестоимость выпуска: '}" Style="{StaticResource Muted}"/>
+                        <TextBlock Text="{Binding OrdersCost, Converter={StaticResource Money}}" FontWeight="SemiBold"/>
+                        <TextBlock Text="{l:T '   (двойной клик — открыть документ)'}" Style="{StaticResource Muted}"/>
+                    </StackPanel>
+                    <DataGrid ItemsSource="{Binding OrdersView}" SelectedItem="{Binding SelectedOrder}" IsReadOnly="True">
+                        <DataGrid.InputBindings>
+                            <MouseBinding Gesture="LeftDoubleClick" Command="{Binding OpenOrderDetailCommand}"/>
+                            <KeyBinding Key="Enter" Command="{Binding OpenOrderDetailCommand}"/>
+                        </DataGrid.InputBindings>
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="{l:T 'Номер'}" Binding="{Binding Number}" Width="100"/>
+                            <DataGridTextColumn Header="{l:T 'Дата'}" Binding="{Binding Date, StringFormat={}{0:dd.MM.yyyy HH:mm}}" Width="130"/>
+                            <DataGridTextColumn Header="{l:T 'Продукция'}" Binding="{Binding Product.Name}" Width="*" MinWidth="160"/>
+                            <DataGridTextColumn Header="{l:T 'Кол-во'}" Binding="{Binding Quantity, StringFormat={}{0:0.###}}" Width="80" ElementStyle="{StaticResource RightCell}"/>
+                            <DataGridTextColumn Header="{l:T 'Себест. ед.'}" Binding="{Binding UnitCost, StringFormat={}{0:N2}}" Width="100" ElementStyle="{StaticResource RightCell}"/>
+                            <DataGridTextColumn Header="{l:T 'Сумма'}" Binding="{Binding TotalCost, Converter={StaticResource Money}}" Width="120" ElementStyle="{StaticResource RightCell}"/>
+                            <DataGridTextColumn Header="{l:T 'Склад'}" Binding="{Binding Warehouse.Name}" Width="140"/>
+                            <DataGridTextColumn Header="{l:T 'Техкарта'}" Binding="{Binding Recipe.Name}" Width="140"/>
+                            <DataGridTextColumn Header="{l:T 'Комментарий'}" Binding="{Binding Comment}" Width="160"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </DockPanel>
+            </Border>
+
+            <!-- ===== Просмотр документа ===== -->
+            <Border Style="{StaticResource Card}" Visibility="{Binding IsOrderDetailOpen, Converter={StaticResource BoolToVis}}">
+                <DockPanel>
+                    <DockPanel DockPanel.Dock="Top" Margin="0,0,0,12">
+                        <Button DockPanel.Dock="Left" Content="{l:T '← Назад к реестру'}" Style="{StaticResource SecondaryButton}" Command="{Binding CloseOrderDetailCommand}"/>
+                        <Button DockPanel.Dock="Right" Content="{l:T 'Отменить документ'}" Style="{StaticResource DangerGhostButton}" Visibility="{l:Can production.cancel}" Command="{Binding CancelOrderCommand}"/>
+                        <StackPanel Margin="16,0,0,0" VerticalAlignment="Center">
+                            <TextBlock Style="{StaticResource SectionTitle}" Margin="0">
+                                <Run Text="{l:T 'Производство'}"/> <Run Text="{Binding SelectedOrder.Number, Mode=OneWay}"/>
+                                <Run Text="{l:T 'от'}"/> <Run Text="{Binding SelectedOrder.Date, Mode=OneWay, StringFormat={}{0:dd.MM.yyyy HH:mm}}"/>
+                            </TextBlock>
+                            <TextBlock Style="{StaticResource Muted}">
+                                <Run Text="{Binding SelectedOrder.Product.Name, Mode=OneWay}"/> <Run Text="—"/>
+                                <Run Text="{Binding SelectedOrder.Quantity, Mode=OneWay, StringFormat={}{0:0.###}}"/>
+                                <Run Text="{Binding SelectedOrder.Product.Unit, Mode=OneWay}"/>
+                                <Run Text="  ·  "/><Run Text="{Binding SelectedOrder.Warehouse.Name, Mode=OneWay}"/>
+                                <Run Text="   "/><Run Text="{Binding SelectedOrder.Comment, Mode=OneWay}"/>
+                            </TextBlock>
+                        </StackPanel>
+                    </DockPanel>
+                    <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Margin="0,8,0,0">
+                        <TextBlock Text="{l:T 'Материалы: '}" Style="{StaticResource Muted}"/>
+                        <TextBlock Text="{Binding SelectedOrder.MaterialsCost, Converter={StaticResource Money}}" FontWeight="SemiBold" Margin="0,0,20,0"/>
+                        <TextBlock Text="{l:T 'Доп. расходы: '}" Style="{StaticResource Muted}"/>
+                        <TextBlock Text="{Binding SelectedOrder.ExtraCost, Converter={StaticResource Money}}" FontWeight="SemiBold" Margin="0,0,20,0"/>
+                        <TextBlock Text="{l:T 'Себестоимость: '}" Style="{StaticResource Muted}"/>
+                        <TextBlock Text="{Binding SelectedOrder.TotalCost, Converter={StaticResource Money}}" FontWeight="SemiBold" Margin="0,0,20,0"/>
+                        <TextBlock Text="{l:T 'За единицу: '}" Style="{StaticResource Muted}"/>
+                        <TextBlock Text="{Binding SelectedOrder.UnitCost, StringFormat={}{0:N2}}" FontWeight="SemiBold"/>
+                    </StackPanel>
+                    <DataGrid ItemsSource="{Binding OrderItems}" IsReadOnly="True">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="{l:T 'Материал'}" Binding="{Binding Product.Name}" Width="*"/>
+                            <DataGridTextColumn Header="{l:T 'Кол-во'}" Binding="{Binding Quantity, StringFormat={}{0:0.###}}" Width="90" ElementStyle="{StaticResource RightCell}"/>
+                            <DataGridTextColumn Header="{l:T 'Ед.'}" Binding="{Binding Product.Unit}" Width="60"/>
+                            <DataGridTextColumn Header="{l:T 'Себест.'}" Binding="{Binding UnitCost, StringFormat={}{0:N2}}" Width="100" ElementStyle="{StaticResource RightCell}"/>
+                            <DataGridTextColumn Header="{l:T 'Сумма'}" Binding="{Binding Amount, Converter={StaticResource Money}}" Width="120" ElementStyle="{StaticResource RightCell}"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </DockPanel>
+            </Border>
+            </Grid>
+
+            <!-- ===== Создание документа ===== -->
+            <Grid Visibility="{Binding IsOrderEditorOpen, Converter={StaticResource BoolToVis}}">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="16"/>
+                    <ColumnDefinition Width="330"/>
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+                <DockPanel Grid.ColumnSpan="3" Margin="0,0,0,12">
+                    <Button DockPanel.Dock="Left" Content="{l:T '← Назад к реестру'}" Style="{StaticResource SecondaryButton}" Command="{Binding CloseOrderEditorCommand}"/>
+                    <TextBlock Text="{l:T 'Новый выпуск продукции'}" Style="{StaticResource SectionTitle}" VerticalAlignment="Center" Margin="16,0,0,0"/>
+                </DockPanel>
+                <Border Grid.Row="1" Style="{StaticResource Card}">
+                    <DockPanel>
+                        <TextBlock DockPanel.Dock="Top" Text="{l:T 'Материалы (списываются со склада)'}" Style="{StaticResource SectionTitle}"/>
+                        <Grid DockPanel.Dock="Top" Margin="0,0,0,12">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="170"/>
+                                <ColumnDefinition Width="*" MinWidth="180"/>
+                                <ColumnDefinition Width="100"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Margin="0,0,8,0">
+                                <TextBlock Text="{l:T 'Штрихкод / артикул'}" Style="{StaticResource FieldLabel}"/>
+                                <TextBox Text="{Binding Barcode, UpdateSourceTrigger=PropertyChanged}" inf:Ui.Placeholder="{l:T 'Скан + Enter'}">
+                                    <TextBox.InputBindings>
+                                        <KeyBinding Key="Enter" Command="{Binding AddByBarcodeCommand}"/>
+                                    </TextBox.InputBindings>
+                                </TextBox>
+                            </StackPanel>
+                            <StackPanel Grid.Column="1" Margin="0,0,8,0">
+                                <TextBlock Text="{l:T 'Товар'}" Style="{StaticResource FieldLabel}"/>
+                                <DockPanel>
+                                    <Button DockPanel.Dock="Right" Style="{StaticResource InputAddonButton}" Content="&#xF03EB;" ToolTip="{l:T 'Изменить выбранный товар'}" Command="{Binding EditProductCommand}" Visibility="{Binding SelectedProduct, Converter={StaticResource BoolToVis}}"/>
+                                    <Button DockPanel.Dock="Right" Style="{StaticResource InputAddonButton}" Content="&#xF0415;" ToolTip="{l:T 'Новый товар'}" Command="{Binding AddProductCommand}" Visibility="{Binding SelectedProduct, Converter={StaticResource InvBoolToVis}}"/>
+                                    <ComboBox ItemsSource="{Binding Products}" SelectedItem="{Binding SelectedProduct}" DisplayMemberPath="Name" inf:Ui.Clearable="True"/>
+                                </DockPanel>
+                            </StackPanel>
+                            <StackPanel Grid.Column="2" Margin="0,0,8,0">
+                                <TextBlock Text="{l:T 'Кол-во'}" Style="{StaticResource FieldLabel}"/>
+                                <TextBox l:Ui.Numeric="True" Text="{Binding NewQuantity, Converter={StaticResource Dec}, UpdateSourceTrigger=PropertyChanged}">
+                                    <TextBox.InputBindings>
+                                        <KeyBinding Key="Enter" Command="{Binding AddLineCommand}"/>
+                                    </TextBox.InputBindings>
+                                </TextBox>
+                            </StackPanel>
+                            <Button Grid.Column="3" Content="{l:T 'Добавить'}" VerticalAlignment="Bottom" Command="{Binding AddLineCommand}"/>
+                        </Grid>
+                        <DataGrid ItemsSource="{Binding Lines}">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="{l:T 'Материал'}" Binding="{Binding Product.Name}" Width="*" MinWidth="160" IsReadOnly="True"/>
+                                <DataGridTextColumn Header="{l:T 'Остаток'}" Binding="{Binding StockFrom, StringFormat={}{0:0.###}}" Width="100" ElementStyle="{StaticResource RightCell}" IsReadOnly="True"/>
+                                <DataGridTemplateColumn Header="{l:T 'Количество'}" Width="120">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate><TextBox Style="{StaticResource CellTextBox}" Text="{Binding Quantity, Converter={StaticResource Dec}, UpdateSourceTrigger=PropertyChanged}"/></DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                                <DataGridTextColumn Header="{l:T 'Ед.'}" Binding="{Binding Product.Unit}" Width="60" IsReadOnly="True"/>
+                                <DataGridTextColumn Header="{l:T 'Себест.'}" Binding="{Binding Price, StringFormat={}{0:N2}}" Width="100" ElementStyle="{StaticResource RightCell}" IsReadOnly="True"/>
+                                <DataGridTextColumn Header="{l:T 'Сумма'}" Binding="{Binding Amount, StringFormat={}{0:N2}}" Width="110" ElementStyle="{StaticResource RightCell}" IsReadOnly="True"/>
+                                <DataGridTemplateColumn Width="44">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <Button Content="&#xF0156;" Style="{StaticResource DangerIconButton}"
+                                                    Command="{Binding DataContext.RemoveLineCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}"/>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </DockPanel>
+                </Border>
+                <Border Grid.Row="1" Grid.Column="2" Style="{StaticResource Card}" VerticalAlignment="Top">
+                    <StackPanel>
+                        <TextBlock Text="{l:T 'Готовая продукция'}" Style="{StaticResource SectionTitle}"/>
+                        <TextBlock Text="{l:T 'Продукция'}" Style="{StaticResource FieldLabel}"/>
+                        <DockPanel>
+                            <Button DockPanel.Dock="Right" Style="{StaticResource InputAddonButton}" Content="&#xF03EB;" ToolTip="{l:T 'Изменить выбранный товар'}" Command="{Binding EditOutputProductCommand}" Visibility="{Binding OutputProduct, Converter={StaticResource BoolToVis}}"/>
+                            <Button DockPanel.Dock="Right" Style="{StaticResource InputAddonButton}" Content="&#xF0415;" ToolTip="{l:T 'Новый товар'}" Command="{Binding AddOutputProductCommand}" Visibility="{Binding OutputProduct, Converter={StaticResource InvBoolToVis}}"/>
+                            <ComboBox ItemsSource="{Binding Products}" SelectedItem="{Binding OutputProduct}" DisplayMemberPath="Name"/>
+                        </DockPanel>
+                        <TextBlock Text="{l:T 'Количество'}" Style="{StaticResource FieldLabel}"/>
+                        <TextBox l:Ui.Numeric="True" Text="{Binding OutputQuantity, Converter={StaticResource Dec}, UpdateSourceTrigger=PropertyChanged, Delay=300}"/>
+                        <TextBlock Text="{l:T 'Склад'}" Style="{StaticResource FieldLabel}"/>
+                        <ComboBox ItemsSource="{Binding Warehouses}" SelectedItem="{Binding Warehouse}" DisplayMemberPath="Name"/>
+                        <TextBlock Text="{l:T 'Доп. расходы (работа, упаковка)'}" Style="{StaticResource FieldLabel}"/>
+                        <TextBox l:Ui.Numeric="True" Text="{Binding ExtraCost, Converter={StaticResource Dec}, UpdateSourceTrigger=PropertyChanged}"/>
+                        <TextBlock Text="{l:T 'Дата проводки'}" Style="{StaticResource FieldLabel}"/>
+                        <DatePicker SelectedDate="{Binding OrderDate}"/>
+                        <TextBlock Text="{l:T 'Комментарий'}" Style="{StaticResource FieldLabel}"/>
+                        <TextBox Text="{Binding OrderComment, UpdateSourceTrigger=PropertyChanged}" MaxLength="500"/>
+                        <Grid Margin="0,12,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition/><RowDefinition/>
+                            </Grid.RowDefinitions>
+                            <TextBlock Text="{l:T 'Материалы:'}" Style="{StaticResource Muted}"/>
+                            <TextBlock Grid.Column="1" Text="{Binding Total, Converter={StaticResource Money}}" FontWeight="SemiBold"/>
+                            <TextBlock Grid.Row="1" Text="{l:T 'Себестоимость единицы ≈'}" Style="{StaticResource Muted}"/>
+                            <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding EstimatedUnitCost, StringFormat={}{0:N2}}" FontWeight="SemiBold"/>
+                        </Grid>
+                        <Button Content="{l:T 'Провести производство'}" Margin="0,14,0,0" Command="{Binding PostOrderCommand}"/>
+                        <TextBlock Text="{l:T 'Материалы списываются по себестоимости склада, продукция приходуется по сумме материалов и доп. расходов.'}"
+                                   Style="{StaticResource Muted}" FontSize="11" TextWrapping="Wrap" Margin="0,10,0,0"/>
+                    </StackPanel>
+                </Border>
+            </Grid>
+          </Grid>
+        </TabItem>
+
+        <!-- ===================== ТЕХКАРТЫ ===================== -->
+        <TabItem Header="{l:T 'Техкарты'}">
+          <Grid>
+            <!-- ===== Список техкарт ===== -->
+            <Border Style="{StaticResource Card}" Visibility="{Binding IsRecipeEditorOpen, Converter={StaticResource InvBoolToVis}}">
+                <DockPanel>
+                    <DockPanel DockPanel.Dock="Top" Margin="0,0,0,10">
+                        <StackPanel DockPanel.Dock="Left" Orientation="Horizontal" VerticalAlignment="Center">
+                            <Button Content="{l:T '+ Создать'}" MinHeight="34" Visibility="{l:Can production.recipes}" Command="{Binding CreateRecipeCommand}"/>
+                        </StackPanel>
+                        <TextBox HorizontalAlignment="Right" Text="{Binding RecipeSearch, UpdateSourceTrigger=PropertyChanged, Delay=200}" Style="{StaticResource TableSearch}"
+                                 inf:Ui.Placeholder="{l:T 'Поиск: название, продукция'}"/>
+                    </DockPanel>
+                    <TextBlock DockPanel.Dock="Bottom" Text="{l:T 'Двойной клик — изменить техкарту'}" Style="{StaticResource Muted}" Margin="0,8,0,0"/>
+                    <DataGrid ItemsSource="{Binding RecipesView}" SelectedItem="{Binding SelectedRecipe}" IsReadOnly="True">
+                        <DataGrid.InputBindings>
+                            <MouseBinding Gesture="LeftDoubleClick" Command="{Binding EditRecipeCommand}"/>
+                            <KeyBinding Key="Delete" Command="{Binding DeleteRecipeCommand}"/>
+                        </DataGrid.InputBindings>
+                        <DataGrid.Columns>
+                            <DataGridTemplateColumn Width="44" CanUserResize="False">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <Button Style="{StaticResource IconButton}" Content="&#xF0493;" FontSize="20" ToolTip="{l:T 'Действия'}" Width="28" Height="26" MinHeight="0" Padding="0"
+                                                inf:Ui.DropDownMenu="True" Tag="{Binding DataContext, RelativeSource={RelativeSource AncestorType=DataGrid}}">
+                                            <Button.ContextMenu>
+                                                <ContextMenu Style="{StaticResource DropDownMenu}">
+                                                    <MenuItem Style="{StaticResource IconMenuItem}" Header="{l:T 'Произвести'}" inf:Ui.Icon="&#xF0247;"
+                                                              Visibility="{l:Can production.produce}" Command="{Binding PlacementTarget.Tag.ProduceByRecipeCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" CommandParameter="{Binding}"/>
+                                                    <MenuItem Style="{StaticResource IconMenuItem}" Header="{l:T 'Изменить'}" inf:Ui.Icon="&#xF0CB6;"
+                                                              Visibility="{l:Can production.recipes}" Command="{Binding PlacementTarget.Tag.EditRecipeCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" CommandParameter="{Binding}"/>
+                                                    <MenuItem Style="{StaticResource IconMenuItem}" Header="{l:T 'Копировать'}" inf:Ui.Icon="&#xF018F;"
+                                                              Visibility="{l:Can production.recipes}" Command="{Binding PlacementTarget.Tag.CopyRecipeCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" CommandParameter="{Binding}"/>
+                                                    <Separator Style="{StaticResource MenuSeparator}"/>
+                                                    <MenuItem Style="{StaticResource IconMenuItem}" Header="{l:T 'Удалить'}" inf:Ui.Icon="&#xF09E7;" Tag="{DynamicResource DangerBrush}"
+                                                              Visibility="{l:Can production.recipes}" Command="{Binding PlacementTarget.Tag.DeleteRecipeCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" CommandParameter="{Binding}"/>
+                                                </ContextMenu>
+                                            </Button.ContextMenu>
+                                        </Button>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                            <DataGridTextColumn Header="{l:T 'Продукция'}" Binding="{Binding Product.Name}" Width="*" MinWidth="160"/>
+                            <DataGridTextColumn Header="{l:T 'Выход'}" Binding="{Binding OutputQuantity, StringFormat={}{0:0.###}}" Width="80" ElementStyle="{StaticResource RightCell}"/>
+                            <DataGridTextColumn Header="{l:T 'Ед.'}" Binding="{Binding Product.Unit}" Width="50"/>
+                            <DataGridTextColumn Header="{l:T 'Материалов'}" Binding="{Binding Items.Count}" Width="90"/>
+                            <DataGridTextColumn Header="{l:T 'Активна'}" Binding="{Binding IsActive, Converter={StaticResource EnumName}}" Width="80"/>
+                            <DataGridTextColumn Header="{l:T 'Комментарий'}" Binding="{Binding Comment}" Width="180"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </DockPanel>
+            </Border>
+
+            <!-- ===== Редактор техкарты ===== -->
+            <Grid Visibility="{Binding IsRecipeEditorOpen, Converter={StaticResource BoolToVis}}">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="16"/>
+                    <ColumnDefinition Width="330"/>
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+                <DockPanel Grid.ColumnSpan="3" Margin="0,0,0,12">
+                    <Button DockPanel.Dock="Left" Content="{l:T '← Назад к списку'}" Style="{StaticResource SecondaryButton}" Command="{Binding CloseRecipeEditorCommand}"/>
+                    <TextBlock Text="{Binding RecipeEditorTitle}" Style="{StaticResource SectionTitle}" VerticalAlignment="Center" Margin="16,0,0,0"/>
+                </DockPanel>
+                <Border Grid.Row="1" Style="{StaticResource Card}">
+                    <DockPanel>
+                        <TextBlock DockPanel.Dock="Top" Style="{StaticResource SectionTitle}">
+                            <Run Text="{l:T 'Состав на выход'}"/> <Run Text="{Binding RecipeOutput, Mode=OneWay, StringFormat={}{0:0.###}}"/>
+                            <Run Text="{Binding RecipeProduct.Unit, Mode=OneWay}"/>
+                        </TextBlock>
+                        <Grid DockPanel.Dock="Top" Margin="0,0,0,12">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" MinWidth="180"/>
+                                <ColumnDefinition Width="100"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Margin="0,0,8,0">
+                                <TextBlock Text="{l:T 'Материал'}" Style="{StaticResource FieldLabel}"/>
+                                <DockPanel>
+                                    <Button DockPanel.Dock="Right" Style="{StaticResource InputAddonButton}" Content="&#xF03EB;" ToolTip="{l:T 'Изменить выбранный товар'}" Command="{Binding EditRecipeMaterialCommand}" Visibility="{Binding RecipeMaterial, Converter={StaticResource BoolToVis}}"/>
+                                    <Button DockPanel.Dock="Right" Style="{StaticResource InputAddonButton}" Content="&#xF0415;" ToolTip="{l:T 'Новый товар'}" Command="{Binding AddRecipeMaterialCommand}" Visibility="{Binding RecipeMaterial, Converter={StaticResource InvBoolToVis}}"/>
+                                    <ComboBox ItemsSource="{Binding Products}" SelectedItem="{Binding RecipeMaterial}" DisplayMemberPath="Name" inf:Ui.Clearable="True"/>
+                                </DockPanel>
+                            </StackPanel>
+                            <StackPanel Grid.Column="1" Margin="0,0,8,0">
+                                <TextBlock Text="{l:T 'Кол-во'}" Style="{StaticResource FieldLabel}"/>
+                                <TextBox l:Ui.Numeric="True" Text="{Binding RecipeMaterialQuantity, Converter={StaticResource Dec}, UpdateSourceTrigger=PropertyChanged}">
+                                    <TextBox.InputBindings>
+                                        <KeyBinding Key="Enter" Command="{Binding AddRecipeLineCommand}"/>
+                                    </TextBox.InputBindings>
+                                </TextBox>
+                            </StackPanel>
+                            <Button Grid.Column="2" Content="{l:T 'Добавить'}" VerticalAlignment="Bottom" Command="{Binding AddRecipeLineCommand}"/>
+                        </Grid>
+                        <DataGrid ItemsSource="{Binding RecipeLines}">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="{l:T 'Материал'}" Binding="{Binding Product.Name}" Width="*" IsReadOnly="True"/>
+                                <DataGridTemplateColumn Header="{l:T 'Количество'}" Width="120">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate><TextBox Style="{StaticResource CellTextBox}" Text="{Binding Quantity, Converter={StaticResource Dec}, UpdateSourceTrigger=PropertyChanged}"/></DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                                <DataGridTextColumn Header="{l:T 'Ед.'}" Binding="{Binding Product.Unit}" Width="60" IsReadOnly="True"/>
+                                <DataGridTemplateColumn Width="44">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <Button Content="&#xF0156;" Style="{StaticResource DangerIconButton}"
+                                                    Command="{Binding DataContext.RemoveRecipeLineCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}"/>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </DockPanel>
+                </Border>
+                <Border Grid.Row="1" Grid.Column="2" Style="{StaticResource Card}" VerticalAlignment="Top">
+                    <StackPanel>
+                        <TextBlock Text="{l:T 'Техкарта'}" Style="{StaticResource SectionTitle}"/>
+                        <TextBlock Text="{l:T 'Продукция'}" Style="{StaticResource FieldLabel}"/>
+                        <DockPanel>
+                            <Button DockPanel.Dock="Right" Style="{StaticResource InputAddonButton}" Content="&#xF03EB;" ToolTip="{l:T 'Изменить выбранный товар'}" Command="{Binding EditRecipeProductCommand}" Visibility="{Binding RecipeProduct, Converter={StaticResource BoolToVis}}"/>
+                            <Button DockPanel.Dock="Right" Style="{StaticResource InputAddonButton}" Content="&#xF0415;" ToolTip="{l:T 'Новый товар'}" Command="{Binding AddRecipeProductCommand}" Visibility="{Binding RecipeProduct, Converter={StaticResource InvBoolToVis}}"/>
+                            <ComboBox ItemsSource="{Binding Products}" SelectedItem="{Binding RecipeProduct}" DisplayMemberPath="Name"/>
+                        </DockPanel>
+                        <TextBlock Text="{l:T 'Выход продукции'}" Style="{StaticResource FieldLabel}"/>
+                        <TextBox l:Ui.Numeric="True" Text="{Binding RecipeOutput, Converter={StaticResource Dec}, UpdateSourceTrigger=PropertyChanged}"/>
+                        <TextBlock Text="{l:T 'Комментарий'}" Style="{StaticResource FieldLabel}"/>
+                        <TextBox Text="{Binding RecipeComment, UpdateSourceTrigger=PropertyChanged}" MaxLength="500"/>
+                        <CheckBox Content="{l:T 'Активна'}" IsChecked="{Binding RecipeIsActive}" Margin="0,12,0,0"/>
+                        <Button Content="{l:T 'Сохранить'}" Margin="0,14,0,0" Command="{Binding SaveRecipeCommand}"/>
+                    </StackPanel>
+                </Border>
+            </Grid>
+          </Grid>
+        </TabItem>
+    </TabControl>
+</UserControl>

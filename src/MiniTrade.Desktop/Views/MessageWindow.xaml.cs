@@ -59,6 +59,19 @@ public partial class MessageWindow : Window, IModalWindow
         if (e.ButtonState == MouseButtonState.Pressed) DragMove();
     }
 
+    /// <summary>Запросить строку у пользователя; null — отмена.</summary>
+    public static string? Prompt(string message, string title, string? initial = null)
+    {
+        var w = new MessageWindow(message, title, MessageKind.Question);
+        w.YesButton.Content = "OK";
+        w.NoButton.Content = L.T("Отмена");
+        w.MessageText.Margin = new Thickness(66, 4, 22, 10);
+        w.InputBox.Visibility = Visibility.Visible;
+        w.InputBox.Text = initial ?? "";
+        w.Loaded += (_, _) => { w.InputBox.Focus(); w.InputBox.SelectAll(); };
+        return ModalHost.ShowDialog(w) == true ? w.InputBox.Text.Trim() : null;
+    }
+
     /// <summary>Показать сообщение модально поверх активного окна.</summary>
     public static bool Show(string message, string title, MessageKind kind) =>
         ModalHost.ShowDialog(new MessageWindow(message, title, kind)) == true;

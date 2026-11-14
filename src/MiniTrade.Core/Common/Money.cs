@@ -3,7 +3,17 @@ namespace MiniTrade.Core.Common;
 /// <summary>Правила округления денег и количеств. Валюта — сомони (TJS), 1 TJS = 100 дирам.</summary>
 public static class Money
 {
-    public const string Currency = "TJS";
+    public const string DefaultCurrency = "TJS";
+
+    /// <summary>Валюта учёта из настроек компании (по умолчанию TJS). Задаётся после входа и при сохранении настроек.</summary>
+    public static string Currency { get; private set; } = DefaultCurrency;
+
+    /// <summary>Нормализует код валюты (пусто → TJS) и делает его текущим.</summary>
+    public static string SetCurrency(string? code)
+    {
+        var c = (code ?? "").Trim().ToUpperInvariant();
+        return Currency = c.Length == 0 ? DefaultCurrency : c;
+    }
 
     public static decimal Round(decimal value) => Math.Round(value, 2, MidpointRounding.AwayFromZero);
 

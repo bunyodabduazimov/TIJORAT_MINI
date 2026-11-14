@@ -45,6 +45,32 @@ public partial class CatalogEditWindow : Window, IModalWindow
 
     private void OnCancel(object sender, RoutedEventArgs e) => DialogResult = false;
 
+    /// <summary>Смена типа весов подставляет порт по умолчанию (TMA — 4001, CAS — 20304), если порт не менялся вручную.</summary>
+    private void OnScaleTypeClick(object sender, RoutedEventArgs e)
+    {
+        if (sender is not FrameworkElement { Tag: string port, DataContext: MiniTrade.Core.Domain.ScaleDevice scale }) return;
+        if (scale.Port is 0 or 4001 or 20304 && scale.Port.ToString() != port)
+        {
+            scale.Port = int.Parse(port);
+            FindInTemplate(sender as DependencyObject)?.GetBindingExpression(System.Windows.Controls.TextBox.TextProperty)?.UpdateTarget();
+        }
+    }
+
+    /// <summary>Rongta: пустой путь к файлу PLU заполняется значением по умолчанию.</summary>
+    private void OnRongtaClick(object sender, RoutedEventArgs e)
+    {
+        if (sender is not FrameworkElement { DataContext: MiniTrade.Core.Domain.ScaleDevice scale } || !string.IsNullOrWhiteSpace(scale.FilePath)) return;
+        scale.FilePath = MiniTrade.Core.Domain.ScaleDevice.RongtaDefaultPath;
+        FindInTemplate(sender as DependencyObject, "ScaleFileBox")?.GetBindingExpression(System.Windows.Controls.TextBox.TextProperty)?.UpdateTarget();
+    }
+
+    private static System.Windows.Controls.TextBox? FindInTemplate(DependencyObject? d, string name = "ScalePortBox")
+    {
+        while (d != null && d is not System.Windows.Controls.ContentPresenter) d = System.Windows.Media.VisualTreeHelper.GetParent(d);
+        return d is System.Windows.Controls.ContentPresenter cp
+            ? cp.ContentTemplate?.FindName(name, cp) as System.Windows.Controls.TextBox : null;
+    }
+
     // Перетаскивание файла изображения на место фото товара
     private static string? DroppedImage(DragEventArgs e) =>
         e.Data.GetData(DataFormats.FileDrop) is string[] { Length: > 0 } files && PhotoProcessor.IsImageFile(files[0]) ? files[0] : null;
@@ -60,6 +86,21 @@ public partial class CatalogEditWindow : Window, IModalWindow
         if (DroppedImage(e) is { } file && DataContext is CatalogEditViewModel<MiniTrade.Core.Domain.Product> vm)
             vm.SetPhotoFromFile(file);
         e.Handled = true;
+    }
+
+    /// <summary>Генерация штрихкода: значение пишется в поле рядом (товар не уведомляет об изменениях сам).</summary>
+    private async void OnGenerateBarcode(object sender, RoutedEventArgs e)
+    {
+        if (sender is not System.Windows.Controls.Button { Parent: System.Windows.Controls.DockPanel panel }
+            || DataContext is not CatalogEditViewModel<MiniTrade.Core.Domain.Product> vm) return;
+        var box = panel.Children.OfType<System.Windows.Controls.TextBox>().FirstOrDefault();
+        if (box is null) return;
+        if (await vm.GenerateBarcodeAsync(replacing: !string.IsNullOrWhiteSpace(box.Text)) is { } code)
+        {
+            box.Text = code;
+            box.Focus();
+            box.SelectAll();
+        }
     }
 
     private void OnHeaderMouseDown(object sender, MouseButtonEventArgs e)

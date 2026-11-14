@@ -6,7 +6,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:vm="clr-namespace:MiniTrade.Desktop.ViewModels"
         mc:Ignorable="d" d:DataContext="{d:DesignInstance vm:MainViewModel}"
-        Title="TIJORAT MINI" Width="1360" Height="840" MinWidth="960" MinHeight="640"
+        Title="TIJORAT.PRO" Width="1360" Height="840" MinWidth="960" MinHeight="640"
         WindowStartupLocation="CenterScreen" WindowState="Maximized" Style="{StaticResource ChromeWindow}">
     <Window.Resources>
         <!-- Скрывать подписи, когда меню свёрнуто до иконок -->
@@ -107,8 +107,8 @@
                 </Style>
             </DockPanel.Style>
 
-            <!-- Логотип и кнопка «свернуть / развернуть меню» справа от него.
-                 В свёрнутом меню (68 px) вместо логотипа — только кнопка. -->
+            <!-- Логотип; кнопка «свернуть / развернуть меню» — перед заголовком страницы.
+                 В свёрнутом меню (68 px) — только значок. -->
             <DockPanel DockPanel.Dock="Top">
                 <DockPanel.Style>
                     <Style TargetType="DockPanel">
@@ -120,30 +120,13 @@
                         </Style.Triggers>
                     </Style>
                 </DockPanel.Style>
-                <Button Command="{Binding ToggleMenuCommand}"
-                        ToolTip="{Binding MenuToggleText}" VerticalAlignment="Center" Width="34" Height="34" Padding="0">
-                    <Button.Style>
-                        <Style TargetType="Button" BasedOn="{StaticResource SidebarButton}">
-                            <Setter Property="HorizontalContentAlignment" Value="Center"/>
-                            <Setter Property="Background" Value="{DynamicResource SidebarHoverBrush}"/>
-                            <Setter Property="DockPanel.Dock" Value="Right"/>
-                            <Style.Triggers>
-                                <DataTrigger Binding="{Binding IsMenuCollapsed}" Value="True">
-                                    <Setter Property="DockPanel.Dock" Value="Top"/>
-                                    <Setter Property="HorizontalAlignment" Value="Center"/>
-                                </DataTrigger>
-                            </Style.Triggers>
-                        </Style>
-                    </Button.Style>
-                    <TextBlock FontFamily="{StaticResource IconFont}" FontSize="20" Width="22" Text="&#xF035C;" TextAlignment="Center" VerticalAlignment="Center"/>
-                </Button>
-                <StackPanel Orientation="Horizontal" Style="{StaticResource ExpandedOnly}">
-                    <Image Source="{StaticResource LogoMark}" Width="38" Height="38"/>
-                    <StackPanel Margin="11,0,0,0" VerticalAlignment="Center">
-                        <TextBlock Text="TIJORAT MINI" Foreground="White" FontWeight="Bold" FontSize="15"/>
-                        <TextBlock Text="ERP · TJS" Foreground="{DynamicResource SidebarTextBrush}" FontSize="11"/>
-                    </StackPanel>
-                </StackPanel>
+                <!-- Свёрнутое меню: только значок -->
+                <Image DockPanel.Dock="Top" Source="{StaticResource LogoMark}" Width="38" Height="38" HorizontalAlignment="Center" RenderOptions.BitmapScalingMode="HighQuality"
+                       Visibility="{Binding IsMenuCollapsed, Converter={StaticResource BoolToVis}}"/>
+                <!-- Логотип tijorat.pro -->
+                <Border Style="{StaticResource ExpandedOnly}" HorizontalAlignment="Left">
+                    <Image Source="{StaticResource LogoFull}" Height="42" RenderOptions.BitmapScalingMode="HighQuality"/>
+                </Border>
             </DockPanel>
 
             <!-- Пользователь, лицензия, выход -->
@@ -169,7 +152,11 @@
                 </Border>
 
                 <!-- Карточка пользователя: аватар, имя/роль, кнопка выхода -->
-                <Border CornerRadius="12" Padding="8" Style="{StaticResource CenterWhenCollapsed}">
+                <!-- Щелчок по карточке — окно «Мой аккаунт» (профиль, пароль, интерфейс) -->
+                <Border CornerRadius="12" Padding="8" Style="{StaticResource CenterWhenCollapsed}" Cursor="Hand" ToolTip="{l:T 'Мой аккаунт'}">
+                    <Border.InputBindings>
+                        <MouseBinding Gesture="LeftClick" Command="{Binding OpenProfileCommand}"/>
+                    </Border.InputBindings>
                     <Border.Background>
                         <SolidColorBrush Color="White" Opacity="0.04"/>
                     </Border.Background>
@@ -233,6 +220,10 @@
                 </ContentControl>
                 <TextBlock Text="{l:T 'Загрузка…'}" DockPanel.Dock="Right" VerticalAlignment="Center"
                            Style="{StaticResource Muted}" Visibility="{Binding CurrentPage.IsBusy, Converter={StaticResource BoolToVis}}"/>
+                <!-- Кнопка «свернуть / развернуть меню» перед заголовком страницы -->
+                <Button DockPanel.Dock="Left" Command="{Binding ToggleMenuCommand}" ToolTip="{Binding MenuToggleText}" Style="{StaticResource IconButton}"
+                        Width="34" Height="34" Margin="0,0,10,0" VerticalAlignment="Center" Focusable="False" WindowChrome.IsHitTestVisibleInChrome="True"
+                        Content="&#xF035C;" FontSize="20"/>
                 <TextBlock Text="{Binding CurrentPage.Title}" Style="{StaticResource PageTitle}" FontSize="16" Margin="0" VerticalAlignment="Center"
                            TextTrimming="CharacterEllipsis"/>
             </DockPanel>

@@ -87,7 +87,7 @@ public static class MySqlDump
         File.Move(tmp, path, overwrite: true);
     }
 
-    /// <summary>Проверка, что файл — дамп TIJORAT MINI.</summary>
+    /// <summary>Проверка, что файл — дамп TIJORAT (заголовок сохранён для совместимости).</summary>
     public static void Validate(string path)
     {
         using var r = new StreamReader(path);

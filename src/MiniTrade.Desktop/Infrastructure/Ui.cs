@@ -1,4 +1,5 @@
 using System.Windows;
+using System.Windows.Data;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Input;
@@ -39,6 +40,49 @@ public static class Ui
 
     public static bool GetClearsText(DependencyObject d) => (bool)d.GetValue(ClearsTextProperty);
     public static void SetClearsText(DependencyObject d, bool value) => d.SetValue(ClearsTextProperty, value);
+
+    /// <summary>
+    /// Кнопка «×» в выпадающем списке: сбрасывает выбор. Показывается, когда что-то выбрано и пустое значение допустимо —
+    /// у списка задан Placeholder («Все склады», «Розничный покупатель») или явно Ui.Clearable="True".
+    /// </summary>
+    public static readonly DependencyProperty ClearableProperty = DependencyProperty.RegisterAttached(
+        "Clearable", typeof(bool), typeof(Ui), new PropertyMetadata(false));
+
+    public static bool GetClearable(DependencyObject d) => (bool)d.GetValue(ClearableProperty);
+    public static void SetClearable(DependencyObject d, bool value) => d.SetValue(ClearableProperty, value);
+
+    /// <summary>Кнопка в шаблоне ComboBox: очищает выбор списка-владельца.</summary>
+    public static readonly DependencyProperty ClearsSelectionProperty = DependencyProperty.RegisterAttached(
+        "ClearsSelection", typeof(bool), typeof(Ui), new PropertyMetadata(false, (d, e) =>
+        {
+            if (d is ButtonBase b && e.NewValue is true)
+                b.Click += (_, _) =>
+                {
+                    if (b.TemplatedParent is not ComboBox cb) return;
+                    cb.SelectedIndex = -1;
+                    cb.SelectedItem = null;
+                    cb.Focus();
+                };
+        }));
+
+    public static bool GetClearsSelection(DependencyObject d) => (bool)d.GetValue(ClearsSelectionProperty);
+    public static void SetClearsSelection(DependencyObject d, bool value) => d.SetValue(ClearsSelectionProperty, value);
+
+    /// <summary>[SelectedItem, Placeholder, Clearable, IsEnabled] → видимость кнопки «×» в списке.</summary>
+    public static readonly IMultiValueConverter ComboClearVisibility = new ComboClearConverter();
+
+    private sealed class ComboClearConverter : IMultiValueConverter
+    {
+        public object Convert(object[] v, Type t, object? p, System.Globalization.CultureInfo c)
+        {
+            var selected = v.Length > 0 && v[0] is not null && v[0] != DependencyProperty.UnsetValue;
+            var allowed = (v.Length > 1 && v[1] is string s && s.Length > 0) || (v.Length > 2 && v[2] is true);
+            var enabled = v.Length <= 3 || v[3] is true;
+            return selected && allowed && enabled ? Visibility.Visible : Visibility.Collapsed;
+        }
+
+        public object[] ConvertBack(object v, Type[] t, object? p, System.Globalization.CultureInfo c) => throw new NotSupportedException();
+    }
 
     /// <summary>
     /// Только число в поле: цифры и один десятичный разделитель («,» или «.»).

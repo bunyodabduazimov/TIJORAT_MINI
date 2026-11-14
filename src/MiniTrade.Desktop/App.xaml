@@ -20,6 +20,7 @@
             <DataTemplate DataType="{x:Type vm:SalesViewModel}"><v:SalesView/></DataTemplate>
             <DataTemplate DataType="{x:Type vm:PurchasesViewModel}"><v:PurchasesView/></DataTemplate>
             <DataTemplate DataType="{x:Type vm:WarehouseViewModel}"><v:WarehouseView/></DataTemplate>
+            <DataTemplate DataType="{x:Type vm:ProductionViewModel}"><v:ProductionView/></DataTemplate>
             <DataTemplate DataType="{x:Type vm:CatalogViewModel}"><v:CatalogView/></DataTemplate>
             <DataTemplate DataType="{x:Type vm:ReportsViewModel}"><v:ReportsView/></DataTemplate>
             <DataTemplate DataType="{x:Type vm:SettingsViewModel}"><v:SettingsView/></DataTemplate>

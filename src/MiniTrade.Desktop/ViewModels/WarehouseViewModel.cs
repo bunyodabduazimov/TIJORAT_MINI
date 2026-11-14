@@ -67,6 +67,11 @@ public partial class WarehouseViewModel : DocumentEditorBase
             && (InventoryWarehouseFilter is null || c.WarehouseId == InventoryWarehouseFilter.Id)
             && Matches(InventoriesSearch, c.Number, c.Comment, c.Warehouse?.Name);
 
+        WriteOffsView = CollectionViewSource.GetDefaultView(WriteOffs);
+        WriteOffsView.Filter = o => o is StockWriteOff w
+            && (WriteOffWarehouseFilter is null || w.WarehouseId == WriteOffWarehouseFilter.Id)
+            && Matches(WriteOffsSearch, w.Number, w.Reason, w.Comment, w.Warehouse?.Name);
+
         MovementTypes = [new(null, L.T("Все операции")), ..Enum.GetValues<StockMovementType>()
             .Select(t => new MovementTypeOption(t, (string)new EnumNameConverter().Convert(t, typeof(string), null, CultureInfo.CurrentCulture)))];
         _movementType = MovementTypes[0];
@@ -74,7 +79,12 @@ public partial class WarehouseViewModel : DocumentEditorBase
         // Новые строки перемещения — сразу с остатками обоих складов
         Lines.CollectionChanged += (_, e) =>
         {
-            foreach (var l in e.NewItems?.OfType<DocumentLineViewModel>() ?? []) SetLineStock(l);
+            foreach (var l in e.NewItems?.OfType<DocumentLineViewModel>() ?? [])
+            {
+                SetLineStock(l);
+                l.Changed += (_, _) => { if (IsWriteOffEditorOpen) RecalcWriteOff(); };
+            }
+            if (IsWriteOffEditorOpen) RecalcWriteOff();
         };
     }
 
@@ -85,6 +95,11 @@ public partial class WarehouseViewModel : DocumentEditorBase
 
     private void SetLineStock(DocumentLineViewModel l)
     {
+        if (IsWriteOffEditorOpen)
+        {
+            l.StockFrom = _writeOffStock.TryGetValue(l.Product.Id, out var w) ? w.Quantity : 0;
+            return;
+        }
         l.StockFrom = StockOf(l.Product.Id);
         l.StockTo = _transferToStock.TryGetValue(l.Product.Id, out var s) ? s.Quantity : 0;
     }
@@ -114,6 +129,9 @@ public partial class WarehouseViewModel : DocumentEditorBase
     public ObservableCollection<InventoryCountItem> InventoryItems { get; } = new();
     public ObservableCollection<InventoryLineViewModel> InventoryLines { get; } = new();
     public ICollectionView InventoryView { get; }
+    public ObservableCollection<StockWriteOff> WriteOffs { get; } = new();
+    public ICollectionView WriteOffsView { get; }
+    public ObservableCollection<StockWriteOffItem> WriteOffItems { get; } = new();
     public ObservableCollection<StockMovement> Movements { get; } = new();
     public ICollectionView MovementsView { get; }
 
@@ -220,6 +238,8 @@ public partial class WarehouseViewModel : DocumentEditorBase
     [RelayCommand]
     private void CreateTransfer()
     {
+        if (IsWriteOffEditorOpen && Lines.Count > 0) { Dialogs.Error(L.T("Сначала проведите или закройте незавершённое списание.")); return; }
+        IsWriteOffEditorOpen = false;
         TransferFrom ??= Warehouses.FirstOrDefault();
         TransferTo ??= Warehouses.Skip(1).FirstOrDefault();
         IsTransferEditorOpen = true;
@@ -325,13 +345,165 @@ public partial class WarehouseViewModel : DocumentEditorBase
     [RelayCommand]
     private void CloseInventoryDetail() => IsInventoryDetailOpen = false;
 
+    // ---------- Списание ----------
+    private Dictionary<int, (decimal Quantity, decimal AvgCost)> _writeOffStock = new();
+    [ObservableProperty] private Warehouse? _writeOffWarehouse;
+    [ObservableProperty] private string? _writeOffReason;
+    [ObservableProperty] private string? _writeOffComment;
+    [ObservableProperty] private DateTime? _writeOffDate = DateTime.Today;
+    [ObservableProperty] private decimal _writeOffTotal;
+    [ObservableProperty] private StockWriteOff? _selectedWriteOff;
+    [ObservableProperty] private bool _isWriteOffEditorOpen;
+    [ObservableProperty] private bool _isWriteOffDetailOpen;
+    [ObservableProperty] private DateTime? _writeOffPeriodFrom = DateTime.Today.AddMonths(-1);
+    [ObservableProperty] private DateTime? _writeOffPeriodTo = DateTime.Today;
+    [ObservableProperty] private string? _writeOffsSearch;
+    [ObservableProperty] private Warehouse? _writeOffWarehouseFilter;
+    [ObservableProperty] private int _writeOffsCount;
+    [ObservableProperty] private decimal _writeOffsSum;
+
+    /// <summary>Типовые причины списания (можно ввести свою).</summary>
+    public IReadOnlyList<string> WriteOffReasons { get; } =
+        [L.T("Порча"), L.T("Брак"), L.T("Истёк срок годности"), L.T("Недостача / кража"), L.T("Собственные нужды"), L.T("Прочее")];
+
+    partial void OnWriteOffsSearchChanged(string? value) => RefreshWriteOffs();
+    partial void OnWriteOffWarehouseFilterChanged(Warehouse? value) => RefreshWriteOffs();
+    partial void OnWriteOffWarehouseChanged(Warehouse? value) => _ = RunAsync(LoadWriteOffStockAsync);
+    partial void OnSelectedWriteOffChanged(StockWriteOff? value) => _ = RunAsync(async () =>
+        Fill(WriteOffItems, value is null ? [] : await _warehouse.GetWriteOffItemsAsync(value.Id)));
+
+    private void RefreshWriteOffs()
+    {
+        WriteOffsView.Refresh();
+        var visible = WriteOffsView.Cast<StockWriteOff>().ToList();
+        WriteOffsCount = visible.Count;
+        WriteOffsSum = visible.Sum(w => w.CostTotal);
+    }
+
+    private async Task LoadWriteOffsCore()
+    {
+        Fill(WriteOffs, await _warehouse.GetWriteOffsAsync(WriteOffPeriodFrom, WriteOffPeriodTo));
+        RefreshWriteOffs();
+    }
+
+    private async Task LoadWriteOffStockAsync()
+    {
+        _writeOffStock = WriteOffWarehouse is null ? new() : await _warehouse.GetWarehouseStockAsync(WriteOffWarehouse.Id);
+        if (!IsWriteOffEditorOpen) return;
+        foreach (var l in Lines)
+        {
+            SetLineStock(l);
+            l.Price = DefaultPrice(l.Product);
+        }
+        RecalcWriteOff();
+    }
+
+    private void RecalcWriteOff() => WriteOffTotal = Lines.Sum(l => l.Amount);
+
+    [RelayCommand]
+    private Task LoadWriteOffsAsync() => RunAsync(LoadWriteOffsCore);
+
+    [RelayCommand]
+    private Task SetWriteOffPeriodAsync(string? period)
+    {
+        var today = DateTime.Today;
+        var monthStart = new DateTime(today.Year, today.Month, 1);
+        (WriteOffPeriodFrom, WriteOffPeriodTo) = period switch
+        {
+            "today" => ((DateTime?)today, (DateTime?)today),
+            "yesterday" => (today.AddDays(-1), today.AddDays(-1)),
+            "week" => (today.AddDays(-6), today),
+            "month" => (monthStart, today),
+            "prevmonth" => (monthStart.AddMonths(-1), monthStart.AddDays(-1)),
+            "quarter" => (new DateTime(today.Year, (today.Month - 1) / 3 * 3 + 1, 1), today),
+            "year" => (new DateTime(today.Year, 1, 1), today),
+            "all" => (null, null),
+            _ => (WriteOffPeriodFrom, WriteOffPeriodTo)
+        };
+        return RunAsync(LoadWriteOffsCore);
+    }
+
+    [RelayCommand]
+    private Task CreateWriteOffAsync()
+    {
+        if (IsTransferEditorOpen && Lines.Count > 0) { Dialogs.Error(L.T("Сначала проведите или закройте незавершённое перемещение.")); return Task.CompletedTask; }
+        IsTransferEditorOpen = false;
+        WriteOffWarehouse ??= Warehouses.FirstOrDefault();
+        IsWriteOffEditorOpen = true;
+        return RunAsync(LoadWriteOffStockAsync);
+    }
+
+    [RelayCommand]
+    private void CloseWriteOffEditor()
+    {
+        if (Lines.Count > 0 && !Dialogs.Confirm(L.T("Закрыть без сохранения? Добавленные позиции будут удалены."))) return;
+        ResetWriteOffEditor();
+    }
+
+    private void ResetWriteOffEditor()
+    {
+        ClearLines();
+        WriteOffReason = null;
+        WriteOffComment = null;
+        WriteOffDate = DateTime.Today;
+        WriteOffTotal = 0;
+        IsWriteOffEditorOpen = false;
+    }
+
+    [RelayCommand]
+    private void OpenWriteOffDetail()
+    {
+        if (SelectedWriteOff is not null) IsWriteOffDetailOpen = true;
+    }
+
+    [RelayCommand]
+    private void CloseWriteOffDetail() => IsWriteOffDetailOpen = false;
+
+    [RelayCommand]
+    private async Task PostWriteOffAsync()
+    {
+        if (WriteOffWarehouse is null) { Dialogs.Error(L.T("Выберите склад.")); return; }
+        if (Lines.Count == 0) { Dialogs.Error(L.T("Добавьте товары.")); return; }
+        if (string.IsNullOrWhiteSpace(WriteOffReason)) { Dialogs.Error(L.T("Укажите причину списания.")); return; }
+
+        var shortages = Lines.GroupBy(l => l.Product)
+            .Select(g => (Product: g.Key, Qty: g.Sum(x => x.Quantity), Stock: _writeOffStock.TryGetValue(g.Key.Id, out var s) ? s.Quantity : 0))
+            .Where(x => x.Qty > x.Stock)
+            .Select(x => $"• {x.Product.Name}: {x.Qty:0.###} > {x.Stock:0.###} {x.Product.Unit}")
+            .ToList();
+        if (shortages.Count > 0)
+        {
+            Dialogs.Error(L.F("Недостаточно товара на складе «{0}»:\n{1}", WriteOffWarehouse.Name, string.Join("\n", shortages)));
+            return;
+        }
+        RecalcWriteOff();
+        if (!Dialogs.Confirm(L.F("Списать {0} поз. со склада «{1}» на сумму {2:N2}?", Lines.Count, WriteOffWarehouse.Name, WriteOffTotal))) return;
+
+        var date = (WriteOffDate ?? DateTime.Today).Date + DateTime.Now.TimeOfDay;
+        var ok = await RunAsync(() => _warehouse.WriteOffAsync(WriteOffWarehouse.Id,
+            Lines.Select(l => new TransferLine(l.Product.Id, l.Quantity)).ToList(), WriteOffReason, WriteOffComment, date));
+        if (!ok) return;
+        Dialogs.Info(L.T("Списание проведено."));
+        ResetWriteOffEditor();
+        await LoadAsync();
+    }
+
+    [RelayCommand]
+    private void ExportWriteOffs()
+    {
+        var lines = WriteOffsView.Cast<StockWriteOff>()
+            .Select(w => Row(w.Number, w.Date.ToString("dd.MM.yyyy HH:mm"), w.Warehouse?.Name, w.Reason, w.Items.Count, w.CostTotal, w.Comment))
+            .Prepend(L.T("Номер;Дата;Склад;Причина;Позиций;Сумма;Комментарий"));
+        SaveExcel($"{L.T("Списания")}_{DateTime.Today:yyyyMMdd}.xlsx", lines);
+    }
+
     // ---------- Движение ----------
     [ObservableProperty] private DateTime _from = DateTime.Today.AddDays(-7);
     [ObservableProperty] private DateTime _to = DateTime.Today;
     [ObservableProperty, NotifyPropertyChangedFor(nameof(ActiveMovementFilterCount))] private Warehouse? _movementWarehouse;
     [ObservableProperty, NotifyPropertyChangedFor(nameof(ActiveMovementFilterCount))] private MovementTypeOption _movementType;
     [ObservableProperty] private string? _movementSearch;
-    [ObservableProperty, NotifyPropertyChangedFor(nameof(ActiveMovementFilterCount))] private StockRow? _movementProduct;
+    [ObservableProperty, NotifyPropertyChangedFor(nameof(ActiveMovementFilterCount))] private Product? _movementProduct;
 
     /// <summary>Сколько условий фильтра движения включено — значок на кнопке «Фильтр».</summary>
     public int ActiveMovementFilterCount =>
@@ -339,10 +511,14 @@ public partial class WarehouseViewModel : DocumentEditorBase
 
     partial void OnMovementWarehouseChanged(Warehouse? value) => _ = RunAsync(LoadMovementsCore);
     partial void OnMovementTypeChanged(MovementTypeOption value) => _ = RunAsync(LoadMovementsCore);
+    partial void OnMovementProductChanged(Product? value) => _ = RunAsync(LoadMovementsCore);
     [ObservableProperty] private decimal _movementsIn;
     [ObservableProperty] private decimal _movementsOut;
 
-    protected override decimal DefaultPrice(Product product) => 0;
+    /// <summary>В списании цена строки — себестоимость на складе (для суммы); в перемещении не нужна.</summary>
+    protected override decimal DefaultPrice(Product product) =>
+        !IsWriteOffEditorOpen ? 0
+        : _writeOffStock.TryGetValue(product.Id, out var s) && s.AvgCost != 0 ? s.AvgCost : product.PurchasePrice;
 
     private static bool Matches(string? search, params string?[] fields) =>
         string.IsNullOrWhiteSpace(search) || fields.Any(f => f?.Contains(search.Trim(), StringComparison.OrdinalIgnoreCase) == true);
@@ -393,10 +569,13 @@ public partial class WarehouseViewModel : DocumentEditorBase
         TransferFrom ??= Warehouses.FirstOrDefault();
         TransferTo ??= Warehouses.Skip(1).FirstOrDefault();
         InventoryWarehouse ??= Warehouses.FirstOrDefault();
+        WriteOffWarehouse ??= Warehouses.FirstOrDefault();
         await LoadBalancesCore();
         await LoadTransferStockAsync();
         await LoadTransfersCore();
         await LoadInventoriesCore();
+        await LoadWriteOffsCore();
+        await LoadWriteOffStockAsync();
         await LoadMovementsCore();
     });
 
@@ -449,11 +628,16 @@ public partial class WarehouseViewModel : DocumentEditorBase
     {
         row ??= SelectedBalance;
         if (row is null) return Task.CompletedTask;
-        MovementProduct = row;
         MovementSearch = null;
         From = DateTime.Today.AddMonths(-3);
         To = DateTime.Today;
-        SelectedTab = 3;
+        SelectedTab = 4;
+        var product = Products.FirstOrDefault(p => p.Id == row.ProductId);
+        if (product is not null && MovementProduct != product)
+        {
+            MovementProduct = product; // перезагрузка — в OnMovementProductChanged
+            return Task.CompletedTask;
+        }
         return RunAsync(LoadMovementsCore);
     }
 
@@ -463,7 +647,7 @@ public partial class WarehouseViewModel : DocumentEditorBase
         var lines = BalancesView.Cast<StockRow>()
             .Select(r => Row(r.Product, r.Sku, r.Category, r.Warehouse, r.Quantity, r.Unit, r.AvgCost, r.CostValue, r.SalePrice, r.SaleValue))
             .Prepend(L.T("Товар;Артикул;Категория;Склад;Остаток;Ед.;Ср. себест.;Сумма по себест.;Цена;Сумма по цене"));
-        SaveCsv($"{L.T("Остатки")}_{DateTime.Today:yyyyMMdd}.csv", lines);
+        SaveExcel($"{L.T("Остатки")}_{DateTime.Today:yyyyMMdd}.xlsx", lines);
     }
 
     // ================= Перемещение =================
@@ -539,6 +723,61 @@ public partial class WarehouseViewModel : DocumentEditorBase
         RecalcInventory();
     });
 
+    /// <summary>Добавляет в лист выбранный товар (факт = введённое количество); если уже есть — прибавляет.</summary>
+    [RelayCommand]
+    private Task AddInventoryLineAsync()
+    {
+        if (SelectedProduct is null) { Dialogs.Error(L.T("Выберите товар.")); return Task.CompletedTask; }
+        if (NewQuantity < 0) { Dialogs.Error(L.T("Фактический остаток не может быть отрицательным.")); return Task.CompletedTask; }
+        var product = SelectedProduct;
+        var qty = NewQuantity;
+        return RunAsync(async () =>
+        {
+            await AddInventoryProductAsync(product, qty);
+            SelectedProduct = null;
+            NewQuantity = 1;
+            Barcode = "";
+        });
+    }
+
+    /// <summary>Скан штрихкода/артикула: +1 к факту; неизвестный код — предложение создать товар.</summary>
+    [RelayCommand]
+    private async Task AddInventoryByBarcodeAsync()
+    {
+        var code = Barcode?.Trim();
+        if (string.IsNullOrEmpty(code)) return;
+        var product = Products.FirstOrDefault(p => string.Equals(p.Barcode, code, StringComparison.OrdinalIgnoreCase))
+                      ?? Products.FirstOrDefault(p => string.Equals(p.Sku, code, StringComparison.OrdinalIgnoreCase));
+        if (product is null)
+        {
+            if (!Dialogs.Confirm(L.F("Товар со штрихкодом/артикулом «{0}» не найден.\nСоздать новый товар?", code))) return;
+            var created = await CatalogDialogs.EditAsync(Products, new Product { Barcode = code });
+            if (created?.Saved is not { } p) return;
+            product = p;
+        }
+        await RunAsync(() => AddInventoryProductAsync(product, 1));
+        Barcode = "";
+    }
+
+    private async Task AddInventoryProductAsync(Product product, decimal qty)
+    {
+        if (InventoryWarehouse is null) { Dialogs.Error(L.T("Выберите склад.")); return; }
+        var existing = InventoryLines.FirstOrDefault(l => l.Product.Id == product.Id);
+        if (existing is not null)
+        {
+            existing.Actual += qty;
+            return;
+        }
+        var stock = await _warehouse.GetWarehouseStockAsync(InventoryWarehouse.Id);
+        var (book, cost) = stock.TryGetValue(product.Id, out var s) ? s : (0m, 0m);
+        var line = new InventoryLineViewModel(product, book, cost != 0 ? cost : product.PurchasePrice) { Actual = qty };
+        line.Changed += OnInventoryLineChanged;
+        InventoryLines.Insert(0, line);
+        InventoryView.Refresh();
+        SyncInventoryPager();
+        RecalcInventory();
+    }
+
     /// <summary>Обнуляет факт по всем видимым строкам — удобно для полного пересчёта.</summary>
     [RelayCommand]
     private void ZeroVisibleActual()
@@ -604,7 +843,7 @@ public partial class WarehouseViewModel : DocumentEditorBase
     private async Task LoadMovementsCore()
     {
         if (From > To) (From, To) = (To, From);
-        Fill(Movements, await _warehouse.GetMovementsAsync(From, To, MovementProduct?.ProductId, MovementWarehouse?.Id, MovementType.Type));
+        Fill(Movements, await _warehouse.GetMovementsAsync(From, To, MovementProduct?.Id, MovementWarehouse?.Id, MovementType.Type));
         MovementsView.Refresh();
         RecalcMovements();
     }
@@ -666,18 +905,18 @@ public partial class WarehouseViewModel : DocumentEditorBase
             .Select(m => Row(m.Date.ToString("dd.MM.yyyy HH:mm"), m.DocumentNumber,
                 conv.Convert(m.Type, typeof(string), null, CultureInfo.CurrentCulture), m.Product?.Name, m.Warehouse?.Name, m.Quantity, m.UnitCost))
             .Prepend(L.T("Дата;Документ;Операция;Товар;Склад;Количество;Себест."));
-        SaveCsv($"{L.T("Движение")}_{From:yyyyMMdd}-{To:yyyyMMdd}.csv", lines);
+        SaveExcel($"{L.T("Движение")}_{From:yyyyMMdd}-{To:yyyyMMdd}.xlsx", lines);
     }
 
     // ================= Общее =================
 
-    private void SaveCsv(string name, IEnumerable<string> lines)
+    private void SaveExcel(string name, IEnumerable<string> lines)
     {
-        var path = Dialogs.SaveFile(name, "CSV (*.csv)|*.csv");
+        var path = Dialogs.SaveFile(name, ExcelExport.Filter);
         if (path is null) return;
         try
         {
-            File.WriteAllLines(path, lines, new UTF8Encoding(true));
+            ExcelExport.Save(path, lines, Path.GetFileNameWithoutExtension(name));
             Dialogs.Info(L.F("Файл сохранён: {0}", path));
         }
         catch (IOException ex) { Dialogs.Error(ex.Message); }

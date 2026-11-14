@@ -19,6 +19,21 @@ public partial class LoginViewModel(SettingsService settings, IDialogService dia
     public string? SavedPassword { get; } = SavedLogin.Load()?.Password;
     [ObservableProperty] private string? _errorMessage;
 
+    /// <summary>Подсказка «Первый вход: admin / admin» — только пока не было успешного входа.</summary>
+    public bool ShowFirstLoginHint { get; } = !UiSettings.Load().HasLoggedIn;
+
+    public string AppVersion
+    {
+        get
+        {
+            var asm = System.Reflection.Assembly.GetEntryAssembly() ?? typeof(LoginViewModel).Assembly;
+            var v = System.Reflection.CustomAttributeExtensions.GetCustomAttribute<System.Reflection.AssemblyInformationalVersionAttribute>(asm)?.InformationalVersion
+                    ?? asm.GetName().Version?.ToString() ?? "";
+            var plus = v.IndexOf('+');
+            return plus > 0 ? v[..plus] : v;
+        }
+    }
+
     /// <summary>Пароль передаётся из PasswordBox (не хранится в ViewModel).</summary>
     [RelayCommand]
     private async Task SignInAsync(string? password)
@@ -32,6 +47,8 @@ public partial class LoginViewModel(SettingsService settings, IDialogService dia
             {
                 if (RememberPassword) SavedLogin.Save(Login ?? "", password ?? "");
                 else SavedLogin.Clear();
+                var ui = UiSettings.Load();
+                if (!ui.HasLoggedIn) { ui.HasLoggedIn = true; ui.Save(); }
                 LoggedIn?.Invoke(this, EventArgs.Empty);
             }
         });

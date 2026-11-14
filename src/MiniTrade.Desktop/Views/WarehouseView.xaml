@@ -9,14 +9,14 @@
              mc:Ignorable="d" d:DataContext="{d:DesignInstance vm:WarehouseViewModel}">
     <TabControl SelectedIndex="{Binding SelectedTab}">
         <!-- ===================== ОСТАТКИ ===================== -->
-        <TabItem Header="{l:T 'Остатки'}">
+        <TabItem Header="{l:T 'Остатки'}" Visibility="{l:Can warehouse.stock}">
             <Border Style="{StaticResource Card}">
                 <DockPanel>
                     <!-- Слева действия · справа фильтр, поиск, страницы -->
                     <DockPanel DockPanel.Dock="Top" Margin="0,0,0,10">
                         <StackPanel DockPanel.Dock="Left" Orientation="Horizontal" VerticalAlignment="Center">
                             <Button Style="{StaticResource InputAddonButton}" Content="&#xF0450;" ToolTip="{l:T 'Обновить'}" Command="{Binding RefreshCommand}" Margin="0"/>
-                            <Button Content="{l:T 'Экспорт CSV'}" Style="{StaticResource SecondaryButton}" Margin="6,0,0,0" Command="{Binding ExportBalancesCommand}"/>
+                            <Button Content="{l:T 'Экспорт в Excel'}" Style="{StaticResource SecondaryButton}" Margin="6,0,0,0" Command="{Binding ExportBalancesCommand}"/>
                         </StackPanel>
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
                             <!-- «Фильтр»: все условия — в выпадающей панели -->
@@ -119,7 +119,7 @@
         </TabItem>
 
         <!-- ===================== ПЕРЕМЕЩЕНИЕ ===================== -->
-        <TabItem Header="{l:T 'Перемещение'}">
+        <TabItem Header="{l:T 'Перемещение'}" Visibility="{l:Can warehouse.transfer}">
           <Grid>
             <!-- ===== Реестр перемещений ===== -->
             <Grid Visibility="{Binding IsTransferEditorOpen, Converter={StaticResource InvBoolToVis}}">
@@ -128,7 +128,7 @@
                     <!-- Слева: создать, период, быстрый период, обновить · справа: фильтр, поиск -->
                     <DockPanel DockPanel.Dock="Top" Margin="0,0,0,10">
                         <StackPanel DockPanel.Dock="Left" Orientation="Horizontal" VerticalAlignment="Center">
-                            <Button Content="{l:T '+ Создать'}" MinHeight="34" Margin="0,0,16,0" Command="{Binding CreateTransferCommand}"/>
+                            <Button Content="{l:T '+ Создать'}" MinHeight="34" Margin="0,0,16,0" Visibility="{l:Can warehouse.transfer}" Command="{Binding CreateTransferCommand}"/>
                             <TextBlock Text="{l:T 'Период:'}" Style="{StaticResource Muted}" VerticalAlignment="Center" Margin="0,0,8,0"/>
                             <DatePicker SelectedDate="{Binding TransferPeriodFrom}" Width="130"/>
                             <TextBlock Text="—" VerticalAlignment="Center" Margin="6,0"/>
@@ -278,9 +278,9 @@
                             <StackPanel Grid.Column="1" Margin="0,0,8,0">
                                 <TextBlock Text="{l:T 'Товар'}" Style="{StaticResource FieldLabel}"/>
                                 <DockPanel>
-                                    <Button DockPanel.Dock="Right" Style="{StaticResource InputAddonButton}" Content="&#xF0CB6;" ToolTip="{l:T 'Изменить выбранный товар'}" Command="{Binding EditProductCommand}" Visibility="{Binding SelectedProduct, Converter={StaticResource BoolToVis}}"/>
+                                    <Button DockPanel.Dock="Right" Style="{StaticResource InputAddonButton}" Content="&#xF03EB;" ToolTip="{l:T 'Изменить выбранный товар'}" Command="{Binding EditProductCommand}" Visibility="{Binding SelectedProduct, Converter={StaticResource BoolToVis}}"/>
                                     <Button DockPanel.Dock="Right" Style="{StaticResource InputAddonButton}" Content="&#xF0415;" ToolTip="{l:T 'Новый товар'}" Command="{Binding AddProductCommand}" Visibility="{Binding SelectedProduct, Converter={StaticResource InvBoolToVis}}"/>
-                                    <ComboBox ItemsSource="{Binding Products}" SelectedItem="{Binding SelectedProduct}" DisplayMemberPath="Name"/>
+                                    <ComboBox ItemsSource="{Binding Products}" SelectedItem="{Binding SelectedProduct}" DisplayMemberPath="Name" inf:Ui.Clearable="True"/>
                                 </DockPanel>
                             </StackPanel>
                             <StackPanel Grid.Column="2" Margin="0,0,8,0">
@@ -340,7 +340,7 @@
         </TabItem>
 
         <!-- ===================== ИНВЕНТАРИЗАЦИЯ ===================== -->
-        <TabItem Header="{l:T 'Инвентаризация'}">
+        <TabItem Header="{l:T 'Инвентаризация'}" Visibility="{l:Can warehouse.inventory}">
           <Grid>
             <!-- ===== Реестр инвентаризаций ===== -->
             <Grid Visibility="{Binding IsInventoryEditorOpen, Converter={StaticResource InvBoolToVis}}">
@@ -348,7 +348,7 @@
                 <DockPanel>
                     <DockPanel DockPanel.Dock="Top" Margin="0,0,0,10">
                         <StackPanel DockPanel.Dock="Left" Orientation="Horizontal" VerticalAlignment="Center">
-                            <Button Content="{l:T '+ Создать'}" MinHeight="34" Margin="0,0,16,0" Command="{Binding CreateInventoryCommand}"/>
+                            <Button Content="{l:T '+ Создать'}" MinHeight="34" Margin="0,0,16,0" Visibility="{l:Can warehouse.inventory}" Command="{Binding CreateInventoryCommand}"/>
                             <TextBlock Text="{l:T 'Период:'}" Style="{StaticResource Muted}" VerticalAlignment="Center" Margin="0,0,8,0"/>
                             <DatePicker SelectedDate="{Binding InventoryPeriodFrom}" Width="130"/>
                             <TextBlock Text="—" VerticalAlignment="Center" Margin="6,0"/>
@@ -482,6 +482,40 @@
                 </DockPanel>
                 <Border Grid.Row="1" Style="{StaticResource Card}">
                     <DockPanel>
+                        <Grid DockPanel.Dock="Top" Margin="0,0,0,12">
+                            <!-- Штрихкод · товар · факт · «Добавить» -->
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="170"/>
+                                <ColumnDefinition Width="*" MinWidth="180"/>
+                                <ColumnDefinition Width="100"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Margin="0,0,8,0">
+                                <TextBlock Text="{l:T 'Штрихкод / артикул'}" Style="{StaticResource FieldLabel}"/>
+                                <TextBox Text="{Binding Barcode, UpdateSourceTrigger=PropertyChanged}" inf:Ui.Placeholder="{l:T 'Скан + Enter'}">
+                                    <TextBox.InputBindings>
+                                        <KeyBinding Key="Enter" Command="{Binding AddInventoryByBarcodeCommand}"/>
+                                    </TextBox.InputBindings>
+                                </TextBox>
+                            </StackPanel>
+                            <StackPanel Grid.Column="1" Margin="0,0,8,0">
+                                <TextBlock Text="{l:T 'Товар'}" Style="{StaticResource FieldLabel}"/>
+                                <DockPanel>
+                                    <Button DockPanel.Dock="Right" Style="{StaticResource InputAddonButton}" Content="&#xF03EB;" ToolTip="{l:T 'Изменить выбранный товар'}" Command="{Binding EditProductCommand}" Visibility="{Binding SelectedProduct, Converter={StaticResource BoolToVis}}"/>
+                                    <Button DockPanel.Dock="Right" Style="{StaticResource InputAddonButton}" Content="&#xF0415;" ToolTip="{l:T 'Новый товар'}" Command="{Binding AddProductCommand}" Visibility="{Binding SelectedProduct, Converter={StaticResource InvBoolToVis}}"/>
+                                    <ComboBox ItemsSource="{Binding Products}" SelectedItem="{Binding SelectedProduct}" DisplayMemberPath="Name" inf:Ui.Clearable="True"/>
+                                </DockPanel>
+                            </StackPanel>
+                            <StackPanel Grid.Column="2" Margin="0,0,8,0">
+                                <TextBlock Text="{l:T 'Фактически'}" Style="{StaticResource FieldLabel}"/>
+                                <TextBox l:Ui.Numeric="True" Text="{Binding NewQuantity, Converter={StaticResource Dec}, UpdateSourceTrigger=PropertyChanged}">
+                                    <TextBox.InputBindings>
+                                        <KeyBinding Key="Enter" Command="{Binding AddInventoryLineCommand}"/>
+                                    </TextBox.InputBindings>
+                                </TextBox>
+                            </StackPanel>
+                            <Button Grid.Column="3" Content="{l:T 'Добавить'}" VerticalAlignment="Bottom" Command="{Binding AddInventoryLineCommand}"/>
+                        </Grid>
                         <DockPanel DockPanel.Dock="Top" Margin="0,0,0,10">
                             <StackPanel DockPanel.Dock="Left" Orientation="Horizontal" VerticalAlignment="Center">
                                 <Button Content="{l:T 'Факт = учёт'}" Style="{StaticResource GhostButton}" Command="{Binding ResetInventoryActualCommand}"/>
@@ -558,8 +592,203 @@
           </Grid>
         </TabItem>
 
+        <!-- ===================== СПИСАНИЕ ===================== -->
+        <TabItem Header="{l:T 'Списание'}" Visibility="{l:Can warehouse.writeoff}">
+          <Grid>
+            <!-- ===== Реестр списаний ===== -->
+            <Grid Visibility="{Binding IsWriteOffEditorOpen, Converter={StaticResource InvBoolToVis}}">
+            <Border Style="{StaticResource Card}" Visibility="{Binding IsWriteOffDetailOpen, Converter={StaticResource InvBoolToVis}}">
+                <DockPanel>
+                    <DockPanel DockPanel.Dock="Top" Margin="0,0,0,10">
+                        <StackPanel DockPanel.Dock="Left" Orientation="Horizontal" VerticalAlignment="Center">
+                            <Button Content="{l:T '+ Создать'}" MinHeight="34" Margin="0,0,16,0" Command="{Binding CreateWriteOffCommand}"/>
+                            <TextBlock Text="{l:T 'Период:'}" Style="{StaticResource Muted}" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                            <DatePicker SelectedDate="{Binding WriteOffPeriodFrom}" Width="130"/>
+                            <TextBlock Text="—" VerticalAlignment="Center" Margin="6,0"/>
+                            <DatePicker SelectedDate="{Binding WriteOffPeriodTo}" Width="130"/>
+                            <Button Style="{StaticResource InputAddonButton}" Content="&#xF0E18;" ToolTip="{l:T 'Быстрый период'}" Margin="8,0,0,0" inf:Ui.DropDownMenu="True">
+                                <Button.ContextMenu>
+                                    <ContextMenu Style="{StaticResource DropDownMenu}">
+                                        <MenuItem Header="{l:T 'Сегодня'}" Command="{Binding SetWriteOffPeriodCommand}" CommandParameter="today"/>
+                                        <MenuItem Header="{l:T 'Вчера'}" Command="{Binding SetWriteOffPeriodCommand}" CommandParameter="yesterday"/>
+                                        <MenuItem Header="{l:T '7 дней'}" Command="{Binding SetWriteOffPeriodCommand}" CommandParameter="week"/>
+                                        <MenuItem Header="{l:T 'Месяц'}" Command="{Binding SetWriteOffPeriodCommand}" CommandParameter="month"/>
+                                        <MenuItem Header="{l:T 'Прошлый месяц'}" Command="{Binding SetWriteOffPeriodCommand}" CommandParameter="prevmonth"/>
+                                        <MenuItem Header="{l:T 'Квартал'}" Command="{Binding SetWriteOffPeriodCommand}" CommandParameter="quarter"/>
+                                        <MenuItem Header="{l:T 'Год'}" Command="{Binding SetWriteOffPeriodCommand}" CommandParameter="year"/>
+                                        <MenuItem Header="{l:T 'Все'}" Command="{Binding SetWriteOffPeriodCommand}" CommandParameter="all"/>
+                                    </ContextMenu>
+                                </Button.ContextMenu>
+                            </Button>
+                            <Button Style="{StaticResource InputAddonButton}" Content="&#xF0450;" ToolTip="{l:T 'Обновить'}" Command="{Binding LoadWriteOffsCommand}" Margin="8,0,0,0"/>
+                            <Button Content="{l:T 'Экспорт в Excel'}" Style="{StaticResource SecondaryButton}" MinHeight="34" Margin="8,0,0,0" Command="{Binding ExportWriteOffsCommand}"/>
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="12,0,0,0">
+                            <ComboBox ItemsSource="{Binding Warehouses}" SelectedItem="{Binding WriteOffWarehouseFilter}" DisplayMemberPath="Name"
+                                      Width="180" Margin="0,0,8,0" inf:Ui.Placeholder="{l:T 'Все склады'}" inf:Ui.Clearable="True"/>
+                            <TextBox Text="{Binding WriteOffsSearch, UpdateSourceTrigger=PropertyChanged, Delay=200}" Style="{StaticResource TableSearch}"
+                                     inf:Ui.Placeholder="{l:T 'Поиск: номер, склад, причина'}"/>
+                        </StackPanel>
+                    </DockPanel>
+                    <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Margin="0,8,0,0">
+                        <TextBlock Text="{l:T 'Документов: '}" Style="{StaticResource Muted}"/>
+                        <TextBlock Text="{Binding WriteOffsCount}" FontWeight="SemiBold"/>
+                        <TextBlock Text="{l:T '   Сумма: '}" Style="{StaticResource Muted}"/>
+                        <TextBlock Text="{Binding WriteOffsSum, StringFormat={}{0:N2}}" FontWeight="SemiBold"/>
+                        <TextBlock Text="{l:T '   (двойной клик — открыть документ)'}" Style="{StaticResource Muted}"/>
+                    </StackPanel>
+                    <DataGrid ItemsSource="{Binding WriteOffsView}" SelectedItem="{Binding SelectedWriteOff}" IsReadOnly="True">
+                        <DataGrid.InputBindings>
+                            <MouseBinding Gesture="LeftDoubleClick" Command="{Binding OpenWriteOffDetailCommand}"/>
+                            <KeyBinding Key="Enter" Command="{Binding OpenWriteOffDetailCommand}"/>
+                        </DataGrid.InputBindings>
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="{l:T 'Номер'}" Binding="{Binding Number}" Width="100"/>
+                            <DataGridTextColumn Header="{l:T 'Дата'}" Binding="{Binding Date, StringFormat={}{0:dd.MM.yyyy HH:mm}}" Width="130"/>
+                            <DataGridTextColumn Header="{l:T 'Склад'}" Binding="{Binding Warehouse.Name}" Width="150"/>
+                            <DataGridTextColumn Header="{l:T 'Причина'}" Binding="{Binding Reason}" Width="170"/>
+                            <DataGridTextColumn Header="{l:T 'Позиций'}" Binding="{Binding Items.Count}" Width="70"/>
+                            <DataGridTextColumn Header="{l:T 'Сумма'}" Binding="{Binding CostTotal, StringFormat={}{0:N2}}" Width="110" ElementStyle="{StaticResource RightCell}"/>
+                            <DataGridTextColumn Header="{l:T 'Комментарий'}" Binding="{Binding Comment}" Width="*"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </DockPanel>
+            </Border>
+
+            <!-- ===== Просмотр документа ===== -->
+            <Border Style="{StaticResource Card}" Visibility="{Binding IsWriteOffDetailOpen, Converter={StaticResource BoolToVis}}">
+                <DockPanel>
+                    <DockPanel DockPanel.Dock="Top" Margin="0,0,0,12">
+                        <Button DockPanel.Dock="Left" Content="{l:T '← Назад к реестру'}" Style="{StaticResource SecondaryButton}" Command="{Binding CloseWriteOffDetailCommand}"/>
+                        <StackPanel Orientation="Vertical" Margin="16,0,0,0" VerticalAlignment="Center">
+                            <TextBlock Style="{StaticResource SectionTitle}" Margin="0">
+                                <Run Text="{l:T 'Списание'}"/> <Run Text="{Binding SelectedWriteOff.Number, Mode=OneWay}"/>
+                                <Run Text="{l:T 'от'}"/> <Run Text="{Binding SelectedWriteOff.Date, Mode=OneWay, StringFormat={}{0:dd.MM.yyyy HH:mm}}"/>
+                            </TextBlock>
+                            <TextBlock Style="{StaticResource Muted}">
+                                <Run Text="{Binding SelectedWriteOff.Warehouse.Name, Mode=OneWay}"/> <Run Text="·"/>
+                                <Run Text="{Binding SelectedWriteOff.Reason, Mode=OneWay}"/>
+                                <Run Text="   "/><Run Text="{Binding SelectedWriteOff.Comment, Mode=OneWay}"/>
+                            </TextBlock>
+                        </StackPanel>
+                    </DockPanel>
+                    <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Margin="0,8,0,0">
+                        <TextBlock Text="{l:T 'Позиций: '}" Style="{StaticResource Muted}"/>
+                        <TextBlock Text="{Binding WriteOffItems.Count}" FontWeight="SemiBold"/>
+                        <TextBlock Text="{l:T '   Сумма: '}" Style="{StaticResource Muted}"/>
+                        <TextBlock Text="{Binding SelectedWriteOff.CostTotal, StringFormat={}{0:N2}}" FontWeight="SemiBold"/>
+                    </StackPanel>
+                    <DataGrid ItemsSource="{Binding WriteOffItems}" IsReadOnly="True">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="{l:T 'Товар'}" Binding="{Binding Product.Name}" Width="*"/>
+                            <DataGridTextColumn Header="{l:T 'Кол-во'}" Binding="{Binding Quantity, StringFormat={}{0:0.###}}" Width="80" ElementStyle="{StaticResource RightCell}"/>
+                            <DataGridTextColumn Header="{l:T 'Ед.'}" Binding="{Binding Product.Unit}" Width="60"/>
+                            <DataGridTextColumn Header="{l:T 'Себест.'}" Binding="{Binding UnitCost, StringFormat={}{0:N2}}" Width="100" ElementStyle="{StaticResource RightCell}"/>
+                            <DataGridTextColumn Header="{l:T 'Сумма'}" Binding="{Binding Amount, StringFormat={}{0:N2}}" Width="110" ElementStyle="{StaticResource RightCell}"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </DockPanel>
+            </Border>
+            </Grid>
+
+            <!-- ===== Создание списания ===== -->
+            <Grid Visibility="{Binding IsWriteOffEditorOpen, Converter={StaticResource BoolToVis}}">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="16"/>
+                    <ColumnDefinition Width="320"/>
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+                <DockPanel Grid.ColumnSpan="3" Margin="0,0,0,12">
+                    <Button DockPanel.Dock="Left" Content="{l:T '← Назад к реестру'}" Style="{StaticResource SecondaryButton}" Command="{Binding CloseWriteOffEditorCommand}"/>
+                    <TextBlock Text="{l:T 'Новое списание'}" Style="{StaticResource SectionTitle}" VerticalAlignment="Center" Margin="16,0,0,0"/>
+                </DockPanel>
+                <Border Grid.Row="1" Style="{StaticResource Card}">
+                    <DockPanel>
+                        <Grid DockPanel.Dock="Top" Margin="0,0,0,12">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="170"/>
+                                <ColumnDefinition Width="*" MinWidth="180"/>
+                                <ColumnDefinition Width="100"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Margin="0,0,8,0">
+                                <TextBlock Text="{l:T 'Штрихкод / артикул'}" Style="{StaticResource FieldLabel}"/>
+                                <TextBox Text="{Binding Barcode, UpdateSourceTrigger=PropertyChanged}" inf:Ui.Placeholder="{l:T 'Скан + Enter'}">
+                                    <TextBox.InputBindings>
+                                        <KeyBinding Key="Enter" Command="{Binding AddByBarcodeCommand}"/>
+                                    </TextBox.InputBindings>
+                                </TextBox>
+                            </StackPanel>
+                            <StackPanel Grid.Column="1" Margin="0,0,8,0">
+                                <TextBlock Text="{l:T 'Товар'}" Style="{StaticResource FieldLabel}"/>
+                                <ComboBox ItemsSource="{Binding Products}" SelectedItem="{Binding SelectedProduct}" DisplayMemberPath="Name" inf:Ui.Clearable="True"/>
+                            </StackPanel>
+                            <StackPanel Grid.Column="2" Margin="0,0,8,0">
+                                <TextBlock Text="{l:T 'Кол-во'}" Style="{StaticResource FieldLabel}"/>
+                                <TextBox l:Ui.Numeric="True" Text="{Binding NewQuantity, Converter={StaticResource Dec}, UpdateSourceTrigger=PropertyChanged}">
+                                    <TextBox.InputBindings>
+                                        <KeyBinding Key="Enter" Command="{Binding AddLineCommand}"/>
+                                    </TextBox.InputBindings>
+                                </TextBox>
+                            </StackPanel>
+                            <Button Grid.Column="3" Content="{l:T 'Добавить'}" VerticalAlignment="Bottom" Command="{Binding AddLineCommand}"/>
+                        </Grid>
+                        <DataGrid ItemsSource="{Binding Lines}">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="{l:T 'Товар'}" Binding="{Binding Product.Name}" Width="*" MinWidth="160" IsReadOnly="True"/>
+                                <DataGridTextColumn Header="{l:T 'Остаток'}" Binding="{Binding StockFrom, StringFormat={}{0:0.###}}" Width="100" ElementStyle="{StaticResource RightCell}" IsReadOnly="True"/>
+                                <DataGridTemplateColumn Header="{l:T 'Количество'}" Width="120">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate><TextBox Style="{StaticResource CellTextBox}" Text="{Binding Quantity, Converter={StaticResource Dec}, UpdateSourceTrigger=PropertyChanged}"/></DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                                <DataGridTextColumn Header="{l:T 'Ед.'}" Binding="{Binding Product.Unit}" Width="60" IsReadOnly="True"/>
+                                <DataGridTextColumn Header="{l:T 'Себест.'}" Binding="{Binding Price, StringFormat={}{0:N2}}" Width="100" ElementStyle="{StaticResource RightCell}" IsReadOnly="True"/>
+                                <DataGridTextColumn Header="{l:T 'Сумма'}" Binding="{Binding Amount, StringFormat={}{0:N2}}" Width="110" ElementStyle="{StaticResource RightCell}" IsReadOnly="True"/>
+                                <DataGridTemplateColumn Width="44">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <Button Content="&#xF0156;" Style="{StaticResource DangerIconButton}"
+                                                    Command="{Binding DataContext.RemoveLineCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}"/>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </DockPanel>
+                </Border>
+                <Border Grid.Row="1" Grid.Column="2" Style="{StaticResource Card}">
+                    <StackPanel>
+                        <TextBlock Text="{l:T 'Списание товара'}" Style="{StaticResource SectionTitle}"/>
+                        <TextBlock Text="{l:T 'Склад'}" Style="{StaticResource FieldLabel}"/>
+                        <ComboBox ItemsSource="{Binding Warehouses}" SelectedItem="{Binding WriteOffWarehouse}" DisplayMemberPath="Name"/>
+                        <TextBlock Text="{l:T 'Причина'}" Style="{StaticResource FieldLabel}"/>
+                        <ComboBox ItemsSource="{Binding WriteOffReasons}" Text="{Binding WriteOffReason, UpdateSourceTrigger=PropertyChanged}" IsEditable="True"/>
+                        <TextBlock Text="{l:T 'Дата проводки'}" Style="{StaticResource FieldLabel}"/>
+                        <DatePicker SelectedDate="{Binding WriteOffDate}"/>
+                        <TextBlock Text="{l:T 'Комментарий'}" Style="{StaticResource FieldLabel}"/>
+                        <TextBox Text="{Binding WriteOffComment, UpdateSourceTrigger=PropertyChanged}" MaxLength="500"/>
+                        <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
+                            <TextBlock Text="{l:T 'Позиций: '}" Style="{StaticResource Muted}"/>
+                            <TextBlock Text="{Binding Lines.Count}" FontWeight="SemiBold"/>
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
+                            <TextBlock Text="{l:T 'Сумма по себестоимости: '}" Style="{StaticResource Muted}"/>
+                            <TextBlock Text="{Binding WriteOffTotal, StringFormat={}{0:N2}}" FontWeight="SemiBold"/>
+                        </StackPanel>
+                        <Button Content="{l:T 'Провести списание'}" Margin="0,12,0,0" Command="{Binding PostWriteOffCommand}"/>
+                    </StackPanel>
+                </Border>
+            </Grid>
+          </Grid>
+        </TabItem>
+
         <!-- ===================== ДВИЖЕНИЕ ===================== -->
-        <TabItem Header="{l:T 'Движение товаров'}">
+        <TabItem Header="{l:T 'Движение товаров'}" Visibility="{l:Can warehouse.movements}">
             <Border Style="{StaticResource Card}">
                 <DockPanel>
                     <!-- Слева период · справа фильтр, поиск, страницы -->
@@ -573,7 +802,7 @@
                             <Button Content="{l:T 'Неделя'}" Style="{StaticResource SmallButton}" Margin="4,0,0,0" Command="{Binding SetMovementPeriodCommand}" CommandParameter="week"/>
                             <Button Content="{l:T 'Месяц'}" Style="{StaticResource SmallButton}" Margin="4,0,0,0" Command="{Binding SetMovementPeriodCommand}" CommandParameter="month"/>
                             <Button Style="{StaticResource InputAddonButton}" Content="&#xF0450;" ToolTip="{l:T 'Показать'}" Command="{Binding LoadMovementsCommand}" Margin="8,0,0,0"/>
-                            <Button Content="{l:T 'Экспорт CSV'}" Style="{StaticResource SecondaryButton}" Margin="6,0,0,0" Command="{Binding ExportMovementsCommand}"/>
+                            <Button Content="{l:T 'Экспорт в Excel'}" Style="{StaticResource SecondaryButton}" Margin="6,0,0,0" Command="{Binding ExportMovementsCommand}"/>
                         </StackPanel>
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="12,0,0,0">
                             <!-- «Фильтр»: склад, операция, товар — в выпадающей панели -->
@@ -607,15 +836,9 @@
                                                       inf:Ui.Placeholder="{l:T 'Все склады'}"/>
                                             <TextBlock Text="{l:T 'Операция'}" Style="{StaticResource Muted}" Margin="0,12,0,4"/>
                                             <ComboBox ItemsSource="{Binding MovementTypes}" SelectedItem="{Binding MovementType}" DisplayMemberPath="Name"/>
-                                            <StackPanel Visibility="{Binding MovementProduct, Converter={StaticResource BoolToVis}}">
-                                                <TextBlock Text="{l:T 'Товар'}" Style="{StaticResource Muted}" Margin="0,12,0,4"/>
-                                                <Border Background="{DynamicResource PrimaryLightBrush}" CornerRadius="6" Padding="10,2">
-                                                    <DockPanel>
-                                                        <Button DockPanel.Dock="Right" Content="&#xF0156;" Style="{StaticResource IconButton}" Margin="6,0,0,0" ToolTip="{l:T 'Все товары'}" Command="{Binding ClearMovementProductCommand}"/>
-                                                        <TextBlock Text="{Binding MovementProduct.Product}" VerticalAlignment="Center" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/>
-                                                    </DockPanel>
-                                                </Border>
-                                            </StackPanel>
+                                            <TextBlock Text="{l:T 'Товар'}" Style="{StaticResource Muted}" Margin="0,12,0,4"/>
+                                            <ComboBox ItemsSource="{Binding Products}" SelectedItem="{Binding MovementProduct}" DisplayMemberPath="Name"
+                                                      inf:Ui.Clearable="True" inf:Ui.Placeholder="{l:T 'Все товары'}"/>
                                             <Button Content="{l:T 'Сбросить'}" Style="{StaticResource SecondaryButton}" HorizontalAlignment="Right" Margin="0,16,0,0"
                                                     Command="{Binding ResetMovementFiltersCommand}"/>
                                         </StackPanel>

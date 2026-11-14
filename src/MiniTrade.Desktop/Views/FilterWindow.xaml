@@ -61,6 +61,43 @@
                                 <ComboBox ItemsSource="{Binding CustomerChoices}" SelectedItem="{Binding Customer}" DisplayMemberPath="Name"/>
                             </StackPanel>
                         </DataTemplate>
+                        <DataTemplate DataType="{x:Type vm:ProductFilterViewModel}">
+                            <Grid>
+                                <Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="12"/><ColumnDefinition/></Grid.ColumnDefinitions>
+                                <StackPanel>
+                                    <TextBlock Text="{l:T 'Категория'}" Style="{StaticResource FieldLabel}" Margin="0,0,0,4"/>
+                                    <ComboBox ItemsSource="{Binding CategoryChoices}" SelectedItem="{Binding Category}" DisplayMemberPath="Name"/>
+                                    <TextBlock Text="{l:T 'Тип'}" Style="{StaticResource FieldLabel}"/>
+                                    <ComboBox ItemsSource="{Binding TypeChoices}" SelectedItem="{Binding Type}" DisplayMemberPath="Name"/>
+                                    <TextBlock Text="{l:T 'Штрихкод'}" Style="{StaticResource FieldLabel}"/>
+                                    <ComboBox ItemsSource="{Binding BarcodeChoices}" SelectedItem="{Binding Barcode}" DisplayMemberPath="Name"/>
+                                    <TextBlock Text="{l:T 'Активность'}" Style="{StaticResource FieldLabel}"/>
+                                    <ComboBox ItemsSource="{Binding ActiveChoices}" SelectedItem="{Binding Active}" DisplayMemberPath="Name"/>
+                                </StackPanel>
+                                <StackPanel Grid.Column="2">
+                                    <TextBlock Text="{l:T 'Ед. измерения'}" Style="{StaticResource FieldLabel}" Margin="0,0,0,4"/>
+                                    <ComboBox ItemsSource="{Binding UnitChoices}" SelectedItem="{Binding Unit}" DisplayMemberPath="Name"/>
+                                    <TextBlock Text="{l:T 'Весовой'}" Style="{StaticResource FieldLabel}"/>
+                                    <ComboBox ItemsSource="{Binding WeightedChoices}" SelectedItem="{Binding Weighted}" DisplayMemberPath="Name"/>
+                                    <TextBlock Text="{l:T 'Фото'}" Style="{StaticResource FieldLabel}"/>
+                                    <ComboBox ItemsSource="{Binding PhotoChoices}" SelectedItem="{Binding Photo}" DisplayMemberPath="Name"/>
+                                    <TextBlock Text="{l:T 'Удалённые'}" Style="{StaticResource FieldLabel}"/>
+                                    <ComboBox ItemsSource="{Binding DeletedChoices}" SelectedItem="{Binding Deleted}" DisplayMemberPath="Name"/>
+                                </StackPanel>
+                            </Grid>
+                        </DataTemplate>
+                        <DataTemplate DataType="{x:Type vm:AuditFilterViewModel}">
+                            <StackPanel>
+                                <TextBlock Text="{l:T 'Пользователь'}" Style="{StaticResource FieldLabel}" Margin="0,0,0,4"/>
+                                <ComboBox ItemsSource="{Binding UserChoices}" SelectedItem="{Binding User}" DisplayMemberPath="Name"/>
+                                <TextBlock Text="{l:T 'Действие'}" Style="{StaticResource FieldLabel}"/>
+                                <ComboBox ItemsSource="{Binding ActionChoices}" SelectedItem="{Binding Action}" DisplayMemberPath="Name"/>
+                                <TextBlock Text="{l:T 'Компьютер'}" Style="{StaticResource FieldLabel}"/>
+                                <ComboBox ItemsSource="{Binding MachineChoices}" SelectedItem="{Binding Machine}" DisplayMemberPath="Name"/>
+                                <TextBlock Text="{l:T 'Объект'}" Style="{StaticResource FieldLabel}"/>
+                                <ComboBox ItemsSource="{Binding ObjectChoices}" SelectedItem="{Binding Object}" DisplayMemberPath="Name"/>
+                            </StackPanel>
+                        </DataTemplate>
                         <DataTemplate DataType="{x:Type vm:PurchasesFilterViewModel}">
                             <StackPanel>
                                 <TextBlock Text="{l:T 'Поставщик'}" Style="{StaticResource FieldLabel}" Margin="0,0,0,4"/>
@@ -68,6 +105,32 @@
                                 <TextBlock Text="{l:T 'Склад'}" Style="{StaticResource FieldLabel}"/>
                                 <ComboBox ItemsSource="{Binding WarehouseChoices}" SelectedItem="{Binding Warehouse}" DisplayMemberPath="Name"/>
                                 <CheckBox Content="{l:T 'Только неоплаченные (с долгом)'}" IsChecked="{Binding OnlyWithDebt}" Margin="0,14,0,0"/>
+                            </StackPanel>
+                        </DataTemplate>
+                        <!-- Фильтр отчётов: пустое поле — «все», «×» сбрасывает выбор -->
+                        <DataTemplate DataType="{x:Type vm:ReportsFilterViewModel}">
+                            <StackPanel>
+                                <StackPanel Visibility="{Binding WarehouseVisible, Converter={StaticResource BoolToVis}}">
+                                    <TextBlock Text="{l:T 'Склад'}" Style="{StaticResource FieldLabel}" Margin="0,0,0,4"/>
+                                    <ComboBox ItemsSource="{Binding Warehouses}" SelectedItem="{Binding Warehouse}" DisplayMemberPath="Name"
+                                              l:Ui.Placeholder="{l:T 'Все склады'}"/>
+                                </StackPanel>
+                                <StackPanel Visibility="{Binding UserVisible, Converter={StaticResource BoolToVis}}">
+                                    <TextBlock Text="{l:T 'Пользователь'}" Style="{StaticResource FieldLabel}"/>
+                                    <ComboBox ItemsSource="{Binding Users}" SelectedItem="{Binding User}" DisplayMemberPath="Name"
+                                              l:Ui.Placeholder="{l:T 'Все пользователи'}"/>
+                                    <TextBlock Text="{l:T 'Контрагент'}" Style="{StaticResource FieldLabel}"/>
+                                    <ComboBox ItemsSource="{Binding Counterparties}" SelectedItem="{Binding Counterparty}" DisplayMemberPath="Name"
+                                              l:Ui.Placeholder="{l:T 'Все контрагенты'}"/>
+                                </StackPanel>
+                                <StackPanel Visibility="{Binding ProductVisible, Converter={StaticResource BoolToVis}}">
+                                    <TextBlock Text="{l:T 'Товар'}" Style="{StaticResource FieldLabel}"/>
+                                    <ComboBox ItemsSource="{Binding Products}" SelectedItem="{Binding Product}" DisplayMemberPath="Name"
+                                              l:Ui.Placeholder="{l:T 'Все товары'}"/>
+                                    <TextBlock Text="{l:T 'Категория'}" Style="{StaticResource FieldLabel}"/>
+                                    <ComboBox ItemsSource="{Binding Categories}" SelectedItem="{Binding Category}" DisplayMemberPath="Name"
+                                              l:Ui.Placeholder="{l:T 'Все категории'}"/>
+                                </StackPanel>
                             </StackPanel>
                         </DataTemplate>
                     </ContentControl.Resources>

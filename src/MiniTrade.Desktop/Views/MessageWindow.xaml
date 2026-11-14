@@ -30,6 +30,9 @@
                     </StackPanel>
                 </Border>
 
+                <!-- Поле ввода (режим Prompt) -->
+                <TextBox x:Name="InputBox" DockPanel.Dock="Bottom" Margin="66,0,22,20" FontSize="16" MinHeight="36" FontWeight="SemiBold" Visibility="Collapsed"/>
+
                 <TextBox x:Name="MessageText" Style="{StaticResource SelectableText}" TextWrapping="Wrap"
                          Margin="66,4,22,20" FontSize="14" MaxHeight="400"
                          VerticalScrollBarVisibility="Auto"/>

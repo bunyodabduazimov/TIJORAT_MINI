@@ -27,7 +27,8 @@ public partial class SalesViewModel(SalesService sales, CatalogService catalog, 
     [ObservableProperty] private string? _comment;
 
     /// <summary>Открытая вкладка: 0 — новая продажа, 1 — история, 2 — возвраты.</summary>
-    [ObservableProperty] private int _selectedTab;
+    // Без права оформления открываем сразу историю (вкладка оформления скрыта)
+    [ObservableProperty] private int _selectedTab = Core.Services.Access.Can(Core.Domain.Perm.SalesCreate) || Core.Services.Access.Can(Core.Domain.Perm.SalesEdit) ? 0 : 1;
 
     protected override decimal DefaultPrice(Product product) => product.SalePrice;
 
@@ -50,10 +51,11 @@ public partial class SalesViewModel(SalesService sales, CatalogService catalog, 
     public override Task LoadAsync() => RunAsync(async () =>
     {
         SetProducts(await catalog.GetAllAsync<Product>(activeOnly: true));
+        ScalePrefix = (await settings.GetCompanyAsync()).ScalePrefix;
         Fill(Warehouses, await catalog.GetAllAsync<Warehouse>(true));
         Fill(CashRegisters, await catalog.GetAllAsync<CashRegister>(true));
         Fill(Customers, await catalog.GetAllAsync<Counterparty>(true));
-        Warehouse ??= Warehouses.FirstOrDefault();
+        Warehouse ??= Warehouses.FirstOrDefault(w => w.Id == App.Ui.PosWarehouseId) ?? Warehouses.FirstOrDefault();
         CashRegister ??= CashRegisters.FirstOrDefault();
         await LoadShowcaseAsync();
         LoadDrafts();
@@ -76,16 +78,16 @@ public partial class SalesViewModel(SalesService sales, CatalogService catalog, 
     {
         if (Warehouse is null || CashRegister is null) { Dialogs.Error(L.T("Выберите склад и кассу.")); return; }
         if (Lines.Count == 0) { Dialogs.Error(L.T("Добавьте товары в чек.")); return; }
-        if (ExtraOverpaid) { Dialogs.Error(L.T("Доп. оплаты больше суммы к оплате.")); return; }
-        if (ExtraPayments.Any(p => p.CashRegister is null)) { Dialogs.Error(L.T("Выберите кассу для каждой оплаты.")); return; }
-        if (CreditNeedsCustomer) { Dialogs.Error(L.T("Для продажи в долг выберите покупателя.")); return; }
-        if (NotEnoughReceived)
+        if (Payments.Any(p => p.CashRegister is null && p.Amount > 0)) { Dialogs.Error(L.T("Выберите кассу для каждой оплаты.")); return; }
+        if (Payments.Any(p => p.Amount < 0)) { Dialogs.Error(L.T("Сумма оплаты не может быть отрицательной.")); return; }
+        if (CreditNeedsCustomer)
         {
-            Dialogs.Error(L.F("Получено меньше суммы к оплате ({0}). Остаток можно записать в долг — кнопка «В долг».", Core.Common.Money.Format(MainPart)));
+            Dialogs.Error(L.F("Оплачено меньше суммы к оплате (остаток {0}). Чтобы продать в долг, выберите покупателя.", Core.Common.Money.Format(Remainder)));
             return;
         }
         var debt = DebtAmount;
-        var request = new SaleRequest(Warehouse.Id, CashRegister.Id, CartLines(), Customer?.Id, Comment, Payments: PaymentParts(), OnCredit: OnCredit);
+        var mainCash = Payments.FirstOrDefault(p => p.CashRegister is not null && p.Amount > 0)?.CashRegister ?? CashRegister;
+        var request = new SaleRequest(Warehouse.Id, mainCash.Id, CartLines(), Customer?.Id, Comment, Payments: PaymentParts(), OnCredit: HasDebt);
         var editing = EditingSale;
         Sale? sale = null;
         var ok = await RunAsync(async () =>
@@ -93,8 +95,39 @@ public partial class SalesViewModel(SalesService sales, CatalogService catalog, 
             sale = editing is null ? await sales.CreateSaleAsync(request) : await sales.UpdateSaleAsync(editing.Id, request);
         });
         if (!ok || sale is null) return;
-        // Без окна-сообщения: итог — плашкой над корзиной, фокус сразу в поиск для следующего покупателя
         var change = Change;
+
+        // Фискальный чек на ККТ — только для новой полностью оплаченной продажи
+        string? fiscalError = null;
+        if (editing is null && FiscalPrinter.Enabled)
+        {
+            if (debt > 0)
+                fiscalError = L.T("Продажа в долг — чек ККТ не пробит.");
+            else
+            {
+                var payments = request.Payments ?? [];
+                try
+                {
+                    var full = await sales.GetSaleAsync(sale.Id);
+                    if (full is not null) fiscalError = await FiscalPrinter.SaleAsync(full, payments, change, CashRegisters);
+                }
+                catch (Exception ex) { fiscalError = ex.Message; }
+
+                // Чек на ККТ не пробит — продажу не сохраняем: откатываем её, корзина остаётся для повтора
+                if (fiscalError is not null)
+                {
+                    var err = fiscalError;
+                    var rolledBack = await RunAsync(() => sales.DeleteSaleAsync(sale.Id));
+                    Dialogs.Error(rolledBack
+                        ? L.F("Чек на ККТ не пробит — продажа не сохранена:\n{0}", err)
+                        : L.F("Чек на ККТ не пробит, но продажу {0} отменить не удалось — удалите её вручную:\n{1}", sale.Number, err));
+                    if (!rolledBack) await RunAsync(LoadHistoryCore);
+                    return;
+                }
+            }
+        }
+
+        // Без окна-сообщения: итог — плашкой над корзиной, фокус сразу в поиск для следующего покупателя
         RemoveCurrentDraft();
         NewSale();
         SalePosted?.Invoke(this, EventArgs.Empty);
@@ -107,6 +140,8 @@ public partial class SalesViewModel(SalesService sales, CatalogService catalog, 
                 : L.F("Продажа {0} проведена: {1}", sale.Number, Core.Common.Money.Format(sale.Total));
         await RunAsync(async () => { await LoadStockAsync(); RefreshShowcase(); await LoadHistoryCore(); });
         if (editing is not null) SelectedTab = 1;
+        if (fiscalError is not null)
+            Dialogs.Error(L.F("Продажа {0} проведена, но чек на ККТ не пробит:\n{1}", sale.Number, fiscalError));
     }
 
     /// <summary>Загрузить строки и реквизиты продажи в чек. asEdit — изменение этой продажи, иначе — новая копия.</summary>
@@ -140,8 +175,8 @@ public partial class SalesViewModel(SalesService sales, CatalogService catalog, 
         // Изменение продажи в долг: сохраняем ту же оплату (остаток снова уйдёт в долг)
         if (asEdit && sale.PaidAmount < sale.Total)
         {
-            OnCredit = true;
-            Received = sale.PaidAmount;
+            _paymentsEdited = true;
+            if (sale.PaidAmount > 0) AddPaymentRow(CashRegister, sale.PaidAmount);
         }
         RaiseTotals();
         SelectedTab = 0;
@@ -422,6 +457,14 @@ public partial class SaleReturnViewModel : ObservableObject, ICloseRequest
         }
         catch (Exception ex) { _dialogs.Error(L.Message(ex)); return; }
         Posted = true;
+        if (FiscalPrinter.Enabled)
+        {
+            string? fiscalError;
+            try { fiscalError = await FiscalPrinter.ReturnAsync(_sale, lines, CashRegister); }
+            catch (Exception ex) { fiscalError = ex.Message; }
+            if (fiscalError is not null)
+                _dialogs.Error(L.F("Возврат оформлен, но чек возврата на ККТ не пробит:\n{0}", fiscalError));
+        }
         CloseRequested?.Invoke(this, true);
     }
 }

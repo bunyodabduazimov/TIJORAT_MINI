@@ -15,10 +15,13 @@ public partial class PosItem(Product product) : ObservableObject
     [ObservableProperty] [NotifyPropertyChangedFor(nameof(IsOut), nameof(StockText))] private decimal _stock;
     [ObservableProperty] [NotifyPropertyChangedFor(nameof(InCart))] private decimal _inCartQuantity;
 
-    public bool IsOut => Stock <= 0;
+    public bool IsOut => !Product.IsService && Stock <= 0;
     public bool InCart => InCartQuantity > 0;
-    public string StockText => L.F("{0:0.###} {1}", Stock, Product.Unit);
+    public string StockText => Product.IsService ? L.T("услуга") : L.F("{0:0.###} {1}", Stock, Product.Unit);
 }
+
+/// <summary>Размер карточек витрины: подпись и масштаб.</summary>
+public sealed record PosTileSize(string Name, double Scale);
 
 /// <summary>Категория на витрине кассы (null-категория — «Все товары»).</summary>
 public sealed record PosCategory(Category? Category, string Name, int Count)
@@ -46,8 +49,41 @@ public partial class SalesViewModel
     [ObservableProperty] private PosCategory? _selectedPosCategory;
     [ObservableProperty] private PosItem? _selectedItem;
     [ObservableProperty] private string? _searchText;
-    [ObservableProperty] private bool _showTable;
-    [ObservableProperty] private bool _onlyInStock;
+    [ObservableProperty] private bool _showTable = App.Ui.PosShowTable;
+    [ObservableProperty] private bool _onlyInStock = App.Ui.PosOnlyInStock;
+    /// <summary>Показывать ленту категорий над витриной.</summary>
+    [ObservableProperty] private bool _showCategories = App.Ui.PosShowCategories;
+
+    // Скрыли категории — сбрасываем фильтр на «Все товары», иначе витрина останется отфильтрованной
+    partial void OnShowCategoriesChanged(bool value)
+    {
+        if (!value && PosCategories.Count > 0) SelectedPosCategory = PosCategories[0];
+        App.Ui.PosShowCategories = value;
+        App.Ui.Save();
+    }
+
+    /// <summary>Варианты размера карточек на витрине.</summary>
+    public IReadOnlyList<PosTileSize> TileSizes { get; } =
+    [
+        new(L.T("Маленький"), 0.85),
+        new(L.T("Обычный"), 1.0),
+        new(L.T("Большой"), 1.25),
+        new(L.T("Очень большой"), 1.5),
+    ];
+
+    [ObservableProperty] private double _tileScale = App.Ui.PosTileScale is > 0 ? App.Ui.PosTileScale : 1;
+
+    partial void OnTileScaleChanged(double value)
+    {
+        App.Ui.PosTileScale = value;
+        App.Ui.Save();
+    }
+
+    partial void OnShowTableChanged(bool value)
+    {
+        App.Ui.PosShowTable = value;
+        App.Ui.Save();
+    }
     [ObservableProperty] private bool _isShowcaseEmpty;
 
     /// <summary>Окно ставит фокус в строку поиска (после проведения, по F2).</summary>
@@ -64,7 +100,7 @@ public partial class SalesViewModel
         _allItems.AddRange(Products.Select(p => new PosItem(p)));
         await LoadStockAsync();
 
-        var selectedId = SelectedPosCategory?.Category?.Id;
+        var selectedId = SelectedPosCategory is { } sel ? sel.Category?.Id : App.Ui.PosCategoryId;
         PosCategories.Clear();
         PosCategories.Add(new PosCategory(null, L.T("Все товары"), _allItems.Count));
         foreach (var c in categories)
@@ -88,12 +124,29 @@ public partial class SalesViewModel
 
     partial void OnWarehouseChanged(Warehouse? value)
     {
+        if (value is not null && App.Ui.PosWarehouseId != value.Id)
+        {
+            App.Ui.PosWarehouseId = value.Id;
+            App.Ui.Save();
+        }
         if (_allItems.Count > 0) _ = RunAsync(async () => { await LoadStockAsync(); RefreshShowcase(); });
     }
 
     partial void OnSearchTextChanged(string? value) => RefreshShowcase();
-    partial void OnSelectedPosCategoryChanged(PosCategory? value) => RefreshShowcase();
-    partial void OnOnlyInStockChanged(bool value) => RefreshShowcase();
+    partial void OnSelectedPosCategoryChanged(PosCategory? value)
+    {
+        RefreshShowcase();
+        if (value is null || App.Ui.PosCategoryId == value.Category?.Id) return;
+        App.Ui.PosCategoryId = value.Category?.Id;
+        App.Ui.Save();
+    }
+
+    partial void OnOnlyInStockChanged(bool value)
+    {
+        RefreshShowcase();
+        App.Ui.PosOnlyInStock = value;
+        App.Ui.Save();
+    }
 
     [RelayCommand]
     private void ToggleView() => ShowTable = !ShowTable;
@@ -140,6 +193,14 @@ public partial class SalesViewModel
         }
         var exact = Products.FirstOrDefault(p => string.Equals(p.Barcode, term, StringComparison.OrdinalIgnoreCase))
                     ?? Products.FirstOrDefault(p => string.Equals(p.Sku, term, StringComparison.OrdinalIgnoreCase));
+        if (exact is null && TryParseScaleBarcode(term, out var code, out var weight))
+        {
+            var weighted = Products.FirstOrDefault(p => p.IsWeighted && SameScaleCode(p.Barcode, code));
+            if (weighted is null) { Dialogs.Error(L.F("Весовой товар с кодом {0} не найден. Укажите этот код в штрихкоде товара и отметьте «Весовой товар».", code)); return; }
+            if (weight <= 0) { Dialogs.Error(L.T("В штрихкоде весов нулевой вес.")); return; }
+            AddToCart(weighted, weight);
+            return;
+        }
         var product = exact ?? SelectedItem?.Product ?? Showcase.FirstOrDefault()?.Product;
         if (product is null)
         {
@@ -171,9 +232,41 @@ public partial class SalesViewModel
     [RelayCommand]
     private void ClearSearch() => SearchText = "";
 
-    private void AddToCart(Product product)
+    // ── Весы: EAN-13 вида ПП ККККК ВВВВВ К (префикс весов, код товара, вес в граммах, контрольная цифра) ──
+
+    /// <summary>Префикс весового штрихкода из настроек (null — весы не используются).</summary>
+    public string? ScalePrefix { get; set; }
+
+    private bool TryParseScaleBarcode(string term, out string code, out decimal weightKg)
     {
-        AddOrMerge(product, 1, DefaultPrice(product));
+        code = "";
+        weightKg = 0;
+        if (ScalePrefix is not { Length: 2 } prefix || term.Length != 13 || !term.All(char.IsAsciiDigit) || !term.StartsWith(prefix))
+            return false;
+        if (!IsValidEan13(term)) return false;
+        code = term.Substring(2, 5);
+        weightKg = int.Parse(term.Substring(7, 5)) / 1000m;
+        return true;
+    }
+
+    private static bool IsValidEan13(string s)
+    {
+        var sum = 0;
+        for (var i = 0; i < 12; i++) sum += (s[i] - '0') * (i % 2 == 0 ? 1 : 3);
+        return (10 - sum % 10) % 10 == s[12] - '0';
+    }
+
+    /// <summary>Код товара на весах сравнивается как число: «00123» = «123».</summary>
+    private static bool SameScaleCode(string? barcode, string code)
+    {
+        var b = barcode?.Trim();
+        if (string.IsNullOrEmpty(b) || !b.All(char.IsAsciiDigit) || b.Length > 5) return false;
+        return int.Parse(b) == int.Parse(code);
+    }
+
+    private void AddToCart(Product product, decimal quantity = 1)
+    {
+        AddOrMerge(product, quantity, DefaultPrice(product));
         SelectedLine = Lines.LastOrDefault(l => l.Product.Id == product.Id);
         // Сканер/поиск — очищаем строку; клик по плитке при пустом поиске фильтр не трогает
         if (!string.IsNullOrEmpty(SearchText)) SearchText = "";
@@ -217,10 +310,8 @@ public partial class SalesViewModel
     private void NewSale()
     {
         ClearLines();
-        DiscountPercent = 0;
-        Received = 0;
-        OnCredit = false;
-        ExtraPayments.Clear();
+        ResetDiscount();
+        ClearPayments();
         Comment = null;
         Customer = null;
         CurrentDraftId = null;
@@ -230,68 +321,84 @@ public partial class SalesViewModel
         FocusSearchRequested?.Invoke(this, EventArgs.Empty);
     }
 
-    /// <summary>«Без сдачи»: получено ровно к оплате.</summary>
-    [RelayCommand]
-    private void ExactCash() => Received = Math.Max(0, MainPart);
-
-    /// <summary>Быстрые купюры: прибавляют сумму к «Получено».</summary>
-    [RelayCommand]
-    private void AddCash(object? amount)
-    {
-        if (amount is null) return;
-        if (decimal.TryParse(Convert.ToString(amount, System.Globalization.CultureInfo.InvariantCulture),
-                System.Globalization.NumberStyles.Number, System.Globalization.CultureInfo.InvariantCulture, out var a))
-            Received += a;
-    }
-
-    [RelayCommand]
-    private void ResetReceived() => Received = 0;
-
-    public IReadOnlyList<int> Banknotes { get; } = [10, 20, 50, 100, 200, 500];
-
-    // ── Итоги: скидка %, получено, сдача ──
+    // ── Итоги: скидка (% или сумма — поля связаны), оплаты, остаток, сдача ──
     [ObservableProperty] private decimal _discountPercent;
-    [ObservableProperty] private decimal _received;
+    [ObservableProperty] private decimal _discountSum;
+    /// <summary>Скидку последней вводили суммой — она держится при изменении чека, процент пересчитывается.</summary>
+    private bool _discountBySum;
+    private bool _syncingDiscount;
 
     public int ItemsCount => Lines.Count;
     public bool IsCartEmpty => Lines.Count == 0;
     public decimal ItemsQuantity => Lines.Sum(l => l.Quantity);
-    /// <summary>Цена строки со скидкой (скидка % применяется к каждой цене — так она попадает в документ).</summary>
-    private decimal Discounted(decimal price) => Money.Round(price * (100 - Math.Clamp(DiscountPercent, 0, 100)) / 100);
+
+    /// <summary>Доля к оплате после скидки (1 — без скидки).</summary>
+    private decimal DiscountFactor => _discountBySum
+        ? (Total > 0 ? (Total - Math.Clamp(DiscountSum, 0, Total)) / Total : 1)
+        : (100 - Math.Clamp(DiscountPercent, 0, 100)) / 100;
+    /// <summary>Цена строки со скидкой (скидка применяется к каждой цене — так она попадает в документ).</summary>
+    private decimal Discounted(decimal price) => Money.Round(price * DiscountFactor);
     public decimal ToPay => Lines.Sum(l => Money.Round(l.Quantity * Discounted(l.Price)));
     public decimal DiscountAmount => Total - ToPay;
     public bool HasDiscount => DiscountAmount > 0;
-    public decimal Change => Received > MainPart ? Money.Round(Received - MainPart) : 0;
-    public bool NotEnoughReceived => !OnCredit && Received > 0 && Received < MainPart;
 
-    // ── Продажа в долг: в основную кассу поступает только «Получено», остаток записывается на покупателя ──
-    [ObservableProperty] private bool _onCredit;
-    /// <summary>Сколько реально поступает в основную кассу.</summary>
-    public decimal MainPaid => !OnCredit ? Math.Max(0, MainPart) : Math.Clamp(Received, 0, Math.Max(0, MainPart));
-    public decimal DebtAmount => OnCredit ? Math.Max(0, MainPart - MainPaid) : 0;
-    public bool HasDebt => DebtAmount > 0;
-    public bool CreditNeedsCustomer => OnCredit && Customer is null;
-    /// <summary>Получено меньше — подсказка, что остаток можно записать в долг.</summary>
-    public bool CanOfferCredit => NotEnoughReceived;
+    partial void OnDiscountPercentChanged(decimal value)
+    {
+        if (!_syncingDiscount)
+        {
+            _discountBySum = false;
+            SyncDiscount();
+        }
+        RaiseTotals();
+    }
 
-    partial void OnDiscountPercentChanged(decimal value) => RaiseTotals();
-    partial void OnReceivedChanged(decimal value) => RaiseTotals();
-    partial void OnOnCreditChanged(bool value) => RaiseTotals();
+    partial void OnDiscountSumChanged(decimal value)
+    {
+        if (!_syncingDiscount)
+        {
+            _discountBySum = true;
+            SyncDiscount();
+        }
+        RaiseTotals();
+    }
+
+    /// <summary>Пересчитать второе поле скидки из того, которое вводили.</summary>
+    private void SyncDiscount()
+    {
+        _syncingDiscount = true;
+        if (_discountBySum)
+            DiscountPercent = Total > 0 ? Math.Round(Math.Clamp(DiscountSum, 0, Total) / Total * 100, 2) : 0;
+        else
+            DiscountSum = Money.Round(Total * Math.Clamp(DiscountPercent, 0, 100) / 100);
+        _syncingDiscount = false;
+    }
+
+    private void ResetDiscount()
+    {
+        _syncingDiscount = true;
+        DiscountPercent = 0;
+        DiscountSum = 0;
+        _discountBySum = false;
+        _syncingDiscount = false;
+    }
+
     partial void OnCustomerChanged(Counterparty? value) => RaiseTotals();
-
-    /// <summary>«В долг» одним нажатием: всё неоплаченное — на покупателя.</summary>
-    [RelayCommand]
-    private void ToggleCredit() => OnCredit = !OnCredit;
 
     protected override void OnPropertyChanged(PropertyChangedEventArgs e)
     {
         base.OnPropertyChanged(e);
-        if (e.PropertyName == nameof(Total)) RaiseTotals();
+        if (e.PropertyName == nameof(Total))
+        {
+            SyncDiscount();
+            RaiseTotals();
+        }
     }
 
     private void RaiseTotals()
     {
-        foreach (var n in new[] { nameof(ItemsCount), nameof(IsCartEmpty), nameof(ItemsQuantity), nameof(ToPay), nameof(DiscountAmount), nameof(HasDiscount), nameof(Change), nameof(NotEnoughReceived), nameof(HasExtraPayments), nameof(ExtraPaid), nameof(MainPart), nameof(ExtraOverpaid), nameof(MainPaid), nameof(DebtAmount), nameof(HasDebt), nameof(CreditNeedsCustomer), nameof(CanOfferCredit) })
+        SyncAutoPayment();
+        foreach (var n in new[] { nameof(ItemsCount), nameof(IsCartEmpty), nameof(ItemsQuantity), nameof(ToPay), nameof(DiscountAmount), nameof(HasDiscount),
+                     nameof(PaidSum), nameof(Remainder), nameof(Change), nameof(HasChange), nameof(DebtAmount), nameof(HasDebt), nameof(CreditNeedsCustomer) })
             OnPropertyChanged(n);
         SyncCartMarks();
     }
@@ -303,7 +410,7 @@ public partial class SalesViewModel
         Lines.Select(l => new Core.Services.DocumentLine(l.Product.Id, l.Quantity, Discounted(l.Price))).ToList();
 }
 
-/// <summary>Доп. оплата на другую кассу (смешанная оплата).</summary>
+/// <summary>Строка оплаты: касса и сумма.</summary>
 public partial class PaymentPart : ObservableObject
 {
     [ObservableProperty] private CashRegister? _cashRegister;
@@ -312,25 +419,58 @@ public partial class PaymentPart : ObservableObject
 
 public partial class SalesViewModel
 {
-    /// <summary>Доп. оплаты; остаток суммы идёт в основную кассу (CashRegister), к нему же относятся «Получено» и сдача.</summary>
-    public ObservableCollection<PaymentPart> ExtraPayments { get; } = new();
-    public bool HasExtraPayments => ExtraPayments.Count > 0;
-    public decimal ExtraPaid => ExtraPayments.Sum(p => p.Amount);
-    /// <summary>Сколько приходится на основную кассу.</summary>
-    public decimal MainPart => ToPay - ExtraPaid;
-    public bool ExtraOverpaid => ExtraPaid > ToPay;
+    /// <summary>
+    /// Оплаты по кассам. Сумма оплат меньше «К оплате» — остаток записывается в долг покупателя
+    /// (нужен покупатель); больше — разница выдаётся сдачей.
+    /// </summary>
+    public ObservableCollection<PaymentPart> Payments { get; } = new();
+    /// <summary>Пока кассир не менял оплаты, единственная строка следует за суммой к оплате.</summary>
+    private bool _paymentsEdited;
+    private bool _settingPayment;
 
+    public decimal PaidSum => Payments.Sum(p => Math.Max(0, p.Amount));
+    public decimal Remainder => Math.Max(0, ToPay - PaidSum);
+    public decimal Change => Math.Max(0, PaidSum - ToPay);
+    public bool HasChange => Change > 0;
+    public decimal DebtAmount => Remainder;
+    public bool HasDebt => Remainder > 0;
+    public bool CreditNeedsCustomer => HasDebt && Customer is null;
+
+    /// <summary>Окно оформления открыто: если оплат нет — одна строка на всю сумму в основную кассу.</summary>
+    private void EnsureDefaultPayment()
+    {
+        if (Payments.Count > 0 || _paymentsEdited) return;
+        AddPaymentRow(CashRegister, ToPay);
+    }
+
+    private void SyncAutoPayment()
+    {
+        if (_paymentsEdited || Payments.Count != 1 || Payments[0].Amount == ToPay) return;
+        _settingPayment = true;
+        Payments[0].Amount = ToPay;
+        _settingPayment = false;
+    }
+
+    private PaymentPart AddPaymentRow(CashRegister? cash, decimal amount)
+    {
+        var part = new PaymentPart { CashRegister = cash, Amount = amount };
+        part.PropertyChanged += (_, _) =>
+        {
+            if (_settingPayment) return;
+            _paymentsEdited = true;
+            RaiseTotals();
+        };
+        Payments.Add(part);
+        return part;
+    }
+
+    /// <summary>«Новая оплата»: строка на неоплаченный остаток, касса — ещё не использованная.</summary>
     [RelayCommand]
     private void AddPayment()
     {
-        var part = new PaymentPart
-        {
-            CashRegister = CashRegisters.FirstOrDefault(c => c != CashRegister) ?? CashRegister,
-            Amount = Math.Max(0, MainPart)
-        };
-        part.PropertyChanged += (_, _) => RaiseTotals();
-        ExtraPayments.Add(part);
-        Received = 0;
+        _paymentsEdited = true;
+        var cash = CashRegisters.FirstOrDefault(c => Payments.All(p => p.CashRegister != c)) ?? CashRegister;
+        AddPaymentRow(cash, Remainder);
         RaiseTotals();
     }
 
@@ -338,23 +478,29 @@ public partial class SalesViewModel
     private void RemovePayment(PaymentPart? part)
     {
         if (part is null) return;
-        ExtraPayments.Remove(part);
+        _paymentsEdited = true;
+        Payments.Remove(part);
         RaiseTotals();
     }
 
     private void ClearPayments()
     {
-        ExtraPayments.Clear();
-        RaiseTotals();
+        Payments.Clear();
+        _paymentsEdited = false;
     }
 
-    /// <summary>Части оплаты для запроса; null — всё в основную кассу.</summary>
-    private IReadOnlyList<Core.Services.SalePayment>? PaymentParts()
+    /// <summary>Оплаты для запроса: сдача вычитается с последних строк, нулевые отбрасываются.</summary>
+    private IReadOnlyList<Core.Services.SalePayment> PaymentParts()
     {
-        if ((ExtraPayments.Count == 0 && !OnCredit) || CashRegister is null) return null;
-        var list = ExtraPayments.Where(p => p.CashRegister is not null && p.Amount > 0)
-            .Select(p => new Core.Services.SalePayment(p.CashRegister!.Id, p.Amount)).ToList();
-        if (MainPaid > 0) list.Insert(0, new Core.Services.SalePayment(CashRegister.Id, MainPaid));
-        return list;
+        var parts = Payments.Where(p => p.CashRegister is not null && p.Amount > 0)
+            .Select(p => (Id: p.CashRegister!.Id, Amount: p.Amount)).ToList();
+        var extra = Change;
+        for (var i = parts.Count - 1; i >= 0 && extra > 0; i--)
+        {
+            var cut = Math.Min(extra, parts[i].Amount);
+            parts[i] = (parts[i].Id, parts[i].Amount - cut);
+            extra -= cut;
+        }
+        return parts.Where(p => p.Amount > 0).Select(p => new Core.Services.SalePayment(p.Id, p.Amount)).ToList();
     }
 }

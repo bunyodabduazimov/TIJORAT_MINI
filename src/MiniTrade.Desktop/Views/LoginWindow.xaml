@@ -7,7 +7,7 @@
         xmlns:vm="clr-namespace:MiniTrade.Desktop.ViewModels"
         xmlns:inf="clr-namespace:MiniTrade.Desktop.Infrastructure"
         mc:Ignorable="d" d:DataContext="{d:DesignInstance vm:LoginViewModel}"
-        Title="{l:T 'TIJORAT MINI — вход'}" Width="904" Height="568"
+        Title="{l:T 'TIJORAT.PRO — вход'}" Width="904" Height="568"
         Style="{StaticResource AppWindow}" Background="Transparent"
         WindowStyle="None" AllowsTransparency="True" ResizeMode="NoResize"
         WindowStartupLocation="CenterScreen"
@@ -93,16 +93,10 @@
                         <Ellipse Width="70" Height="70" Stroke="#24FFFFFF" StrokeThickness="2" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,46,90"/>
 
                         <DockPanel Margin="36,34,36,30">
-                            <StackPanel DockPanel.Dock="Top" Orientation="Horizontal">
-                                <!-- Логотип в светлой рамке — отделяется от синего фона панели -->
-                                <Border CornerRadius="14" Background="#33FFFFFF" Padding="3">
-                                    <Image Source="{StaticResource LogoMark}" Width="46" Height="46"/>
-                                </Border>
-                                <StackPanel Margin="12,0,0,0" VerticalAlignment="Center">
-                                    <TextBlock Text="TIJORAT MINI" Foreground="White" FontSize="18" FontWeight="SemiBold"/>
-                                    <TextBlock Text="{l:T 'ERP для торговли · TJS'}" Foreground="#B9C8EE" FontSize="12"/>
-                                </StackPanel>
-                            </StackPanel>
+                            <!-- Полный логотип на белой плашке: синий текст логотипа не теряется на синем фоне -->
+                            <Border DockPanel.Dock="Top" HorizontalAlignment="Left" CornerRadius="12" Background="White" Padding="14,10">
+                                <Image Source="{StaticResource LogoFull}" Height="44" RenderOptions.BitmapScalingMode="HighQuality"/>
+                            </Border>
 
                             <TextBlock DockPanel.Dock="Bottom" Text="{l:T 'Данные хранятся локально на этом компьютере'}" Foreground="#93A5D3" FontSize="11"/>
 
@@ -183,7 +177,8 @@
                             </StackPanel>
                         </Button>
 
-                        <Border Margin="0,22,0,0" Padding="12,10" CornerRadius="8" Background="{DynamicResource SurfaceAltBrush}">
+                        <Border Margin="0,22,0,0" Padding="12,10" CornerRadius="8" Background="{DynamicResource SurfaceAltBrush}"
+                                Visibility="{Binding ShowFirstLoginHint, Converter={StaticResource BoolToVis}}">
                             <DockPanel>
                                 <TextBlock Text="&#xF02FC;" FontFamily="{StaticResource IconFont}" FontSize="16" Foreground="{DynamicResource MutedBrush}" Margin="0,2,10,0"/>
                                 <TextBlock Style="{StaticResource Muted}" FontSize="12" TextWrapping="Wrap">
@@ -192,6 +187,8 @@
                             </DockPanel>
                         </Border>
                     </StackPanel>
+                    <TextBlock Text="{Binding AppVersion, StringFormat='v{0}'}" Style="{StaticResource Muted}" FontSize="11"
+                               HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,16,12"/>
                 </Grid>
             </Grid>
         </Border>

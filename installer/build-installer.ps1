@@ -3,7 +3,7 @@
 # Запуск:  installer\build-installer.ps1              — новая версия (+1)
 #          installer\build-installer.ps1 -NoBump      — пересобрать текущую версию
 #          installer\build-installer.ps1 -SetVersion 1.1.0 — задать версию вручную
-# Результат: installer\output\TijoratMini-Setup-<версия>.exe
+# Результат: installer\output\TijoratPro-Setup-<версия>.exe
 param([switch]$NoBump, [string]$SetVersion)
 $ErrorActionPreference = 'Stop'
 $root = Resolve-Path "$PSScriptRoot\.."
@@ -35,4 +35,4 @@ Remove-Item "$publish\*.pdb" -Force -ErrorAction SilentlyContinue
 
 & $iscc "/DAppVersion=$version" "$PSScriptRoot\MiniTrade.iss"
 if ($LASTEXITCODE -ne 0) { throw 'Inno Setup завершился с ошибкой' }
-Write-Host "Готово: $PSScriptRoot\output\TijoratMini-Setup-$version.exe" -ForegroundColor Green
+Write-Host "Готово: $PSScriptRoot\output\TijoratPro-Setup-$version.exe" -ForegroundColor Green

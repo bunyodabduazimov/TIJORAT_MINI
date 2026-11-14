@@ -7,11 +7,11 @@ namespace MiniTrade.Core.Services;
 
 /// <summary>Платёж контрагенту или от контрагента.</summary>
 public sealed record CounterpartyPaymentRequest(CashDirection Direction, int CashRegisterId, int CounterpartyId,
-    decimal Amount, string? Article = null, string? Comment = null);
+    decimal Amount, string? Article = null, string? Comment = null, DateTime? Date = null);
 
 /// <summary>Фильтр журнала кассовых операций. Search ищет по статье, комментарию и номеру документа.</summary>
 public sealed record CashOperationFilter(DateTime From, DateTime To, int? CashRegisterId = null, CashDirection? Direction = null,
-    int? CounterpartyId = null, string? Search = null);
+    int? CounterpartyId = null, string? Search = null, CashOperationKind[]? Kinds = null);
 
 /// <summary>Страница журнала и итоги по всему отфильтрованному периоду (без перемещений между кассами).</summary>
 public sealed record CashOperationsPage(IReadOnlyList<CashTransaction> Items, int TotalCount, decimal Income, decimal Expense);
@@ -40,6 +40,7 @@ public class FinanceService(IDbContextFactory<TradeDbContext> factory, UserSessi
     public async Task<CashTransaction> AddOperationAsync(int cashRegisterId, CashDirection direction, string category, decimal amount,
         string? comment, DateTime? date = null, CancellationToken ct = default)
     {
+        Access.Demand(direction == CashDirection.Income ? Perm.FinanceIncomeCreate : Perm.FinanceExpenseCreate);
         if (string.IsNullOrWhiteSpace(category)) throw new BusinessException("Укажите статью операции.");
         await using var db = await factory.CreateDbContextAsync(ct);
         await using var tx = await db.Database.BeginTransactionAsync(ct);
@@ -57,9 +58,23 @@ public class FinanceService(IDbContextFactory<TradeDbContext> factory, UserSessi
     /// </summary>
     public static bool CanModify(CashTransaction t) => t.Kind is CashOperationKind.Manual or CashOperationKind.CounterpartyPayment or CashOperationKind.CounterpartyAccrual;
 
+    /// <summary>Подраздел прав операции: finance.income / expense / payment / accrual / transfer; null — операция документа.</summary>
+    public static string? PermGroupOf(CashTransaction t) => t.Kind switch
+    {
+        CashOperationKind.Manual => t.Direction == CashDirection.Income ? "finance.income" : "finance.expense",
+        CashOperationKind.CounterpartyPayment or CashOperationKind.SupplierPayment => "finance.payment",
+        CashOperationKind.CounterpartyAccrual => "finance.accrual",
+        CashOperationKind.TransferIn or CashOperationKind.TransferOut => "finance.transfer",
+        _ => null
+    };
+
+    /// <summary>Разрешено ли текущему пользователю действие (view/create/edit/delete) с операцией.</summary>
+    public static bool CanDo(CashTransaction t, string action) =>
+        PermGroupOf(t) is { } g ? Access.Can($"{g}.{action}") : action == "view" && Access.Can(Perm.FinanceView);
+
     /// <summary>Изменение ручной операции: касса, статья, сумма, комментарий, контрагент. Остатки касс пересчитываются.</summary>
     public async Task UpdateOperationAsync(int id, int? cashRegisterId, string category, decimal amount, string? comment,
-        int? counterpartyId = null, CancellationToken ct = default)
+        int? counterpartyId = null, DateTime? date = null, CancellationToken ct = default)
     {
         if (string.IsNullOrWhiteSpace(category)) throw new BusinessException("Укажите статью операции.");
         amount = Money.Round(amount);
@@ -67,6 +82,7 @@ public class FinanceService(IDbContextFactory<TradeDbContext> factory, UserSessi
         await using var db = await factory.CreateDbContextAsync(ct);
         await using var tx = await db.Database.BeginTransactionAsync(ct);
         var op = await LoadModifiableAsync(db, id, ct);
+        Access.Demand($"{PermGroupOf(op)}.edit");
         if (op.Kind is CashOperationKind.CounterpartyPayment or CashOperationKind.CounterpartyAccrual && counterpartyId is null)
             throw new BusinessException("Выберите контрагента.");
 
@@ -77,6 +93,7 @@ public class FinanceService(IDbContextFactory<TradeDbContext> factory, UserSessi
             op.Amount = amount;
             op.Comment = comment;
             op.CounterpartyId = counterpartyId;
+            if (date is { } d0) op.Date = d0;
             await db.SaveChangesAsync(ct);
             await tx.CommitAsync(ct);
             return;
@@ -92,6 +109,7 @@ public class FinanceService(IDbContextFactory<TradeDbContext> factory, UserSessi
         op.Amount = amount;
         op.Comment = comment;
         if (op.Kind == CashOperationKind.CounterpartyPayment) op.CounterpartyId = counterpartyId;
+        if (date is { } d1) op.Date = d1;
         newCash.Balance = Money.Round(newCash.Balance + op.SignedAmount);
         EnsureNotNegative(oldCash);
         EnsureNotNegative(newCash);
@@ -106,6 +124,7 @@ public class FinanceService(IDbContextFactory<TradeDbContext> factory, UserSessi
         await using var db = await factory.CreateDbContextAsync(ct);
         await using var tx = await db.Database.BeginTransactionAsync(ct);
         var op = await LoadModifiableAsync(db, id, ct);
+        Access.Demand($"{PermGroupOf(op)}.delete");
         if (op.CashRegisterId is not null)
         {
             var cash = await db.CashRegisters.FindAsync([op.CashRegisterId], ct) ?? throw new BusinessException("Касса не найдена.");
@@ -131,13 +150,14 @@ public class FinanceService(IDbContextFactory<TradeDbContext> factory, UserSessi
             throw new BusinessException("Недостаточно средств в кассе «{0}»: остаток станет {1}.", cash.Name, Money.Format(cash.Balance));
     }
 
-    public async Task TransferAsync(int fromCashId, int toCashId, decimal amount, string? comment, CancellationToken ct = default)
+    public async Task TransferAsync(int fromCashId, int toCashId, decimal amount, string? comment, DateTime? date = null, CancellationToken ct = default)
     {
+        Access.Demand(Perm.FinanceTransferCreate);
         if (fromCashId == toCashId) throw new BusinessException("Кассы должны различаться.");
         await using var db = await factory.CreateDbContextAsync(ct);
         await using var tx = await db.Database.BeginTransactionAsync(ct);
         var number = await DocumentNumbers.NextAsync(db, DocumentNumbers.Cash, ct);
-        var now = DateTime.Now;
+        var now = date ?? DateTime.Now;
         await CashLedger.PostAsync(db, fromCashId, CashDirection.Expense, CashOperationKind.TransferOut, "Перемещение между кассами", amount, comment, now, null, number, session.UserId, ct);
         await CashLedger.PostAsync(db, toCashId, CashDirection.Income, CashOperationKind.TransferIn, "Перемещение между кассами", amount, comment, now, null, number, session.UserId, ct);
         await db.SaveChangesAsync(ct);
@@ -150,6 +170,8 @@ public class FinanceService(IDbContextFactory<TradeDbContext> factory, UserSessi
     /// </summary>
     public async Task<CashTransaction> CounterpartyPaymentAsync(CounterpartyPaymentRequest r, CancellationToken ct = default)
     {
+        // Платёж из «Финансов» или оплата закупки из раздела «Закуп»
+        if (!Access.Can(Perm.PurchasesPay)) Access.Demand(Perm.FinancePaymentCreate);
         if (r.CounterpartyId <= 0) throw new BusinessException("Выберите контрагента.");
         var amount = Money.Round(r.Amount);
         if (amount <= 0) throw new BusinessException("Сумма операции должна быть больше нуля.");
@@ -165,7 +187,7 @@ public class FinanceService(IDbContextFactory<TradeDbContext> factory, UserSessi
         var paysSupplierDebt = supplierDebt.Count > 0;
         var op = await CashLedger.PostAsync(db, r.CashRegisterId, r.Direction,
             paysSupplierDebt ? CashOperationKind.SupplierPayment : CashOperationKind.CounterpartyPayment,
-            article, amount, r.Comment, DateTime.Now, null, number, session.UserId, ct);
+            article, amount, r.Comment, r.Date ?? DateTime.Now, null, number, session.UserId, ct);
         op.CounterpartyId = r.CounterpartyId;
 
         if (paysSupplierDebt)
@@ -191,15 +213,16 @@ public class FinanceService(IDbContextFactory<TradeDbContext> factory, UserSessi
     /// Expense — контрагент должен нам (баланс +), Income — мы должны контрагенту (баланс −).
     /// </summary>
     public async Task<CashTransaction> AccrueAsync(CashDirection direction, int counterpartyId, decimal amount, string? article,
-        string? comment, CancellationToken ct = default)
+        string? comment, DateTime? date = null, CancellationToken ct = default)
     {
+        Access.Demand(Perm.FinanceAccrualCreate);
         if (counterpartyId <= 0) throw new BusinessException("Выберите контрагента.");
         amount = Money.Round(amount);
         if (amount <= 0) throw new BusinessException("Сумма операции должна быть больше нуля.");
         await using var db = await factory.CreateDbContextAsync(ct);
         var op = new CashTransaction
         {
-            Date = DateTime.Now,
+            Date = date ?? DateTime.Now,
             CashRegisterId = null,
             Direction = direction,
             Kind = CashOperationKind.CounterpartyAccrual,
@@ -239,7 +262,20 @@ public class FinanceService(IDbContextFactory<TradeDbContext> factory, UserSessi
         var q = db.CashTransactions.AsNoTracking().Where(t => t.Date >= f.From.Date && t.Date < f.To.Date.AddDays(1));
         if (f.CashRegisterId is { } cash) q = q.Where(t => t.CashRegisterId == cash);
         if (f.Direction is { } dir) q = q.Where(t => t.Direction == dir);
+        if (f.Kinds is { Length: > 0 } kinds) q = q.Where(t => kinds.Contains(t.Kind));
         if (f.CounterpartyId is { } cp) q = q.Where(t => t.CounterpartyId == cp);
+
+        // Видны только подразделы, на просмотр которых есть право; операции документов — по доступу к модулю
+        bool inc = Access.Can(Perm.FinanceIncomeView), exp = Access.Can(Perm.FinanceExpenseView),
+            pay = Access.Can(Perm.FinancePaymentView), acr = Access.Can(Perm.FinanceAccrualView), trf = Access.Can(Perm.FinanceTransferView);
+        if (!(inc && exp && pay && acr && trf))
+            q = q.Where(t =>
+                (t.Kind == CashOperationKind.Manual && (t.Direction == CashDirection.Income ? inc : exp))
+                || ((t.Kind == CashOperationKind.CounterpartyPayment || t.Kind == CashOperationKind.SupplierPayment) && pay)
+                || (t.Kind == CashOperationKind.CounterpartyAccrual && acr)
+                || ((t.Kind == CashOperationKind.TransferIn || t.Kind == CashOperationKind.TransferOut) && trf)
+                || t.Kind == CashOperationKind.Sale || t.Kind == CashOperationKind.SaleReturn || t.Kind == CashOperationKind.PurchaseReturn);
+
         if (!string.IsNullOrWhiteSpace(f.Search))
         {
             // SQLite сравнивает кириллицу с учётом регистра — ищем несколько вариантов написания

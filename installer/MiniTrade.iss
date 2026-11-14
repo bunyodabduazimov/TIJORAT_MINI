@@ -1,8 +1,8 @@
-﻿; Установщик TIJORAT MINI (Inno Setup 6). Собирается скриптом build-installer.ps1.
+﻿; Установщик TIJORAT.PRO (Inno Setup 6). Собирается скриптом build-installer.ps1.
 #ifndef AppVersion
-  #define AppVersion "1.0.0"
+  #define AppVersion "1.7.125"
 #endif
-#define AppName "TIJORAT MINI"
+#define AppName "TIJORAT.PRO"
 #define AppExe "MiniTrade.exe"
 
 [Setup]
@@ -13,11 +13,11 @@ AppVerName={#AppName} {#AppVersion}
 AppPublisher=Tijorat
 AppPublisherURL=https://tijorat.pro
 AppSupportURL=https://tijorat.pro
-DefaultDirName={autopf}\Tijorat Mini
+DefaultDirName={autopf}\Tijorat Pro
 DefaultGroupName={#AppName}
 DisableProgramGroupPage=yes
 OutputDir=output
-OutputBaseFilename=TijoratMini-Setup-{#AppVersion}
+OutputBaseFilename=TijoratPro-Setup-{#AppVersion}
 SetupIconFile=..\src\MiniTrade.Desktop\Resources\app.ico
 UninstallDisplayIcon={app}\{#AppExe}
 Compression=lzma2/ultra64

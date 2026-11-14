@@ -13,7 +13,7 @@ namespace MiniTrade.Desktop.ViewModels;
 /// и оформляются в модальных окнах (Views/OperationWindow); условия журнала — в окне «Фильтр».
 /// </summary>
 public partial class FinanceViewModel(
-    FinanceService finance, CatalogService catalog, SettingsService settings, IDialogService dialogs, ICatalogDialogs catalogDialogs) : PageViewModel(dialogs)
+    FinanceService finance, CatalogService catalog, SettingsService settings, IDialogService dialogs, ICatalogDialogs catalogDialogs, StatementService statements) : PageViewModel(dialogs)
 {
     public override string Title => L.T("Финансы");
 
@@ -23,6 +23,98 @@ public partial class FinanceViewModel(
     [ObservableProperty] private decimal _totalCash;
     [ObservableProperty] private decimal _periodIncome;
     [ObservableProperty] private decimal _periodExpense;
+    // ── Вкладки: 0 — платежи, 1 — кассы, 2 — взаиморасчёты, 3 — выписка ──
+    [ObservableProperty] private int _selectedTab;
+
+    // ── Кассы: остатки на конец выбранного дня ──
+    public ObservableCollection<CashBalanceRow> CashBalances { get; } = new();
+    [ObservableProperty] private DateTime _cashDate = DateTime.Today;
+    [ObservableProperty] private decimal _cashDateTotal;
+    partial void OnCashDateChanged(DateTime value) { if (_loaded) _ = RunAsync(LoadCashBalancesCore); }
+
+    private async Task LoadCashBalancesCore()
+    {
+        var rows = await statements.GetCashBalancesAsync(CashDate);
+        Fill(CashBalances, rows);
+        CashDateTotal = rows.Sum(r => r.Balance);
+    }
+
+    // ── Взаиморасчёты: балансы контрагентов на конец дня (+ должен нам, − мы должны) ──
+    public ObservableCollection<CounterpartyBalanceRow> Counterparties { get; } = new();
+    public ObservableCollection<FilterChoice<int>> GroupChoices { get; } = new();
+    private System.ComponentModel.ICollectionView? _counterpartiesView;
+    public System.ComponentModel.ICollectionView CounterpartiesView => _counterpartiesView ??= CreateCounterpartiesView();
+    private System.ComponentModel.ICollectionView CreateCounterpartiesView()
+    {
+        var v = System.Windows.Data.CollectionViewSource.GetDefaultView(Counterparties);
+        v.Filter = o => o is CounterpartyBalanceRow c && MatchCounterparty(c);
+        return v;
+    }
+    [ObservableProperty] private DateTime _debtDate = DateTime.Today;
+    [ObservableProperty] private FilterChoice<int>? _debtGroup;
+    [ObservableProperty] private string? _debtSearch;
+    [ObservableProperty] private bool _onlyWithDebt = true;
+    [ObservableProperty] private decimal _receivable;
+    [ObservableProperty] private decimal _payable;
+    partial void OnDebtDateChanged(DateTime value) { if (_loaded) _ = RunAsync(LoadCounterpartyBalancesCore); }
+    partial void OnDebtGroupChanged(FilterChoice<int>? value) => RefreshCounterparties();
+    partial void OnDebtSearchChanged(string? value) => RefreshCounterparties();
+    partial void OnOnlyWithDebtChanged(bool value) => RefreshCounterparties();
+
+    private bool MatchCounterparty(CounterpartyBalanceRow c)
+    {
+        if (OnlyWithDebt && c.Balance == 0) return false;
+        if (DebtGroup?.Value is { } g && c.GroupId != g) return false;
+        var q = DebtSearch?.Trim();
+        return string.IsNullOrEmpty(q) || c.Name.Contains(q, StringComparison.CurrentCultureIgnoreCase)
+            || (c.Phone?.Contains(q, StringComparison.CurrentCultureIgnoreCase) ?? false);
+    }
+
+    /// <summary>Фильтр списка и итоги по видимым строкам.</summary>
+    private void RefreshCounterparties()
+    {
+        CounterpartiesView.Refresh();
+        var visible = CounterpartiesView.Cast<CounterpartyBalanceRow>().ToList();
+        Receivable = visible.Where(c => c.Balance > 0).Sum(c => c.Balance);
+        Payable = -visible.Where(c => c.Balance < 0).Sum(c => c.Balance);
+    }
+
+    private async Task LoadCounterpartyBalancesCore()
+    {
+        Fill(Counterparties, await statements.GetCounterpartyBalancesAsync(DebtDate));
+        RefreshCounterparties();
+    }
+
+    // ── Выписка: движение по кассе или контрагенту за период ──
+    public IReadOnlyList<string> StatementKinds { get; } = [L.T("Касса"), L.T("Контрагент")];
+    public ObservableCollection<Counterparty> AllCounterparties { get; } = new();
+    public ObservableCollection<StatementRow> StatementRows { get; } = new();
+    [ObservableProperty] private int _statementKind;
+    [ObservableProperty] private CashRegister? _statementCash;
+    [ObservableProperty] private Counterparty? _statementCounterparty;
+    [ObservableProperty] private DateTime _statementFrom = new(DateTime.Today.Year, DateTime.Today.Month, 1);
+    [ObservableProperty] private DateTime _statementTo = DateTime.Today;
+    [ObservableProperty] private Statement? _statement;
+    partial void OnStatementKindChanged(int value) => ReloadStatement();
+    partial void OnStatementCashChanged(CashRegister? value) => ReloadStatement();
+    partial void OnStatementCounterpartyChanged(Counterparty? value) => ReloadStatement();
+    partial void OnStatementFromChanged(DateTime value) => ReloadStatement();
+    partial void OnStatementToChanged(DateTime value) => ReloadStatement();
+    private void ReloadStatement() { if (_loaded) _ = RunAsync(LoadStatementCore); }
+
+    private async Task LoadStatementCore()
+    {
+        Statement? s = StatementKind == 0
+            ? StatementCash is { } c ? await statements.GetCashStatementAsync(c.Id, StatementFrom, StatementTo) : null
+            : StatementCounterparty is { } p ? await statements.GetCounterpartyStatementAsync(p.Id, StatementFrom, StatementTo) : null;
+        Statement = s;
+        Fill(StatementRows, s?.Rows ?? []);
+    }
+
+    [RelayCommand]
+    private Task ReloadAsync() => LoadAsync();
+
+
 
     // ── Период (на панели журнала): смена дат сразу обновляет журнал ──
     [ObservableProperty] private DateTime _from = DateTime.Today.AddDays(-30);
@@ -69,6 +161,17 @@ public partial class FinanceViewModel(
         var cash = await finance.GetCashRegistersAsync();
         Fill(CashRegisters, cash);
         TotalCash = cash.Sum(c => c.Balance);
+        var cps = await catalog.GetAllAsync<Counterparty>();
+        Fill(AllCounterparties, cps.Where(c => c.IsActive).OrderBy(c => c.Name));
+        var groups = await catalog.GetAllAsync<CounterpartyGroup>();
+        var selectedGroup = DebtGroup?.Value;
+        Fill(GroupChoices, [new FilterChoice<int>(L.T("Все группы"), null), .. groups.Where(g => g.IsActive).OrderBy(g => g.Name).Select(g => new FilterChoice<int>(g.Name, g.Id))]);
+        DebtGroup = GroupChoices.FirstOrDefault(g => g.Value == selectedGroup) ?? GroupChoices[0];
+        StatementCash = CashRegisters.FirstOrDefault(c => c.Id == StatementCash?.Id) ?? CashRegisters.FirstOrDefault();
+        StatementCounterparty = AllCounterparties.FirstOrDefault(c => c.Id == StatementCounterparty?.Id);
+        await LoadCashBalancesCore();
+        await LoadCounterpartyBalancesCore();
+        await LoadStatementCore();
         await LoadOperationsCore();
         _loaded = true;
     });
@@ -86,7 +189,7 @@ public partial class FinanceViewModel(
     private async Task LoadOperationsCore()
     {
         var version = ++_loadVersion;
-        var f = new CashOperationFilter(From, To, Filter.CashRegisterId, Filter.Direction, Filter.CounterpartyId, Search);
+        var f = new CashOperationFilter(From, To, Filter.CashRegisterId, Filter.Direction, Filter.CounterpartyId, Search, Filter.Kinds);
         var result = await finance.GetOperationsPageAsync(f, (Page - 1) * PageSize, PageSize);
         if (version != _loadVersion) return; // ответ на устаревший запрос
 
@@ -150,8 +253,10 @@ public partial class FinanceViewModel(
         _ => null
     };
 
-    private static bool CanModify(CashTransaction? t) => t is not null && FinanceService.CanModify(t);
-    private bool CanCopy(CashTransaction? t) => t is not null && FormFor(t) is not null;
+    // Права проверяются по подразделу операции: приход, расход, платёж, начисление, перевод
+    private static bool CanModify(CashTransaction? t) => t is not null && FinanceService.CanModify(t) && FinanceService.CanDo(t, "edit");
+    private static bool CanRemove(CashTransaction? t) => t is not null && FinanceService.CanModify(t) && FinanceService.CanDo(t, "delete");
+    private bool CanCopy(CashTransaction? t) => t is not null && FormFor(t) is not null && FinanceService.CanDo(t, "create");
 
     [RelayCommand(CanExecute = nameof(CanModify))]
     private Task EditOperationAsync(CashTransaction? t) =>
@@ -168,7 +273,7 @@ public partial class FinanceViewModel(
         await RunAsync(async () => CashOrderPrinter.Print(t, await settings.GetCompanyAsync()));
     }
 
-    [RelayCommand(CanExecute = nameof(CanModify))]
+    [RelayCommand(CanExecute = nameof(CanRemove))]
     private async Task DeleteOperationAsync(CashTransaction? t)
     {
         if (t is null || !Dialogs.Confirm(L.F("Удалить операцию {0} на сумму {1}? Остаток кассы будет пересчитан.", t.DocumentNumber ?? "", MiniTrade.Core.Common.Money.Format(t.Amount)))) return;
@@ -208,9 +313,29 @@ public partial class FinanceViewModel(
 }
 
 /// <summary>Условия фильтра журнала (кроме периода и поиска).</summary>
-public sealed record FinanceFilter(int? CashRegisterId = null, CashDirection? Direction = null, int? CounterpartyId = null)
+public sealed record FinanceFilter(int? CashRegisterId = null, int? OperationType = null, int? CounterpartyId = null)
 {
-    public int ActiveCount => (CashRegisterId is null ? 0 : 1) + (Direction is null ? 0 : 1) + (CounterpartyId is null ? 0 : 1);
+    public int ActiveCount => (CashRegisterId is null ? 0 : 1) + (OperationType is null ? 0 : 1) + (CounterpartyId is null ? 0 : 1);
+
+    /// <summary>Типы операций фильтра: название, направление (null — любое), виды (null — любые).</summary>
+    public static readonly (string Name, CashDirection? Direction, CashOperationKind[]? Kinds)[] OperationTypes =
+    [
+        ("Доходы", CashDirection.Income, null),
+        ("Расходы", CashDirection.Expense, null),
+        ("Приход денег", CashDirection.Income, [CashOperationKind.Manual]),
+        ("Расход денег", CashDirection.Expense, [CashOperationKind.Manual]),
+        ("Продажа", null, [CashOperationKind.Sale]),
+        ("Возврат покупателю", null, [CashOperationKind.SaleReturn]),
+        ("Оплата поставщику", null, [CashOperationKind.SupplierPayment]),
+        ("Возврат от поставщика", null, [CashOperationKind.PurchaseReturn]),
+        ("Перемещение между кассами", null, [CashOperationKind.TransferIn, CashOperationKind.TransferOut]),
+        ("Платёж контрагенту", CashDirection.Expense, [CashOperationKind.CounterpartyPayment]),
+        ("Платёж от контрагента", CashDirection.Income, [CashOperationKind.CounterpartyPayment]),
+        ("Начисление контрагенту", null, [CashOperationKind.CounterpartyAccrual]),
+    ];
+
+    public CashDirection? Direction => OperationType is { } i ? OperationTypes[i].Direction : null;
+    public CashOperationKind[]? Kinds => OperationType is { } i ? OperationTypes[i].Kinds : null;
 }
 
 /// <summary>Пункт выпадающего списка фильтра; Value = null — «Все».</summary>
@@ -225,7 +350,7 @@ public partial class FinanceFilterViewModel : ObservableObject, ICloseRequest
     public FinanceFilterViewModel(FinanceFilter current, IEnumerable<CashRegister> cash, IEnumerable<Counterparty> counterparties)
     {
         CashChoices = [new(L.T("Все кассы"), null), .. cash.Select(c => new FilterChoice<int>(c.Name, c.Id))];
-        DirectionChoices = [new(L.T("Все операции"), null), new(L.T("Доходы"), CashDirection.Income), new(L.T("Расходы"), CashDirection.Expense)];
+        DirectionChoices = [new(L.T("Все операции"), null), .. FinanceFilter.OperationTypes.Select((t, i) => new FilterChoice<int>(L.T(t.Name), i))];
         CounterpartyChoices = [new(L.T("Все контрагенты"), null),
             .. counterparties.Where(c => c.IsActive || c.Id == current.CounterpartyId).Select(c => new FilterChoice<int>(c.Name, c.Id))];
         Load(current);
@@ -236,11 +361,11 @@ public partial class FinanceFilterViewModel : ObservableObject, ICloseRequest
     public event EventHandler<bool>? CloseRequested;
 
     public IReadOnlyList<FilterChoice<int>> CashChoices { get; }
-    public IReadOnlyList<FilterChoice<CashDirection>> DirectionChoices { get; }
+    public IReadOnlyList<FilterChoice<int>> DirectionChoices { get; }
     public IReadOnlyList<FilterChoice<int>> CounterpartyChoices { get; }
 
     [ObservableProperty] private FilterChoice<int>? _cash;
-    [ObservableProperty] private FilterChoice<CashDirection>? _direction;
+    [ObservableProperty] private FilterChoice<int>? _direction;
     [ObservableProperty] private FilterChoice<int>? _counterparty;
     /// <summary>Применённый фильтр; null — окно закрыто без изменений.</summary>
     public FinanceFilter? Result { get; private set; }
@@ -248,7 +373,7 @@ public partial class FinanceFilterViewModel : ObservableObject, ICloseRequest
     private void Load(FinanceFilter f)
     {
         Cash = CashChoices.FirstOrDefault(c => c.Value == f.CashRegisterId) ?? CashChoices[0];
-        Direction = DirectionChoices.FirstOrDefault(c => c.Value == f.Direction) ?? DirectionChoices[0];
+        Direction = DirectionChoices.FirstOrDefault(c => c.Value == f.OperationType) ?? DirectionChoices[0];
         Counterparty = CounterpartyChoices.FirstOrDefault(c => c.Value == f.CounterpartyId) ?? CounterpartyChoices[0];
     }
 

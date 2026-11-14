@@ -30,6 +30,7 @@ public class SalesService(IDbContextFactory<TradeDbContext> factory, UserSession
 {
     public async Task<Sale> CreateSaleAsync(SaleRequest request, CancellationToken ct = default)
     {
+        Access.Demand(Perm.SalesCreate);
         var lines = ValidLines(request);
         await using var db = await factory.CreateDbContextAsync(ct);
         await using var tx = await db.Database.BeginTransactionAsync(ct);
@@ -52,6 +53,7 @@ public class SalesService(IDbContextFactory<TradeDbContext> factory, UserSession
     /// </summary>
     public async Task<Sale> UpdateSaleAsync(int id, SaleRequest request, CancellationToken ct = default)
     {
+        Access.Demand(Perm.SalesEdit);
         var lines = ValidLines(request);
         await using var db = await factory.CreateDbContextAsync(ct);
         await using var tx = await db.Database.BeginTransactionAsync(ct);
@@ -69,6 +71,7 @@ public class SalesService(IDbContextFactory<TradeDbContext> factory, UserSession
     /// <summary>Удаление продажи: товар возвращается на склад, сумма снимается с кассы.</summary>
     public async Task DeleteSaleAsync(int id, CancellationToken ct = default)
     {
+        Access.Demand(Perm.SalesDelete);
         await using var db = await factory.CreateDbContextAsync(ct);
         await using var tx = await db.Database.BeginTransactionAsync(ct);
         var sale = await LoadModifiableAsync(db, id, "удалить", ct);
@@ -220,6 +223,7 @@ public class SalesService(IDbContextFactory<TradeDbContext> factory, UserSession
 
     public async Task<SaleReturn> CreateReturnAsync(SaleReturnRequest request, CancellationToken ct = default)
     {
+        Access.Demand(Perm.SalesReturn);
         var lines = request.Lines.Where(l => l.Quantity > 0).ToList();
         if (lines.Count == 0) throw new BusinessException("Укажите количество возвращаемого товара.");
 

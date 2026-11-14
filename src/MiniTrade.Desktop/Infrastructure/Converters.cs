@@ -74,6 +74,10 @@ public sealed class EnumNameConverter : IValueConverter
             Core.Domain.StockMovementType.TransferOut => L.T("Перемещение (−)"),
             Core.Domain.StockMovementType.TransferIn => L.T("Перемещение (+)"),
             Core.Domain.StockMovementType.InventoryAdjust => L.T("Инвентаризация"),
+            Core.Domain.StockMovementType.PurchaseReturn => L.T("Возврат поставщику"),
+            Core.Domain.StockMovementType.ProductionConsume => L.T("Производство (−)"),
+            Core.Domain.StockMovementType.ProductionOutput => L.T("Производство (+)"),
+            Core.Domain.StockMovementType.WriteOff => L.T("Списание"),
             _ => t.ToString()
         },
         Core.Domain.UserRole r => r switch
@@ -104,4 +108,13 @@ public static class Ratio
         public object[] ConvertBack(object value, Type[] targetTypes, object? parameter, CultureInfo culture) =>
             throw new NotSupportedException();
     }
+}
+
+/// <summary>Знак числа: -1, 0 или 1 (для подсветки баланса).</summary>
+public sealed class SignConverter : IValueConverter
+{
+    public object Convert(object? value, Type targetType, object? parameter, System.Globalization.CultureInfo culture) =>
+        value is decimal d ? Math.Sign(d) : 0;
+    public object ConvertBack(object? value, Type targetType, object? parameter, System.Globalization.CultureInfo culture) =>
+        throw new NotSupportedException();
 }

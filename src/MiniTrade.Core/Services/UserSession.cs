@@ -7,17 +7,22 @@ public class UserSession
 {
     public User? CurrentUser { get; private set; }
     public int? UserId => CurrentUser?.Id;
-    public bool IsAdmin => CurrentUser?.Role == UserRole.Admin;
+    public bool IsAdmin => CurrentUser?.IsAdmin == true;
+
+    /// <summary>Разрешено ли действие текущему пользователю (без входа — да).</summary>
+    public bool Can(string permission) => CurrentUser is not { } u || u.Can(permission);
 
     public void SignIn(User user)
     {
         CurrentUser = user;
+        Access.Set(user);
         AuditContext.Set(user.Id, string.IsNullOrWhiteSpace(user.FullName) ? user.Login : user.FullName);
     }
 
     public void SignOut()
     {
         CurrentUser = null;
+        Access.Set(null);
         AuditContext.Set(null, null);
     }
 }

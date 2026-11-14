@@ -23,6 +23,8 @@ public sealed partial class ReportPager<T> : ObservableObject
 
     /// <summary>Все строки после поиска/фильтра (для итогов и экспорта).</summary>
     public IReadOnlyList<T> Filtered => _filtered;
+    /// <summary>Все строки до фильтра.</summary>
+    public IReadOnlyList<T> Source => _source;
 
     public IReadOnlyList<int> PageSizes { get; } = [25, 50, 100, 200, 500, 1000, 10000, 100000];
 

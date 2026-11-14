@@ -19,6 +19,34 @@ namespace MiniTrade.Core.Data.MySqlMigrations
                 .HasAnnotation("ProductVersion", "10.0.14")
                 .HasAnnotation("Relational:MaxIdentifierLength", 64);
 
+            modelBuilder.Entity("MiniTrade.Core.Domain.AccessRole", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("varchar(500)");
+
+                    b.Property<bool>("IsAdmin")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)");
+
+                    b.Property<string>("Permissions")
+                        .IsRequired()
+                        .HasMaxLength(4000)
+                        .HasColumnType("varchar(4000)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Roles", (string)null);
+                });
+
             modelBuilder.Entity("MiniTrade.Core.Domain.AuditLog", b =>
                 {
                     b.Property<int>("Id")
@@ -78,6 +106,9 @@ namespace MiniTrade.Core.Data.MySqlMigrations
                         .HasColumnType("decimal(18,2)");
 
                     b.Property<bool>("IsActive")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<bool>("IsCashless")
                         .HasColumnType("tinyint(1)");
 
                     b.Property<bool>("IsDeleted")
@@ -187,8 +218,14 @@ namespace MiniTrade.Core.Data.MySqlMigrations
                     b.Property<bool>("AllowNegativeStock")
                         .HasColumnType("tinyint(1)");
 
+                    b.Property<long?>("CashierPermissions")
+                        .HasColumnType("bigint");
+
                     b.Property<int>("CostingMethod")
                         .HasColumnType("int");
+
+                    b.Property<string>("Country")
+                        .HasColumnType("longtext");
 
                     b.Property<string>("Currency")
                         .IsRequired()
@@ -196,6 +233,9 @@ namespace MiniTrade.Core.Data.MySqlMigrations
 
                     b.Property<string>("Email")
                         .HasColumnType("longtext");
+
+                    b.Property<long?>("ManagerPermissions")
+                        .HasColumnType("bigint");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -205,6 +245,9 @@ namespace MiniTrade.Core.Data.MySqlMigrations
                         .HasColumnType("longtext");
 
                     b.Property<string>("ReceiptFooter")
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("ScalePrefix")
                         .HasColumnType("longtext");
 
                     b.Property<string>("TaxId")
@@ -388,6 +431,32 @@ namespace MiniTrade.Core.Data.MySqlMigrations
                     b.ToTable("InventoryCountItem");
                 });
 
+            modelBuilder.Entity("MiniTrade.Core.Domain.MeasureUnit", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("varchar(16)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("MeasureUnits");
+                });
+
             modelBuilder.Entity("MiniTrade.Core.Domain.Product", b =>
                 {
                     b.Property<int>("Id")
@@ -405,6 +474,12 @@ namespace MiniTrade.Core.Data.MySqlMigrations
                         .HasColumnType("tinyint(1)");
 
                     b.Property<bool>("IsDeleted")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<bool>("IsService")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<bool>("IsWeighted")
                         .HasColumnType("tinyint(1)");
 
                     b.Property<decimal>("MinStock")
@@ -429,6 +504,9 @@ namespace MiniTrade.Core.Data.MySqlMigrations
                         .IsRequired()
                         .HasMaxLength(16)
                         .HasColumnType("varchar(16)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime(6)");
 
                     b.HasKey("Id");
 
@@ -460,6 +538,96 @@ namespace MiniTrade.Core.Data.MySqlMigrations
                     b.HasKey("ProductId");
 
                     b.ToTable("ProductPhotos");
+                });
+
+            modelBuilder.Entity("MiniTrade.Core.Domain.ProductionItem", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("Amount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("ProductId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("ProductionOrderId")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("Quantity")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("UnitCost")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProductId");
+
+                    b.HasIndex("ProductionOrderId");
+
+                    b.ToTable("ProductionItems");
+                });
+
+            modelBuilder.Entity("MiniTrade.Core.Domain.ProductionOrder", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    b.Property<string>("Comment")
+                        .HasMaxLength(500)
+                        .HasColumnType("varchar(500)");
+
+                    b.Property<DateTime>("Date")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<decimal>("ExtraCost")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("MaterialsCost")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("Number")
+                        .IsRequired()
+                        .HasColumnType("varchar(255)");
+
+                    b.Property<int>("ProductId")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("Quantity")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int?>("RecipeId")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("TotalCost")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("UnitCost")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int?>("UserId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("WarehouseId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Date");
+
+                    b.HasIndex("Number")
+                        .IsUnique();
+
+                    b.HasIndex("ProductId");
+
+                    b.HasIndex("RecipeId");
+
+                    b.HasIndex("WarehouseId");
+
+                    b.ToTable("ProductionOrders");
                 });
 
             modelBuilder.Entity("MiniTrade.Core.Domain.Purchase", b =>
@@ -619,6 +787,61 @@ namespace MiniTrade.Core.Data.MySqlMigrations
                     b.HasIndex("PurchaseReturnId");
 
                     b.ToTable("PurchaseReturnItems");
+                });
+
+            modelBuilder.Entity("MiniTrade.Core.Domain.Recipe", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    b.Property<string>("Comment")
+                        .HasMaxLength(500)
+                        .HasColumnType("varchar(500)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("varchar(200)");
+
+                    b.Property<decimal>("OutputQuantity")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("ProductId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProductId");
+
+                    b.ToTable("Recipes");
+                });
+
+            modelBuilder.Entity("MiniTrade.Core.Domain.RecipeItem", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    b.Property<int>("ProductId")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("Quantity")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("RecipeId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProductId");
+
+                    b.HasIndex("RecipeId");
+
+                    b.ToTable("RecipeItems");
                 });
 
             modelBuilder.Entity("MiniTrade.Core.Domain.Sale", b =>
@@ -792,6 +1015,43 @@ namespace MiniTrade.Core.Data.MySqlMigrations
                     b.HasIndex("SaleReturnId");
 
                     b.ToTable("SaleReturnItems");
+                });
+
+            modelBuilder.Entity("MiniTrade.Core.Domain.ScaleDevice", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    b.Property<string>("FilePath")
+                        .HasMaxLength(260)
+                        .HasColumnType("varchar(260)");
+
+                    b.Property<string>("Ip")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("varchar(64)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("varchar(200)");
+
+                    b.Property<int>("Port")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Type")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Scales", (string)null);
                 });
 
             modelBuilder.Entity("MiniTrade.Core.Domain.StockBalance", b =>
@@ -993,10 +1253,81 @@ namespace MiniTrade.Core.Data.MySqlMigrations
                     b.ToTable("StockTransferItem");
                 });
 
+            modelBuilder.Entity("MiniTrade.Core.Domain.StockWriteOff", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    b.Property<string>("Comment")
+                        .HasColumnType("longtext");
+
+                    b.Property<decimal>("CostTotal")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTime>("Date")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("Number")
+                        .IsRequired()
+                        .HasColumnType("varchar(255)");
+
+                    b.Property<string>("Reason")
+                        .HasColumnType("longtext");
+
+                    b.Property<int?>("UserId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("WarehouseId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Number")
+                        .IsUnique();
+
+                    b.HasIndex("WarehouseId");
+
+                    b.ToTable("StockWriteOffs");
+                });
+
+            modelBuilder.Entity("MiniTrade.Core.Domain.StockWriteOffItem", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("Amount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("ProductId")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("Quantity")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("StockWriteOffId")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("UnitCost")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProductId");
+
+                    b.HasIndex("StockWriteOffId");
+
+                    b.ToTable("StockWriteOffItem");
+                });
+
             modelBuilder.Entity("MiniTrade.Core.Domain.User", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    b.Property<int?>("AccessRoleId")
                         .HasColumnType("int");
 
                     b.Property<DateTime>("CreatedAt")
@@ -1043,6 +1374,8 @@ namespace MiniTrade.Core.Data.MySqlMigrations
                         .HasColumnType("int");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("AccessRoleId");
 
                     b.HasIndex("Login")
                         .IsUnique();
@@ -1149,6 +1482,49 @@ namespace MiniTrade.Core.Data.MySqlMigrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("MiniTrade.Core.Domain.ProductionItem", b =>
+                {
+                    b.HasOne("MiniTrade.Core.Domain.Product", "Product")
+                        .WithMany()
+                        .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("MiniTrade.Core.Domain.ProductionOrder", null)
+                        .WithMany("Items")
+                        .HasForeignKey("ProductionOrderId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Product");
+                });
+
+            modelBuilder.Entity("MiniTrade.Core.Domain.ProductionOrder", b =>
+                {
+                    b.HasOne("MiniTrade.Core.Domain.Product", "Product")
+                        .WithMany()
+                        .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("MiniTrade.Core.Domain.Recipe", "Recipe")
+                        .WithMany()
+                        .HasForeignKey("RecipeId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("MiniTrade.Core.Domain.Warehouse", "Warehouse")
+                        .WithMany()
+                        .HasForeignKey("WarehouseId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Product");
+
+                    b.Navigation("Recipe");
+
+                    b.Navigation("Warehouse");
+                });
+
             modelBuilder.Entity("MiniTrade.Core.Domain.Purchase", b =>
                 {
                     b.HasOne("MiniTrade.Core.Domain.Counterparty", "Supplier")
@@ -1222,6 +1598,34 @@ namespace MiniTrade.Core.Data.MySqlMigrations
                     b.Navigation("Product");
 
                     b.Navigation("PurchaseReturn");
+                });
+
+            modelBuilder.Entity("MiniTrade.Core.Domain.Recipe", b =>
+                {
+                    b.HasOne("MiniTrade.Core.Domain.Product", "Product")
+                        .WithMany()
+                        .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Product");
+                });
+
+            modelBuilder.Entity("MiniTrade.Core.Domain.RecipeItem", b =>
+                {
+                    b.HasOne("MiniTrade.Core.Domain.Product", "Product")
+                        .WithMany()
+                        .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("MiniTrade.Core.Domain.Recipe", null)
+                        .WithMany("Items")
+                        .HasForeignKey("RecipeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Product");
                 });
 
             modelBuilder.Entity("MiniTrade.Core.Domain.Sale", b =>
@@ -1411,7 +1815,50 @@ namespace MiniTrade.Core.Data.MySqlMigrations
                     b.Navigation("Product");
                 });
 
+            modelBuilder.Entity("MiniTrade.Core.Domain.StockWriteOff", b =>
+                {
+                    b.HasOne("MiniTrade.Core.Domain.Warehouse", "Warehouse")
+                        .WithMany()
+                        .HasForeignKey("WarehouseId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Warehouse");
+                });
+
+            modelBuilder.Entity("MiniTrade.Core.Domain.StockWriteOffItem", b =>
+                {
+                    b.HasOne("MiniTrade.Core.Domain.Product", "Product")
+                        .WithMany()
+                        .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("MiniTrade.Core.Domain.StockWriteOff", null)
+                        .WithMany("Items")
+                        .HasForeignKey("StockWriteOffId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Product");
+                });
+
+            modelBuilder.Entity("MiniTrade.Core.Domain.User", b =>
+                {
+                    b.HasOne("MiniTrade.Core.Domain.AccessRole", "AccessRole")
+                        .WithMany()
+                        .HasForeignKey("AccessRoleId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("AccessRole");
+                });
+
             modelBuilder.Entity("MiniTrade.Core.Domain.InventoryCount", b =>
+                {
+                    b.Navigation("Items");
+                });
+
+            modelBuilder.Entity("MiniTrade.Core.Domain.ProductionOrder", b =>
                 {
                     b.Navigation("Items");
                 });
@@ -1422,6 +1869,11 @@ namespace MiniTrade.Core.Data.MySqlMigrations
                 });
 
             modelBuilder.Entity("MiniTrade.Core.Domain.PurchaseReturn", b =>
+                {
+                    b.Navigation("Items");
+                });
+
+            modelBuilder.Entity("MiniTrade.Core.Domain.Recipe", b =>
                 {
                     b.Navigation("Items");
                 });
@@ -1437,6 +1889,11 @@ namespace MiniTrade.Core.Data.MySqlMigrations
                 });
 
             modelBuilder.Entity("MiniTrade.Core.Domain.StockTransfer", b =>
+                {
+                    b.Navigation("Items");
+                });
+
+            modelBuilder.Entity("MiniTrade.Core.Domain.StockWriteOff", b =>
                 {
                     b.Navigation("Items");
                 });

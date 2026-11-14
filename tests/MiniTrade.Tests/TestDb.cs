@@ -26,6 +26,7 @@ public sealed class TestDb : IDbContextFactory<TradeDbContext>, IDisposable
     public SalesService Sales => new(this, Session);
     public PurchaseService Purchases => new(this, Session);
     public WarehouseService Warehouse => new(this);
+    public ProductionService Production => new(this, Session);
     public FinanceService Finance => new(this, Session);
     public CatalogService Catalog => new(this);
     public ReportService Reports => new(this);

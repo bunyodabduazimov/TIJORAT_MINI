@@ -6,14 +6,14 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:vm="clr-namespace:MiniTrade.Desktop.ViewModels"
         mc:Ignorable="d" d:DataContext="{d:DesignInstance vm:ActivationViewModel}"
-        Title="{l:T 'TIJORAT MINI — регистрация и активация'}" Width="560" SizeToContent="Height"
+        Title="{l:T 'TIJORAT.PRO — регистрация и активация'}" Width="560" SizeToContent="Height"
         WindowStartupLocation="CenterScreen" ResizeMode="NoResize" Style="{StaticResource ChromeWindow}">
     <Grid Margin="28,40,28,28">
         <StackPanel>
             <StackPanel Orientation="Horizontal" Margin="0,0,0,18">
                 <Image Source="{StaticResource LogoMark}" Width="44" Height="44"/>
                 <StackPanel Margin="12,0,0,0" VerticalAlignment="Center">
-                    <TextBlock Text="{l:T 'Добро пожаловать в TIJORAT MINI'}" FontSize="18" FontWeight="SemiBold"/>
+                    <TextBlock Text="{l:T 'Добро пожаловать в TIJORAT.PRO'}" FontSize="18" FontWeight="SemiBold"/>
                     <TextBlock Text="{l:T 'Для начала работы зарегистрируйтесь или активируйте ключ'}" Style="{StaticResource Muted}"/>
                 </StackPanel>
             </StackPanel>

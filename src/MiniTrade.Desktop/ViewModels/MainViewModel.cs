@@ -25,12 +25,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
         _dialogs = dialogs;
         _isMenuCollapsed = App.Ui.MenuCollapsed;
         UserName = session.CurrentUser?.FullName ?? "";
-        UserRole = session.CurrentUser?.Role switch
-        {
-            Core.Domain.UserRole.Admin => L.T("Администратор"),
-            Core.Domain.UserRole.Manager => L.T("Менеджер"),
-            _ => L.T("Кассир")
-        };
+        UserRole = session.CurrentUser is { IsAdmin: true } ? L.T("Администратор") : session.CurrentUser?.AccessRole?.Name ?? "";
         NavItems =
         [
             new(L.T("Главная"), "\U000F0A1D", typeof(DashboardViewModel)),
@@ -38,6 +33,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
             new(L.T("Продажи"), "\U000F0111", typeof(SalesViewModel)),
             new(L.T("Закуп"), "\U000F129B", typeof(PurchasesViewModel)),
             new(L.T("Склад"), "\U000F03D7", typeof(WarehouseViewModel)),
+            new(L.T("Производство"), "\U000F0247", typeof(ProductionViewModel)),
             new(L.T("Справочники"), "\U000F1CCC", typeof(CatalogViewModel)),
             new(L.T("Отчёты"), "\U000F0127", typeof(ReportsViewModel)),
             new(L.T("Настройки"), "\U000F08BB", typeof(SettingsViewModel)),
@@ -53,16 +49,17 @@ public partial class MainViewModel : ObservableObject, IDisposable
     }
 
     /// <summary>Право, необходимое для раздела (null — раздел доступен всем).</summary>
-    public static Core.Domain.Permission? PermissionOf(Type page) => page.Name switch
+    public static string? PermissionOf(Type page) => page.Name switch
     {
-        nameof(DashboardViewModel) => Core.Domain.Permission.Dashboard,
-        nameof(FinanceViewModel) => Core.Domain.Permission.Finance,
-        nameof(SalesViewModel) => Core.Domain.Permission.Sales,
-        nameof(PurchasesViewModel) => Core.Domain.Permission.Purchases,
-        nameof(WarehouseViewModel) => Core.Domain.Permission.Warehouse,
-        nameof(CatalogViewModel) => Core.Domain.Permission.Catalog,
-        nameof(ReportsViewModel) => Core.Domain.Permission.Reports,
-        nameof(AuditLogViewModel) => Core.Domain.Permission.AuditLog,
+        nameof(DashboardViewModel) => Core.Domain.Perm.DashboardView,
+        nameof(FinanceViewModel) => Core.Domain.Perm.FinanceView,
+        nameof(SalesViewModel) => Core.Domain.Perm.SalesView,
+        nameof(PurchasesViewModel) => Core.Domain.Perm.PurchasesView,
+        nameof(WarehouseViewModel) => Core.Domain.Perm.WarehouseView,
+        nameof(ProductionViewModel) => Core.Domain.Perm.ProductionView,
+        nameof(CatalogViewModel) => Core.Domain.Perm.CatalogView,
+        nameof(ReportsViewModel) => Core.Domain.Perm.ReportsView,
+        nameof(AuditLogViewModel) => Core.Domain.Perm.AuditView,
         _ => null
     };
 
@@ -95,6 +92,25 @@ public partial class MainViewModel : ObservableObject, IDisposable
         if (!_dialogs.Confirm(L.T("Выйти из аккаунта? Несохранённые данные на открытой странице будут потеряны."), L.T("Выход")))
             return;
         System.Windows.Application.Current.Dispatcher.BeginInvoke(App.SignOut);
+    }
+
+    /// <summary>Окно «Мой аккаунт»: профиль, пароль, интерфейс этого компьютера.</summary>
+    [RelayCommand]
+    private void OpenProfile() => ShowProfile(ProfileViewModel.AccountTab);
+
+    private void ShowProfile(int tab)
+    {
+        var vm = new ProfileViewModel(_services.GetRequiredService<SettingsService>(), _services.GetRequiredService<UserSession>(), _dialogs, tab);
+        ModalHost.ShowDialog(new Views.ProfileWindow { DataContext = vm });
+    }
+
+    /// <summary>После смены языка: новое главное окно на той же странице и снова «Мой аккаунт» → «Интерфейс».</summary>
+    public static void ReloadWithProfile()
+    {
+        var page = (System.Windows.Application.Current.MainWindow?.DataContext as MainViewModel)?.CurrentPage?.GetType();
+        var main = App.ReloadMainWindow();
+        if (page is not null) main.NavigateTo(page);
+        main.ShowProfile(ProfileViewModel.InterfaceTab);
     }
 
     public void Dispose() => _license.StateChanged -= OnLicenseChanged;

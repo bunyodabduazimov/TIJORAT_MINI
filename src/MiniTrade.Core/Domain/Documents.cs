@@ -166,3 +166,28 @@ public class InventoryCountItem : Entity
     public decimal Difference { get; set; }
     public decimal UnitCost { get; set; }
 }
+
+/// <summary>Списание товара со склада (порча, брак, истечение срока, собственные нужды).</summary>
+public class StockWriteOff : Entity
+{
+    public string Number { get; set; } = "";
+    public DateTime Date { get; set; }
+    public int WarehouseId { get; set; }
+    public Warehouse? Warehouse { get; set; }
+    public string? Reason { get; set; }
+    public string? Comment { get; set; }
+    /// <summary>Сумма списания по себестоимости.</summary>
+    public decimal CostTotal { get; set; }
+    public int? UserId { get; set; }
+    public List<StockWriteOffItem> Items { get; set; } = new();
+}
+
+public class StockWriteOffItem : Entity
+{
+    public int StockWriteOffId { get; set; }
+    public int ProductId { get; set; }
+    public Product? Product { get; set; }
+    public decimal Quantity { get; set; }
+    public decimal UnitCost { get; set; }
+    public decimal Amount { get; set; }
+}

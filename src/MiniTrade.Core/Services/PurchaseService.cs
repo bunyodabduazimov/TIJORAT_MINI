@@ -41,6 +41,7 @@ public class PurchaseService(IDbContextFactory<TradeDbContext> factory, UserSess
 
     public async Task<Purchase> CreatePurchaseAsync(PurchaseRequest request, CancellationToken ct = default)
     {
+        Access.Demand(Perm.PurchasesCreate);
         var lines = ValidLines(request);
         await using var db = await factory.CreateDbContextAsync(ct);
         await using var tx = await db.Database.BeginTransactionAsync(ct);
@@ -63,6 +64,7 @@ public class PurchaseService(IDbContextFactory<TradeDbContext> factory, UserSess
     /// </summary>
     public async Task<Purchase> UpdatePurchaseAsync(int id, PurchaseRequest request, CancellationToken ct = default)
     {
+        Access.Demand(Perm.PurchasesEdit);
         var lines = ValidLines(request);
         await using var db = await factory.CreateDbContextAsync(ct);
         await using var tx = await db.Database.BeginTransactionAsync(ct);
@@ -84,6 +86,7 @@ public class PurchaseService(IDbContextFactory<TradeDbContext> factory, UserSess
     /// <summary>Удаление закупки: товар списывается со склада, оплаты по документу возвращаются в кассы.</summary>
     public async Task DeletePurchaseAsync(int id, CancellationToken ct = default)
     {
+        Access.Demand(Perm.PurchasesDelete);
         await using var db = await factory.CreateDbContextAsync(ct);
         await using var tx = await db.Database.BeginTransactionAsync(ct);
         var purchase = await LoadModifiableAsync(db, id, "удалить", ct);
@@ -106,6 +109,7 @@ public class PurchaseService(IDbContextFactory<TradeDbContext> factory, UserSess
     /// <summary>Погашение задолженности по конкретной закупке.</summary>
     public async Task PayAsync(int purchaseId, decimal amount, int cashRegisterId, string? comment = null, CancellationToken ct = default)
     {
+        Access.Demand(Perm.PurchasesPay);
         await using var db = await factory.CreateDbContextAsync(ct);
         await using var tx = await db.Database.BeginTransactionAsync(ct);
         var purchase = await db.Purchases.FindAsync([purchaseId], ct) ?? throw new BusinessException("Закупка не найдена.");
@@ -127,6 +131,7 @@ public class PurchaseService(IDbContextFactory<TradeDbContext> factory, UserSess
     /// </summary>
     public async Task<PurchaseReturn> CreateReturnAsync(PurchaseReturnRequest request, CancellationToken ct = default)
     {
+        Access.Demand(Perm.PurchasesReturn);
         var lines = request.Lines.Where(l => l.Quantity > 0).ToList();
         if (lines.Count == 0) throw new BusinessException("Укажите количество возвращаемого товара.");
 
@@ -156,21 +161,24 @@ public class PurchaseService(IDbContextFactory<TradeDbContext> factory, UserSess
             if (qty > item.Quantity - item.ReturnedQuantity)
                 throw new BusinessException("Нельзя вернуть больше, чем закуплено: доступно к возврату {0:0.###}.", item.Quantity - item.ReturnedQuantity);
 
-            // Товар уходит со склада по цене закупки — средняя себестоимость пересчитывается обратно
-            var balance = await StockLedger.GetOrCreateAsync(db, item.ProductId, purchase.WarehouseId, ct);
-            if (!allowNegative && balance.Quantity < qty)
+            // Товар уходит со склада по цене закупки — средняя себестоимость пересчитывается обратно (услуги склад не трогают)
+            if (!await StockLedger.IsServiceAsync(db, item.ProductId, ct))
             {
-                var product = await db.Products.FindAsync([item.ProductId], ct);
-                throw new BusinessException("Недостаточно товара «{0}» на складе: доступно {1:0.###}, к возврату {2:0.###}.",
-                    product?.Name, balance.Quantity, qty);
+                var balance = await StockLedger.GetOrCreateAsync(db, item.ProductId, purchase.WarehouseId, ct);
+                if (!allowNegative && balance.Quantity < qty)
+                {
+                    var product = await db.Products.FindAsync([item.ProductId], ct);
+                    throw new BusinessException("Недостаточно товара «{0}» на складе: доступно {1:0.###}, к возврату {2:0.###}.",
+                        product?.Name, balance.Quantity, qty);
+                }
+                await StockLedger.RemoveReceiptAsync(db, item.ProductId, purchase.WarehouseId, qty, item.Price,
+                    StockMovementType.Purchase, purchase.Id, ct);
+                db.StockMovements.Add(new StockMovement
+                {
+                    Date = date, ProductId = item.ProductId, WarehouseId = purchase.WarehouseId, Quantity = -qty,
+                    UnitCost = item.Price, Type = StockMovementType.PurchaseReturn, DocumentId = ret.Id, DocumentNumber = ret.Number
+                });
             }
-            await StockLedger.RemoveReceiptAsync(db, item.ProductId, purchase.WarehouseId, qty, item.Price,
-                StockMovementType.Purchase, purchase.Id, ct);
-            db.StockMovements.Add(new StockMovement
-            {
-                Date = date, ProductId = item.ProductId, WarehouseId = purchase.WarehouseId, Quantity = -qty,
-                UnitCost = item.Price, Type = StockMovementType.PurchaseReturn, DocumentId = ret.Id, DocumentNumber = ret.Number
-            });
 
             item.ReturnedQuantity = Money.RoundQty(item.ReturnedQuantity + qty);
             ret.Items.Add(new PurchaseReturnItem
@@ -282,6 +290,7 @@ public class PurchaseService(IDbContextFactory<TradeDbContext> factory, UserSess
         var touched = new List<StockBalance>();
         foreach (var item in purchase.Items)
         {
+            if (await StockLedger.IsServiceAsync(db, item.ProductId, ct)) continue;
             await StockLedger.RemoveReceiptAsync(db, item.ProductId, purchase.WarehouseId, item.Quantity, item.Price,
                 StockMovementType.Purchase, purchase.Id, ct);
             var balance = await StockLedger.GetOrCreateAsync(db, item.ProductId, purchase.WarehouseId, ct);
@@ -334,6 +343,17 @@ public class PurchaseService(IDbContextFactory<TradeDbContext> factory, UserSess
             .Where(p => pageIds.Contains(p.Id)).ToListAsync(ct);
         var ordered = items.OrderBy(p => pageIds.IndexOf(p.Id)).ToList();
         return new PurchasesPage(ordered, rows.Count, rows.Sum(r => r.Total), rows.Sum(r => r.PaidAmount));
+    }
+
+    /// <summary>Журнал возвратов поставщикам за период.</summary>
+    public async Task<List<PurchaseReturn>> GetReturnsAsync(DateTime from, DateTime to, CancellationToken ct = default)
+    {
+        await using var db = await factory.CreateDbContextAsync(ct);
+        return await db.PurchaseReturns.AsNoTracking()
+            .Include(r => r.Purchase).ThenInclude(p => p!.Supplier)
+            .Include(r => r.CashRegister)
+            .Where(r => r.Date >= from.Date && r.Date < to.Date.AddDays(1))
+            .OrderByDescending(r => r.Date).ToListAsync(ct);
     }
 
     public async Task<List<Purchase>> GetPurchasesAsync(DateTime from, DateTime to, CancellationToken ct = default)

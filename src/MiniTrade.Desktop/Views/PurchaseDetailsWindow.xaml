@@ -33,12 +33,13 @@
                         BorderThickness="0,1,0,0" CornerRadius="0,0,12,12" Padding="22,12">
                     <DockPanel>
                         <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
-                            <Button Style="{StaticResource SecondaryButton}" MinHeight="36" Command="{Binding ReturnPurchaseCommand}">
+                            <Button Style="{StaticResource SecondaryButton}" MinHeight="36" Visibility="{l:Can purchases.return}" Command="{Binding ReturnPurchaseCommand}">
                                 <StackPanel Orientation="Horizontal">
                                     <TextBlock Text="&#xF054C;" FontFamily="{StaticResource IconFont}" Foreground="{DynamicResource WarningBrush}" VerticalAlignment="Center" Margin="0,1,8,0"/>
                                     <TextBlock Text="{l:T 'Возврат поставщику'}" VerticalAlignment="Center"/>
                                 </StackPanel>
                             </Button>
+                            <Grid Visibility="{l:Can purchases.pay}">
                             <Button Style="{StaticResource SuccessButton}" MinHeight="36" Margin="8,0,0,0" Command="{Binding PayDebtCommand}"
                                     Visibility="{Binding SelectedHasDebt, Converter={StaticResource BoolToVis}}">
                                 <StackPanel Orientation="Horizontal">
@@ -46,6 +47,7 @@
                                     <TextBlock Text="{l:T 'Оплатить'}" VerticalAlignment="Center"/>
                                 </StackPanel>
                             </Button>
+                            </Grid>
                         </StackPanel>
                         <WrapPanel VerticalAlignment="Center">
                             <StackPanel Margin="0,0,24,0">

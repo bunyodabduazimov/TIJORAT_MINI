@@ -38,7 +38,7 @@
                         </TextBlock>
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
                             <Button Content="{l:T 'Отмена'}" Style="{StaticResource SecondaryButton}" IsCancel="True" Click="OnCancel" MinWidth="96"/>
-                            <Button Content="{l:T 'Оформить возврат'}" Style="{StaticResource DangerButton}" IsDefault="True" Command="{Binding PostCommand}" Margin="8,0,0,0" MinWidth="150"/>
+                            <Button Content="{l:T 'Оформить возврат'}" Style="{StaticResource DangerButton}" IsDefault="True" Visibility="{l:Can sales.return}" Command="{Binding PostCommand}" Margin="8,0,0,0" MinWidth="150"/>
                         </StackPanel>
                     </DockPanel>
                 </Border>

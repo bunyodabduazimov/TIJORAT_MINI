@@ -25,6 +25,8 @@ public partial class SalesViewModel
         if (Lines.Count == 0) { Dialogs.Error(L.T("Добавьте товары в чек.")); return; }
         if (Lines.Any(l => l.Quantity <= 0)) { Dialogs.Error(L.T("Количество в чеке должно быть больше нуля.")); return; }
         LastResult = null;
+        EnsureDefaultPayment();
+        RaiseTotals();
         ModalHost.ShowDialog(new CheckoutWindow { DataContext = this });
         FocusSearchRequested?.Invoke(this, EventArgs.Empty);
     }

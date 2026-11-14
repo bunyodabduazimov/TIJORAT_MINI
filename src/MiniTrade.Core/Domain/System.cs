@@ -12,27 +12,30 @@ public class User : Entity
     public string Login { get; set; } = "";
     public string FullName { get; set; } = "";
     public string PasswordHash { get; set; } = "";
+    /// <summary>Admin — у пользователя роль-администратор (все права); иначе права задаёт <see cref="AccessRole"/>.</summary>
     public UserRole Role { get; set; } = UserRole.Cashier;
+    /// <summary>Роль с набором разрешений.</summary>
+    public int? AccessRoleId { get; set; }
+    public AccessRole? AccessRole { get; set; }
     public bool IsActive { get; set; } = true;
     public DateTime CreatedAt { get; set; } = DateTime.Now;
     public string? Phone { get; set; }
     /// <summary>Комментарий администратора (смена, должность и т. п.).</summary>
     public string? Note { get; set; }
-    /// <summary>Индивидуальные права; null — права роли по умолчанию. Администратору доступно всё.</summary>
+    /// <summary>Устарело: прежние индивидуальные права по разделам. Не используется.</summary>
     public Permission? Permissions { get; set; }
     public DateTime? LastLoginAt { get; set; }
     /// <summary>Компьютер последнего входа.</summary>
     public string? LastLoginMachine { get; set; }
     public int LoginCount { get; set; }
 
-    /// <summary>Действующие права пользователя.</summary>
-    public Permission EffectivePermissions =>
-        Role == UserRole.Admin ? Permission.All : Permissions ?? RolePermissions.Default(Role);
+    public bool IsAdmin => Role == UserRole.Admin || AccessRole?.IsAdmin == true;
 
-    public bool Can(Permission p) => (EffectivePermissions & p) == p;
+    /// <summary>Разрешено ли действие (ключ из <see cref="Perm"/>).</summary>
+    public bool Can(string permission) => IsAdmin || AccessRole?.Has(permission) == true;
 }
 
-/// <summary>Права доступа к разделам программы.</summary>
+/// <summary>Устаревшие права по разделам (флаги) — только для переноса старых настроек в роли.</summary>
 [Flags]
 public enum Permission : long
 {
@@ -45,19 +48,8 @@ public enum Permission : long
     Catalog = 32,
     Reports = 64,
     AuditLog = 256,
-    All = Dashboard | Finance | Sales | Purchases | Warehouse | Catalog | Reports | AuditLog
-}
-
-/// <summary>Права ролей по умолчанию.</summary>
-public static class RolePermissions
-{
-    public static Permission Default(UserRole role) => role switch
-    {
-        UserRole.Admin => Permission.All,
-        UserRole.Manager => Permission.Dashboard | Permission.Finance | Permission.Sales | Permission.Purchases
-                            | Permission.Warehouse | Permission.Catalog | Permission.Reports,
-        _ => Permission.Dashboard | Permission.Sales
-    };
+    Production = 512,
+    All = Dashboard | Finance | Sales | Purchases | Warehouse | Catalog | Reports | AuditLog | Production
 }
 
 public class CompanySettings : Entity
@@ -70,11 +62,19 @@ public class CompanySettings : Entity
     public string? Email { get; set; }
     /// <summary>Текст внизу товарного чека (благодарность, условия возврата).</summary>
     public string? ReceiptFooter { get; set; }
+    /// <summary>Страна (код ISO 3166-1, например TJ): задаёт валюту и телефонный код.</summary>
+    public string? Country { get; set; } = "TJ";
     public string Currency { get; set; } = "TJS";
     /// <summary>Разрешить продажу в минус (по умолчанию запрещено).</summary>
     public bool AllowNegativeStock { get; set; }
+    /// <summary>Префикс весового штрихкода (2 цифры). Штрихкод весов EAN-13: ПП ККККК ВВВВВ К — префикс, код товара, вес в граммах, контрольная цифра.</summary>
+    public string? ScalePrefix { get; set; } = "20";
     /// <summary>Метод списания себестоимости (по умолчанию FIFO).</summary>
     public CostingMethod CostingMethod { get; set; } = CostingMethod.Fifo;
+    /// <summary>Права роли «Менеджер» (null — по умолчанию).</summary>
+    public Permission? ManagerPermissions { get; set; }
+    /// <summary>Права роли «Кассир» (null — по умолчанию).</summary>
+    public Permission? CashierPermissions { get; set; }
 }
 
 /// <summary>Метод оценки себестоимости при списании товара.</summary>

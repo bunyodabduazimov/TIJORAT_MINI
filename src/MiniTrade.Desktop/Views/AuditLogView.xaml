@@ -10,21 +10,33 @@
     <Border Style="{StaticResource Card}">
         <DockPanel>
             <!-- Период и фильтры -->
-            <WrapPanel DockPanel.Dock="Top" Margin="0,0,0,10" Orientation="Horizontal">
-                <TextBlock Text="{l:T 'Период:'}" Style="{StaticResource Muted}" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                <DatePicker SelectedDate="{Binding From}" Width="130"/>
-                <TextBlock Text="—" VerticalAlignment="Center" Margin="6,0"/>
-                <DatePicker SelectedDate="{Binding To}" Width="130"/>
-                <Button Content="{l:T 'Сегодня'}" Style="{StaticResource SmallButton}" Margin="8,0,0,0" Command="{Binding SetPeriodCommand}" CommandParameter="today"/>
-                <Button Content="{l:T 'Неделя'}" Style="{StaticResource SmallButton}" Margin="4,0,0,0" Command="{Binding SetPeriodCommand}" CommandParameter="week"/>
-                <Button Content="{l:T 'Месяц'}" Style="{StaticResource SmallButton}" Margin="4,0,0,0" Command="{Binding SetPeriodCommand}" CommandParameter="month"/>
-                <Button Style="{StaticResource InputAddonButton}" Content="&#xF0450;" ToolTip="{l:T 'Показать'}" Command="{Binding LoadRowsCommand}" Margin="8,0,0,0"/>
-                <ComboBox ItemsSource="{Binding Users}" SelectedItem="{Binding SelectedUser}" Width="170" Margin="12,0,0,0" ToolTip="{l:T 'Пользователь'}"/>
-                <ComboBox ItemsSource="{Binding Actions}" SelectedItem="{Binding SelectedAction}" Width="150" Margin="8,0,0,0" ToolTip="{l:T 'Действие'}"/>
-                <TextBox Text="{Binding Search, UpdateSourceTrigger=PropertyChanged, Delay=200}" Style="{StaticResource TableSearch}" Margin="8,0,0,0"
-                         inf:Ui.Placeholder="{l:T 'Поиск: пользователь, объект, подробности'}"/>
-                <Button Content="{l:T 'Экспорт CSV'}" Style="{StaticResource SecondaryButton}" Margin="8,0,0,0" Command="{Binding ExportCommand}"/>
-            </WrapPanel>
+            <DockPanel DockPanel.Dock="Top" Margin="0,0,0,10">
+                <StackPanel DockPanel.Dock="Left" Orientation="Horizontal">
+                    <TextBlock Text="{l:T 'Период:'}" Style="{StaticResource Muted}" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                    <DatePicker SelectedDate="{Binding From}" Width="130"/>
+                    <TextBlock Text="—" VerticalAlignment="Center" Margin="6,0"/>
+                    <DatePicker SelectedDate="{Binding To}" Width="130"/>
+                    <Button Content="{l:T 'Сегодня'}" Style="{StaticResource SmallButton}" Margin="8,0,0,0" Command="{Binding SetPeriodCommand}" CommandParameter="today"/>
+                    <Button Content="{l:T 'Неделя'}" Style="{StaticResource SmallButton}" Margin="4,0,0,0" Command="{Binding SetPeriodCommand}" CommandParameter="week"/>
+                    <Button Content="{l:T 'Месяц'}" Style="{StaticResource SmallButton}" Margin="4,0,0,0" Command="{Binding SetPeriodCommand}" CommandParameter="month"/>
+                    <Button Style="{StaticResource InputAddonButton}" Content="&#xF0450;" ToolTip="{l:T 'Показать'}" Command="{Binding LoadRowsCommand}" Margin="8,0,0,0"/>
+                    <Button Content="{l:T 'Экспорт в Excel'}" Style="{StaticResource SecondaryButton}" Margin="8,0,0,0" Command="{Binding ExportCommand}"/>
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="12,0,0,0">
+                    <Button Style="{StaticResource SecondaryButton}" Command="{Binding OpenFilterCommand}" MinHeight="34" Margin="0,0,8,0">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="&#xF0236;" FontFamily="{StaticResource IconFont}" FontSize="13" VerticalAlignment="Center" Margin="0,1,8,0"/>
+                            <TextBlock Text="{l:T 'Фильтр'}" VerticalAlignment="Center"/>
+                            <Border Background="{DynamicResource PrimaryBrush}" CornerRadius="9" MinWidth="18" Height="18" Padding="5,0" Margin="8,0,0,0"
+                                    Visibility="{Binding HasActiveFilter, Converter={StaticResource BoolToVis}}">
+                                <TextBlock Text="{Binding ActiveFilterCount}" Foreground="White" FontSize="11" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                        </StackPanel>
+                    </Button>
+                    <TextBox Text="{Binding Search, UpdateSourceTrigger=PropertyChanged, Delay=200}" Style="{StaticResource TableSearch}"
+                             inf:Ui.Placeholder="{l:T 'Поиск: пользователь, объект, подробности'}"/>
+                </StackPanel>
+            </DockPanel>
 
             <DockPanel DockPanel.Dock="Bottom" Margin="0,10,0,0">
                 <ContentControl DockPanel.Dock="Right" Content="{Binding Pager}" ContentTemplate="{StaticResource PagerBar}" Focusable="False" Margin="20,0,0,0"/>

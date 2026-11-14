@@ -65,13 +65,52 @@ public partial class ReportsViewModel : PageViewModel
     public ReportPager<StockRow> StockPager { get; }
 
     public IReadOnlyList<ReportOption<SalesGrouping>> Groupings { get; }
-    public ObservableCollection<ReportOption<int?>> Warehouses { get; } = new();
+    /// <summary>Справочники для окна фильтра (без пункта «все» — пустое поле означает «все»).</summary>
+    private ReportFilterOptions? _options;
+
+    /// <summary>Текущий фильтр отчётов (общий для всех вкладок).</summary>
+    public ReportFilter Filter { get; private set; } = ReportFilter.None;
+
+    private ReportFilter CurrentFilter => Filter;
+
+    /// <summary>Пользователь и контрагент — во всех отчётах кроме остатков; товар и категория — кроме движения денег.</summary>
+    public bool UserFilterVisible => SelectedTab != StockTab;
+    public bool ProductFilterVisible => SelectedTab != CashTab;
+    public int ActiveFilterCount =>
+        new[] { Filter.WarehouseId, Filter.UserId, Filter.CounterpartyId, Filter.ProductId, Filter.CategoryId }.Count(v => v is not null);
+    public bool HasFilters => ActiveFilterCount > 0;
+
+    [RelayCommand]
+    private async Task OpenFilterAsync()
+    {
+        try
+        {
+            _options ??= await _reports.GetFilterOptionsAsync();
+        }
+        catch (Exception ex)
+        {
+            Dialogs.Error(L.F("Непредвиденная ошибка: {0}", ex.Message));
+            return;
+        }
+        var vm = new ReportsFilterViewModel(Filter, _options, WarehouseFilterVisible, UserFilterVisible, ProductFilterVisible);
+        ModalHost.ShowDialog(new Views.FilterWindow { DataContext = vm });
+        if (vm.Result is not { } applied || applied == Filter) return;
+        Filter = applied;
+        FiltersChanged(allTabs: true);
+    }
+
+    [RelayCommand]
+    private void ResetFilters()
+    {
+        if (Filter == ReportFilter.None) return;
+        Filter = ReportFilter.None;
+        FiltersChanged(allTabs: true);
+    }
 
     [ObservableProperty] private DateTime _from = new(DateTime.Today.Year, DateTime.Today.Month, 1);
     [ObservableProperty] private DateTime _to = DateTime.Today;
     [ObservableProperty] private int _selectedTab;
     [ObservableProperty] private ReportOption<SalesGrouping> _grouping;
-    [ObservableProperty] private ReportOption<int?>? _warehouseFilter;
     [ObservableProperty] private string? _search;
     [ObservableProperty] private bool _onlyLowStock;
     [ObservableProperty] private bool _isLoading;
@@ -97,7 +136,7 @@ public partial class ReportsViewModel : PageViewModel
     public string PeriodText => L.F("{0:dd.MM.yyyy} — {1:dd.MM.yyyy}", From, To);
 
     /// <summary>Склад используется в продажах, закупках и остатках.</summary>
-    public bool WarehouseFilterVisible => SelectedTab is SalesTab or PurchasesTab or StockTab;
+    public bool WarehouseFilterVisible => SelectedTab != CashTab;
     public bool PeriodVisible => SelectedTab != StockTab;
     public bool IsSalesTab => SelectedTab == SalesTab;
     public bool IsStockTab => SelectedTab == StockTab;
@@ -113,7 +152,6 @@ public partial class ReportsViewModel : PageViewModel
 
     partial void OnFromChanged(DateTime value) => FiltersChanged(allTabs: true);
     partial void OnToChanged(DateTime value) => FiltersChanged(allTabs: true);
-    partial void OnWarehouseFilterChanged(ReportOption<int?>? value) => FiltersChanged(allTabs: true);
 
     partial void OnGroupingChanged(ReportOption<SalesGrouping> value)
     {
@@ -126,6 +164,8 @@ public partial class ReportsViewModel : PageViewModel
     partial void OnSelectedTabChanged(int value)
     {
         OnPropertyChanged(nameof(WarehouseFilterVisible));
+        OnPropertyChanged(nameof(UserFilterVisible));
+        OnPropertyChanged(nameof(ProductFilterVisible));
         OnPropertyChanged(nameof(PeriodVisible));
         OnPropertyChanged(nameof(IsSalesTab));
         OnPropertyChanged(nameof(IsStockTab));
@@ -145,6 +185,8 @@ public partial class ReportsViewModel : PageViewModel
     private void FiltersChanged(bool allTabs)
     {
         OnPropertyChanged(nameof(PeriodText));
+        OnPropertyChanged(nameof(HasFilters));
+        OnPropertyChanged(nameof(ActiveFilterCount));
         if (allTabs) Array.Fill(_stale, true);
         if (!_suspend) _ = LoadCurrentAsync();
     }
@@ -156,21 +198,12 @@ public partial class ReportsViewModel : PageViewModel
     {
         try
         {
-            var selected = WarehouseFilter?.Value;
-            var list = await _catalog.GetAllAsync<Warehouse>(true);
-            _suspend = true;
-            Warehouses.Clear();
-            Warehouses.Add(new(L.T("Все склады"), null));
-            foreach (var w in list) Warehouses.Add(new(w.Name, w.Id));
-            WarehouseFilter = Warehouses.FirstOrDefault(o => o.Value == selected) ?? Warehouses[0];
+            // Справочники могли измениться в других модулях
+            _options = await _reports.GetFilterOptionsAsync();
         }
         catch (Exception ex)
         {
             Dialogs.Error(L.F("Непредвиденная ошибка: {0}", ex.Message));
-        }
-        finally
-        {
-            _suspend = false;
         }
         // При открытии страницы данные могли измениться в других модулях
         Array.Fill(_stale, true);
@@ -218,7 +251,7 @@ public partial class ReportsViewModel : PageViewModel
         _cts = cts;
         var ct = cts.Token;
         var (from, to) = From <= To ? (From, To) : (To, From);
-        var warehouseId = WarehouseFilter?.Value;
+        var filter = CurrentFilter;
 
         IsLoading = true;
         try
@@ -227,7 +260,7 @@ public partial class ReportsViewModel : PageViewModel
             {
                 case SalesTab:
                 {
-                    var rows = await _reports.GetSalesAsync(from, to, Grouping.Value, warehouseId, ct);
+                    var rows = await _reports.GetSalesAsync(from, to, Grouping.Value, filter, ct);
                     ct.ThrowIfCancellationRequested();
                     SalesPager.SetSource(rows.Select(Localize).ToList());
                     SalesRevenue = rows.Sum(r => r.Revenue);
@@ -240,7 +273,7 @@ public partial class ReportsViewModel : PageViewModel
                 }
                 case PurchasesTab:
                 {
-                    var rows = await _reports.GetPurchasesBySupplierAsync(from, to, warehouseId, ct);
+                    var rows = await _reports.GetPurchasesBySupplierAsync(from, to, filter, ct);
                     ct.ThrowIfCancellationRequested();
                     PurchasesPager.SetSource(rows);
                     PurchasesTotal = rows.Sum(r => r.Total);
@@ -250,14 +283,14 @@ public partial class ReportsViewModel : PageViewModel
                 }
                 case ProfitTab:
                 {
-                    var p = await _reports.GetProfitAsync(from, to, ct);
+                    var p = await _reports.GetProfitAsync(from, to, filter, ct);
                     ct.ThrowIfCancellationRequested();
                     Profit = p;
                     break;
                 }
                 case CashTab:
                 {
-                    var c = await _reports.GetCashFlowAsync(from, to, ct);
+                    var c = await _reports.GetCashFlowAsync(from, to, filter, ct);
                     ct.ThrowIfCancellationRequested();
                     CashFlow = c;
                     Fill(CashRows, c.Registers);
@@ -266,7 +299,7 @@ public partial class ReportsViewModel : PageViewModel
                 }
                 case StockTab:
                 {
-                    var rows = await _warehouse.GetBalancesAsync(warehouseId, ct: ct);
+                    var rows = await _warehouse.GetBalancesAsync(filter.WarehouseId, ct: ct, productId: filter.ProductId, categoryId: filter.CategoryId);
                     ct.ThrowIfCancellationRequested();
                     StockPager.SetSource(rows);
                     StockCost = rows.Sum(r => r.CostValue);
@@ -304,7 +337,7 @@ public partial class ReportsViewModel : PageViewModel
         _ => r
     };
 
-    /// <summary>Экспорт открытого отчёта в CSV (с учётом поиска; открывается в Excel).</summary>
+    /// <summary>Экспорт открытого отчёта в Excel (с учётом поиска).</summary>
     [RelayCommand]
     private void Export()
     {
@@ -318,12 +351,11 @@ public partial class ReportsViewModel : PageViewModel
         };
         var safeName = string.Concat(name.Split(Path.GetInvalidFileNameChars()));
         var suffix = SelectedTab == StockTab ? DateTime.Today.ToString("yyyyMMdd") : $"{From:yyyyMMdd}-{To:yyyyMMdd}";
-        var path = Dialogs.SaveFile($"{safeName}_{suffix}.csv", "CSV (*.csv)|*.csv");
+        var path = Dialogs.SaveFile($"{safeName}_{suffix}.xlsx", ExcelExport.Filter);
         if (path is null) return;
         try
         {
-            File.WriteAllLines(path, lines.Prepend(Row(name, SelectedTab == StockTab ? DateTime.Today.ToString("dd.MM.yyyy") : PeriodText)),
-                new UTF8Encoding(true));
+            ExcelExport.Save(path, lines.Prepend(Row(name, SelectedTab == StockTab ? DateTime.Today.ToString("dd.MM.yyyy") : PeriodText)), name);
             Dialogs.Info(L.F("Отчёт сохранён: {0}", path));
         }
         catch (IOException ex)
@@ -402,4 +434,69 @@ public partial class ReportsViewModel : PageViewModel
         null => "",
         _ => "\"" + v.ToString()!.Replace("\"", "\"\"") + "\""
     }));
+}
+
+/// <summary>Модель окна «Фильтр» отчётов: пустое поле — «все», «×» в поле сбрасывает выбор.</summary>
+public partial class ReportsFilterViewModel : ObservableObject, ICloseRequest
+{
+    public ReportsFilterViewModel(ReportFilter current, ReportFilterOptions options,
+        bool warehouseVisible, bool userVisible, bool productVisible)
+    {
+        static IReadOnlyList<ReportOption<int?>> Map(IEnumerable<ReportLookup> items) =>
+            items.Select(i => new ReportOption<int?>(i.Name, i.Id)).ToList();
+        Warehouses = Map(options.Warehouses);
+        Users = Map(options.Users);
+        Counterparties = Map(options.Counterparties);
+        Products = Map(options.Products);
+        Categories = Map(options.Categories);
+        WarehouseVisible = warehouseVisible;
+        UserVisible = userVisible;
+        ProductVisible = productVisible;
+        Load(current);
+    }
+
+    public string Title => L.T("Фильтр");
+    public double DialogWidth => 480;
+    public event EventHandler<bool>? CloseRequested;
+
+    public IReadOnlyList<ReportOption<int?>> Warehouses { get; }
+    public IReadOnlyList<ReportOption<int?>> Users { get; }
+    public IReadOnlyList<ReportOption<int?>> Counterparties { get; }
+    public IReadOnlyList<ReportOption<int?>> Products { get; }
+    public IReadOnlyList<ReportOption<int?>> Categories { get; }
+
+    /// <summary>Поля, которые учитывает открытый отчёт.</summary>
+    public bool WarehouseVisible { get; }
+    public bool UserVisible { get; }
+    public bool ProductVisible { get; }
+
+    [ObservableProperty] private ReportOption<int?>? _warehouse;
+    [ObservableProperty] private ReportOption<int?>? _user;
+    [ObservableProperty] private ReportOption<int?>? _counterparty;
+    [ObservableProperty] private ReportOption<int?>? _product;
+    [ObservableProperty] private ReportOption<int?>? _category;
+
+    public ReportFilter? Result { get; private set; }
+
+    private static ReportOption<int?>? Find(IReadOnlyList<ReportOption<int?>> list, int? id) =>
+        id is null ? null : list.FirstOrDefault(o => o.Value == id);
+
+    private void Load(ReportFilter f)
+    {
+        Warehouse = Find(Warehouses, f.WarehouseId);
+        User = Find(Users, f.UserId);
+        Counterparty = Find(Counterparties, f.CounterpartyId);
+        Product = Find(Products, f.ProductId);
+        Category = Find(Categories, f.CategoryId);
+    }
+
+    [RelayCommand]
+    private void Reset() => Load(ReportFilter.None);
+
+    [RelayCommand]
+    private void Apply()
+    {
+        Result = new ReportFilter(Warehouse?.Value, User?.Value, Counterparty?.Value, Product?.Value, Category?.Value);
+        CloseRequested?.Invoke(this, true);
+    }
 }

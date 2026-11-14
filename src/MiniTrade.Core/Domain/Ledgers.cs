@@ -50,7 +50,13 @@ public enum StockMovementType
     TransferOut = 4,
     TransferIn = 5,
     InventoryAdjust = 6,
-    PurchaseReturn = 7
+    PurchaseReturn = 7,
+    /// <summary>Списание материалов в производство.</summary>
+    ProductionConsume = 8,
+    /// <summary>Выпуск готовой продукции.</summary>
+    ProductionOutput = 9,
+    /// <summary>Списание (порча, брак и т.п.).</summary>
+    WriteOff = 10
 }
 
 /// <summary>Журнал движения товаров (источник истины для аудита остатков).</summary>

@@ -18,12 +18,24 @@ public partial class CheckoutWindow : Window, IModalWindow
             if (e.NewValue is SalesViewModel vm) vm.SalePosted += OnPosted;
         };
         Closed += (_, _) => { if (DataContext is SalesViewModel vm) vm.SalePosted -= OnPosted; };
-        // Кассир сразу вводит полученную сумму
+        // Кассир сразу вводит сумму первой оплаты
         Loaded += (_, _) => Dispatcher.BeginInvoke(DispatcherPriority.Input, () =>
         {
-            Keyboard.Focus(ReceivedBox);
-            ReceivedBox.SelectAll();
+            if (FindTextBox(PaymentsList) is not { } box) return;
+            Keyboard.Focus(box);
+            box.SelectAll();
         });
+    }
+
+    private static System.Windows.Controls.TextBox? FindTextBox(DependencyObject root)
+    {
+        for (var i = 0; i < System.Windows.Media.VisualTreeHelper.GetChildrenCount(root); i++)
+        {
+            var child = System.Windows.Media.VisualTreeHelper.GetChild(root, i);
+            if (child is System.Windows.Controls.TextBox tb) return tb;
+            if (FindTextBox(child) is { } found) return found;
+        }
+        return null;
     }
 
     private void OnPosted(object? sender, EventArgs e) => DialogResult = true;

@@ -67,6 +67,10 @@
         <DataTemplate x:Key="ProductTile" DataType="{x:Type vm:PosItem}">
             <Border x:Name="Bd" Width="116" Margin="0,0,8,8" CornerRadius="10" BorderThickness="1"
                     Background="{DynamicResource SurfaceBrush}" BorderBrush="{DynamicResource BorderBrush}">
+                <Border.LayoutTransform>
+                    <ScaleTransform ScaleX="{Binding DataContext.TileScale, RelativeSource={RelativeSource AncestorType=ListBox}, FallbackValue=1}"
+                                    ScaleY="{Binding DataContext.TileScale, RelativeSource={RelativeSource AncestorType=ListBox}, FallbackValue=1}"/>
+                </Border.LayoutTransform>
                 <StackPanel>
                     <Grid Height="104">
                         <Border CornerRadius="9,9,0,0" Background="{DynamicResource SurfaceAltBrush}">
@@ -109,7 +113,7 @@
     <TabControl SelectedIndex="{Binding SelectedTab}">
         <!-- Новая продажа: слева витрина (поиск, категории, товары), справа чек и оплата. F2 — поиск, F9 — провести.
              При изменении проведённой продажи вкладка называется «Изменение ПР-…» -->
-        <TabItem Header="{Binding EditorTabTitle}">
+        <TabItem Header="{Binding EditorTabTitle}" Visibility="{l:Can sales.create|sales.edit}">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" MinWidth="360"/>
@@ -139,12 +143,10 @@
                                             </DockPanel>
                                             <CheckBox Content="{l:T 'Только товары в наличии'}" IsChecked="{Binding OnlyInStock}" Margin="0,12,0,0"/>
                                             <CheckBox Content="{l:T 'Показывать таблицей'}" IsChecked="{Binding ShowTable}" Margin="0,8,0,0"/>
-                                            <Button Style="{StaticResource SecondaryButton}" Command="{Binding AddProductCommand}" Margin="0,14,0,0" HorizontalAlignment="Stretch">
-                                                <StackPanel Orientation="Horizontal">
-                                                    <TextBlock Text="&#xF0417;" FontFamily="{StaticResource IconFont}" FontSize="16" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                                                    <TextBlock Text="{l:T 'Новый товар'}"/>
-                                                </StackPanel>
-                                            </Button>
+                                            <CheckBox Content="{l:T 'Показывать категории'}" IsChecked="{Binding ShowCategories}" Margin="0,8,0,0"/>
+                                            <TextBlock Text="{l:T 'Размер карточек'}" Style="{StaticResource FieldLabel}" Margin="0,12,0,4"/>
+                                            <ComboBox ItemsSource="{Binding TileSizes}" SelectedValue="{Binding TileScale}"
+                                                      SelectedValuePath="Scale" DisplayMemberPath="Name"/>
                                         </StackPanel>
                                     </Border>
                                 </Popup>
@@ -170,6 +172,7 @@
 
                         <!-- Категории с картинками -->
                         <ListBox DockPanel.Dock="Top" ItemsSource="{Binding PosCategories}" SelectedItem="{Binding SelectedPosCategory}"
+                                 Visibility="{Binding ShowCategories, Converter={StaticResource BoolToVis}}"
                                  ItemTemplate="{StaticResource CategoryChip}" ItemContainerStyle="{StaticResource PlainItem}"
                                  PreviewMouseLeftButtonUp="OnCategoryClick"
                                  BorderThickness="0" Background="Transparent" Padding="0" Margin="0,0,0,4"
@@ -460,7 +463,7 @@
         </TabItem>
 
         <!-- История продаж: журнал как в «Финансах» — период, фильтр, поиск, страницы; «⋯» в строке — действия -->
-        <TabItem Header="{l:T 'История продаж'}">
+        <TabItem Header="{l:T 'История продаж'}" Visibility="{l:Can sales.history.view}">
             <Border Style="{StaticResource Card}">
                 <DockPanel>
                     <!-- Панель журнала: период слева, фильтр и поиск справа -->
@@ -512,18 +515,18 @@
                                             <Button.ContextMenu>
                                                 <ContextMenu Style="{StaticResource DropDownMenu}">
                                                     <MenuItem Style="{StaticResource IconMenuItem}" Header="{l:T 'Изменить'}" l:Ui.Icon="&#xF0CB6;"
-                                                              Command="{Binding PlacementTarget.Tag.EditSaleCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" CommandParameter="{Binding}"/>
+                                                              Visibility="{l:Can sales.edit}" Command="{Binding PlacementTarget.Tag.EditSaleCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" CommandParameter="{Binding}"/>
                                                     <MenuItem Style="{StaticResource IconMenuItem}" Header="{l:T 'Скопировать'}" l:Ui.Icon="&#xF018F;"
-                                                              Command="{Binding PlacementTarget.Tag.CopySaleCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" CommandParameter="{Binding}"/>
+                                                              Visibility="{l:Can sales.create}" Command="{Binding PlacementTarget.Tag.CopySaleCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" CommandParameter="{Binding}"/>
                                                     <MenuItem Style="{StaticResource IconMenuItem}" Header="{l:T 'Печать чека'}" l:Ui.Icon="&#xF1786;"
                                                               Command="{Binding PlacementTarget.Tag.PrintSaleCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" CommandParameter="{Binding}"/>
                                                     <MenuItem Style="{StaticResource IconMenuItem}" Header="{l:T 'Печать накладной'}" l:Ui.Icon="&#xF09EE;"
                                                               Command="{Binding PlacementTarget.Tag.PrintInvoiceCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" CommandParameter="{Binding}"/>
                                                     <MenuItem Style="{StaticResource IconMenuItem}" Header="{l:T 'Возврат'}" l:Ui.Icon="&#xF054C;" Tag="{DynamicResource WarningBrush}"
-                                                              Command="{Binding PlacementTarget.Tag.ReturnSaleCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" CommandParameter="{Binding}"/>
+                                                              Visibility="{l:Can sales.return}" Command="{Binding PlacementTarget.Tag.ReturnSaleCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" CommandParameter="{Binding}"/>
                                                     <Separator Style="{StaticResource MenuSeparator}"/>
                                                     <MenuItem Style="{StaticResource IconMenuItem}" Header="{l:T 'Удалить'}" l:Ui.Icon="&#xF09E7;" Tag="{DynamicResource DangerBrush}"
-                                                              Command="{Binding PlacementTarget.Tag.DeleteSaleCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" CommandParameter="{Binding}"/>
+                                                              Visibility="{l:Can sales.delete}" Command="{Binding PlacementTarget.Tag.DeleteSaleCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" CommandParameter="{Binding}"/>
                                                 </ContextMenu>
                                             </Button.ContextMenu>
                                         </Button>
@@ -562,7 +565,7 @@
         </TabItem>
 
         <!-- Журнал возвратов -->
-        <TabItem Header="{l:T 'Возвраты'}">
+        <TabItem Header="{l:T 'Возвраты'}" Visibility="{l:Can sales.returns.view}">
             <Border Style="{StaticResource Card}">
                 <DataGrid ItemsSource="{Binding Returns}">
                     <DataGrid.Columns>

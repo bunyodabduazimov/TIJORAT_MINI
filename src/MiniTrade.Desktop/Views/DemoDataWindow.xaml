@@ -1,0 +1,78 @@
+<Window x:Class="MiniTrade.Desktop.Views.DemoDataWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:l="clr-namespace:MiniTrade.Desktop.Infrastructure"
+        Title="{l:T 'Демо-данные'}" Width="760" SizeToContent="Height"
+        Style="{StaticResource AppWindow}" Background="Transparent"
+        WindowStyle="None" AllowsTransparency="True" ResizeMode="NoResize"
+        ShowInTaskbar="True" WindowStartupLocation="CenterScreen">
+    <!-- Пустая база: предложить заполнить её демо-компанией выбранного направления -->
+    <Grid Margin="20">
+        <Border Background="{DynamicResource SurfaceBrush}" CornerRadius="12" Effect="{DynamicResource DialogShadow}"/>
+        <Border Background="{DynamicResource SurfaceBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" CornerRadius="12">
+            <DockPanel>
+                <!-- Заголовок -->
+                <DockPanel DockPanel.Dock="Top" Background="Transparent" Margin="22,16,12,4" MouseLeftButtonDown="OnHeaderMouseDown">
+                    <Button x:Name="CloseButton" DockPanel.Dock="Right" Style="{StaticResource IconButton}" Content="&#xF0156;"
+                            Width="30" Height="30" IsTabStop="False" Focusable="False" Click="OnSkip" VerticalAlignment="Top"/>
+                    <Border Width="36" Height="36" CornerRadius="18" Margin="0,0,12,0" Background="{DynamicResource PrimaryLightBrush}">
+                        <TextBlock Text="&#xF01BC;" FontFamily="{StaticResource IconFont}" FontSize="17" Foreground="{DynamicResource PrimaryBrush}"
+                                   HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+                    <StackPanel VerticalAlignment="Center">
+                        <TextBlock Text="{l:T 'База данных пустая'}" FontSize="17" FontWeight="SemiBold"/>
+                        <TextBlock Text="{l:T 'Заполнить её демо-данными, чтобы посмотреть программу в работе?'}" Style="{StaticResource Muted}"/>
+                    </StackPanel>
+                </DockPanel>
+
+                <!-- Кнопки -->
+                <Border DockPanel.Dock="Bottom" Background="{DynamicResource SurfaceAltBrush}" BorderBrush="{DynamicResource BorderBrush}"
+                        BorderThickness="0,1,0,0" CornerRadius="0,0,12,12" Padding="22,12">
+                    <DockPanel>
+                        <CheckBox x:Name="DontAsk" Content="{l:T 'Больше не предлагать'}" VerticalAlignment="Center"/>
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                            <Button x:Name="SkipButton" Content="{l:T 'Начать с пустой базы'}" Style="{StaticResource SecondaryButton}"
+                                    Click="OnSkip" MinWidth="120"/>
+                            <Button x:Name="FillButton" Content="{l:T 'Заполнить демо-данными'}" Click="OnFill" Margin="8,0,0,0" MinWidth="150"/>
+                        </StackPanel>
+                    </DockPanel>
+                </Border>
+
+                <StackPanel Margin="22,10,22,18">
+                    <TextBlock Text="{l:T 'Выберите направление компании'}" Style="{StaticResource SectionTitle}"/>
+                    <ItemsControl x:Name="Industries">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate><UniformGrid Columns="3"/></ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <RadioButton Style="{StaticResource ChoiceTile}" GroupName="industry" Margin="0,0,10,10"
+                                             IsChecked="{Binding IsSelected}">
+                                    <DockPanel>
+                                        <TextBlock DockPanel.Dock="Left" Text="{Binding Icon}" FontFamily="{StaticResource IconFont}" FontSize="22"
+                                                   Foreground="{DynamicResource PrimaryBrush}" Margin="0,0,10,0" VerticalAlignment="Top"/>
+                                        <StackPanel>
+                                            <TextBlock Text="{Binding Title}" FontWeight="SemiBold"/>
+                                            <TextBlock Text="{Binding Description}" Style="{StaticResource Muted}" FontSize="11"
+                                                       TextWrapping="Wrap" Margin="0,2,0,0"/>
+                                        </StackPanel>
+                                    </DockPanel>
+                                </RadioButton>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+
+                    <TextBlock Style="{StaticResource Muted}" TextWrapping="Wrap" Margin="0,4,0,0"
+                               Text="{l:T 'Будет создана компания с реалистичными товарами, клиентами и поставщиками, а также год работы: ежедневные продажи, закупки, оплаты, долги, расходы, возвраты. Реквизиты компании заменятся демонстрационными. Займёт около минуты.'}"/>
+
+                    <!-- Ход заполнения -->
+                    <StackPanel x:Name="ProgressPanel" Margin="0,14,0,0" Visibility="Collapsed">
+                        <ProgressBar x:Name="Progress" Height="8" Minimum="0" Maximum="1" Foreground="{DynamicResource PrimaryBrush}"
+                                     Background="{DynamicResource SurfaceAltBrush}" BorderThickness="0"/>
+                        <TextBlock x:Name="StepText" Style="{StaticResource Muted}" Margin="0,6,0,0"/>
+                    </StackPanel>
+                </StackPanel>
+            </DockPanel>
+        </Border>
+    </Grid>
+</Window>

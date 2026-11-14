@@ -31,7 +31,11 @@ public record PurchaseReportRow(string Supplier, int Documents, decimal Total, d
     public decimal Debt => Total - Paid;
 }
 
-public record ExpenseRow(string Category, decimal Amount);
+public record ExpenseRow(string Category, decimal Amount)
+{
+    /// <summary>Доля статьи в общих операционных расходах, %.</summary>
+    public decimal Share { get; init; }
+}
 
 public record ProfitReport(decimal Revenue, decimal Returns, decimal CostOfSales, decimal Expenses, IReadOnlyList<ExpenseRow> ExpenseItems)
 {
@@ -65,6 +69,21 @@ public record CashFlowReport(IReadOnlyList<CashFlowRow> Registers, IReadOnlyList
     public decimal Closing => Registers.Sum(r => r.Closing);
 }
 
+/// <summary>Общий фильтр отчётов. null — без ограничения.</summary>
+public sealed record ReportFilter(int? WarehouseId = null, int? UserId = null, int? CounterpartyId = null,
+    int? ProductId = null, int? CategoryId = null)
+{
+    public static readonly ReportFilter None = new();
+    /// <summary>Фильтр по строкам товаров (товар или категория).</summary>
+    public bool ByItems => ProductId is not null || CategoryId is not null;
+}
+
+/// <summary>Пункт справочника для фильтра.</summary>
+public sealed record ReportLookup(int Id, string Name);
+
+public sealed record ReportFilterOptions(IReadOnlyList<ReportLookup> Warehouses, IReadOnlyList<ReportLookup> Users,
+    IReadOnlyList<ReportLookup> Counterparties, IReadOnlyList<ReportLookup> Products, IReadOnlyList<ReportLookup> Categories);
+
 /// <summary>
 /// Отчёты. В SQL выполняются фильтрация и проекция только нужных колонок,
 /// суммирование — в памяти (SQLite хранит decimal как TEXT).
@@ -82,20 +101,51 @@ public class ReportService(IDbContextFactory<TradeDbContext> factory)
     public async Task<List<SalesReportRow>> GetSalesByProductAsync(DateTime from, DateTime to, CancellationToken ct = default)
         => await GetSalesAsync(from, to, SalesGrouping.Product, null, ct);
 
+    /// <summary>Справочники для фильтров отчётов (включая неактивные — по ним могут быть документы).</summary>
+    public async Task<ReportFilterOptions> GetFilterOptionsAsync(CancellationToken ct = default)
+    {
+        await using var db = await factory.CreateDbContextAsync(ct);
+        static List<ReportLookup> Sort(IEnumerable<ReportLookup> x) =>
+            x.OrderBy(i => i.Name, StringComparer.CurrentCultureIgnoreCase).ToList();
+        var warehouses = await db.Warehouses.AsNoTracking().Select(x => new ReportLookup(x.Id, x.Name)).ToListAsync(ct);
+        var users = await db.Users.AsNoTracking().Select(x => new ReportLookup(x.Id, x.FullName != "" ? x.FullName : x.Login)).ToListAsync(ct);
+        var counterparties = await db.Counterparties.AsNoTracking().Select(x => new ReportLookup(x.Id, x.Name)).ToListAsync(ct);
+        var products = await db.Products.AsNoTracking().Select(x => new ReportLookup(x.Id, x.Name)).ToListAsync(ct);
+        var categories = await db.Categories.AsNoTracking().Select(x => new ReportLookup(x.Id, x.Name)).ToListAsync(ct);
+        return new ReportFilterOptions(Sort(warehouses), Sort(users), Sort(counterparties), Sort(products), Sort(categories));
+    }
+
+    private static IQueryable<SaleItem> Apply(IQueryable<SaleItem> q, ReportFilter f)
+    {
+        if (f.WarehouseId is { } w) q = q.Where(i => i.Sale!.WarehouseId == w);
+        if (f.UserId is { } u) q = q.Where(i => i.Sale!.UserId == u);
+        if (f.CounterpartyId is { } c) q = q.Where(i => i.Sale!.CustomerId == c);
+        if (f.ProductId is { } p) q = q.Where(i => i.ProductId == p);
+        if (f.CategoryId is { } k) q = q.Where(i => i.Product!.CategoryId == k);
+        return q;
+    }
+
+    /// <summary>Возврат: склад и покупатель — от исходной продажи, пользователь — оформивший возврат.</summary>
+    private static IQueryable<SaleReturnItem> Apply(IQueryable<SaleReturnItem> q, ReportFilter f)
+    {
+        if (f.WarehouseId is { } w) q = q.Where(i => i.SaleReturn!.Sale!.WarehouseId == w);
+        if (f.UserId is { } u) q = q.Where(i => i.SaleReturn!.UserId == u);
+        if (f.CounterpartyId is { } c) q = q.Where(i => i.SaleReturn!.Sale!.CustomerId == c);
+        if (f.ProductId is { } p) q = q.Where(i => i.ProductId == p);
+        if (f.CategoryId is { } k) q = q.Where(i => i.Product!.CategoryId == k);
+        return q;
+    }
+
     /// <summary>Продажи минус возвраты в выбранном разрезе, с долей и ABC-классом.</summary>
     public async Task<List<SalesReportRow>> GetSalesAsync(DateTime from, DateTime to, SalesGrouping grouping,
-        int? warehouseId = null, CancellationToken ct = default)
+        ReportFilter? filter = null, CancellationToken ct = default)
     {
         await using var db = await factory.CreateDbContextAsync(ct);
         var (f, t) = Range(from, to);
+        filter ??= ReportFilter.None;
 
-        var itemsQuery = db.SaleItems.AsNoTracking().Where(i => i.Sale!.Date >= f && i.Sale.Date < t);
-        var returnsQuery = db.SaleReturnItems.AsNoTracking().Where(i => i.SaleReturn!.Date >= f && i.SaleReturn.Date < t);
-        if (warehouseId is { } w)
-        {
-            itemsQuery = itemsQuery.Where(i => i.Sale!.WarehouseId == w);
-            returnsQuery = returnsQuery.Where(i => i.SaleReturn!.Sale!.WarehouseId == w);
-        }
+        var itemsQuery = Apply(db.SaleItems.AsNoTracking().Where(i => i.Sale!.Date >= f && i.Sale.Date < t), filter);
+        var returnsQuery = Apply(db.SaleReturnItems.AsNoTracking().Where(i => i.SaleReturn!.Date >= f && i.SaleReturn.Date < t), filter);
 
         var items = await itemsQuery.Select(i => new SaleLine(i.SaleId, i.ProductId, i.Product!.Name, i.Product.Unit,
                 i.Product.Category != null ? i.Product.Category.Name : null,
@@ -159,44 +209,114 @@ public class ReportService(IDbContextFactory<TradeDbContext> factory)
         return result;
     }
 
-    public async Task<List<PurchaseReportRow>> GetPurchasesBySupplierAsync(DateTime from, DateTime to, int? warehouseId = null, CancellationToken ct = default)
+    public async Task<List<PurchaseReportRow>> GetPurchasesBySupplierAsync(DateTime from, DateTime to, ReportFilter? filter = null, CancellationToken ct = default)
     {
         await using var db = await factory.CreateDbContextAsync(ct);
         var (f, t) = Range(from, to);
+        filter ??= ReportFilter.None;
         var query = db.Purchases.AsNoTracking().Where(p => p.Date >= f && p.Date < t);
-        if (warehouseId is { } w) query = query.Where(p => p.WarehouseId == w);
-        var list = await query.Select(p => new { p.SupplierId, Supplier = p.Supplier!.Name, p.Total, p.PaidAmount }).ToListAsync(ct);
-        // Группируем по Id: у разных поставщиков может быть одинаковое название
-        return list.GroupBy(p => p.SupplierId)
-            .Select(g => new PurchaseReportRow(g.First().Supplier, g.Count(), g.Sum(x => x.Total), g.Sum(x => x.PaidAmount)))
+        if (filter.WarehouseId is { } w) query = query.Where(p => p.WarehouseId == w);
+        if (filter.UserId is { } u) query = query.Where(p => p.UserId == u);
+        if (filter.CounterpartyId is { } c) query = query.Where(p => p.SupplierId == c);
+
+        if (!filter.ByItems)
+        {
+            var list = await query.Select(p => new { p.SupplierId, Supplier = p.Supplier!.Name, p.Total, p.PaidAmount }).ToListAsync(ct);
+            // Группируем по Id: у разных поставщиков может быть одинаковое название
+            return list.GroupBy(p => p.SupplierId)
+                .Select(g => new PurchaseReportRow(g.First().Supplier, g.Count(), g.Sum(x => x.Total), g.Sum(x => x.PaidAmount)))
+                .OrderByDescending(r => r.Total).ToList();
+        }
+
+        // По товару/категории: сумма — только подходящие строки (за вычетом возвращённого),
+        // оплата распределяется пропорционально доле этих строк в документе
+        var ids = query.Select(p => p.Id);
+        var items = db.PurchaseItems.AsNoTracking().Where(i => ids.Contains(i.PurchaseId));
+        if (filter.ProductId is { } pr) items = items.Where(i => i.ProductId == pr);
+        if (filter.CategoryId is { } k) items = items.Where(i => i.Product!.CategoryId == k);
+        var lines = await items.Select(i => new
+            {
+                i.PurchaseId, i.Purchase!.SupplierId, Supplier = i.Purchase.Supplier!.Name, i.Purchase.Total, i.Purchase.PaidAmount,
+                i.Quantity, i.ReturnedQuantity, i.Amount
+            }).ToListAsync(ct);
+        return lines.GroupBy(l => l.SupplierId)
+            .Select(g =>
+            {
+                var docs = g.GroupBy(x => x.PurchaseId).Select(d =>
+                {
+                    var first = d.First();
+                    var amount = d.Sum(x => x.Quantity == 0 ? x.Amount : Money.Round(x.Amount * (x.Quantity - x.ReturnedQuantity) / x.Quantity));
+                    var paid = first.Total == 0 ? 0 : Money.Round(Math.Min(first.PaidAmount, first.Total) * amount / first.Total);
+                    return (Amount: amount, Paid: paid);
+                }).ToList();
+                return new PurchaseReportRow(g.First().Supplier, docs.Count, docs.Sum(d => d.Amount), docs.Sum(d => d.Paid));
+            })
             .OrderByDescending(r => r.Total).ToList();
     }
 
-    public async Task<ProfitReport> GetProfitAsync(DateTime from, DateTime to, CancellationToken ct = default)
+    public async Task<ProfitReport> GetProfitAsync(DateTime from, DateTime to, ReportFilter? filter = null, CancellationToken ct = default)
     {
         await using var db = await factory.CreateDbContextAsync(ct);
         var (f, t) = Range(from, to);
-        var sales = await db.Sales.AsNoTracking().Where(s => s.Date >= f && s.Date < t)
-            .Select(s => new { s.Total, s.CostTotal }).ToListAsync(ct);
-        var returns = await db.SaleReturns.AsNoTracking().Where(r => r.Date >= f && r.Date < t)
-            .Select(r => new { r.Total, r.CostTotal }).ToListAsync(ct);
-        var expenses = await db.CashTransactions.AsNoTracking()
-            .Where(x => x.Date >= f && x.Date < t && x.Kind == CashOperationKind.Manual && x.Direction == CashDirection.Expense
-                        && x.Category != CashWithdrawal) // Изъятие наличных — не расход бизнеса
-            .Select(x => new { x.Category, x.Amount })
-            .ToListAsync(ct);
-        var expenseRows = expenses.GroupBy(e => e.Category).Select(g => new ExpenseRow(g.Key, g.Sum(x => x.Amount)))
-            .OrderByDescending(r => r.Amount).ToList();
+        filter ??= ReportFilter.None;
+
+        decimal revenue, returnsTotal, cost;
+        int checks, returnsCount;
+        if (filter.ByItems)
+        {
+            // По товару/категории считаем по строкам документов
+            var items = await Apply(db.SaleItems.AsNoTracking().Where(i => i.Sale!.Date >= f && i.Sale.Date < t), filter)
+                .Select(i => new { i.SaleId, i.Amount, i.Quantity, i.UnitCost }).ToListAsync(ct);
+            var ret = await Apply(db.SaleReturnItems.AsNoTracking().Where(i => i.SaleReturn!.Date >= f && i.SaleReturn.Date < t), filter)
+                .Select(i => new { i.SaleReturnId, i.Amount, i.Quantity, i.UnitCost }).ToListAsync(ct);
+            revenue = items.Sum(i => i.Amount);
+            returnsTotal = ret.Sum(i => i.Amount);
+            cost = Money.Round(items.Sum(i => i.Quantity * i.UnitCost) - ret.Sum(i => i.Quantity * i.UnitCost));
+            checks = items.Select(i => i.SaleId).Distinct().Count();
+            returnsCount = ret.Select(i => i.SaleReturnId).Distinct().Count();
+        }
+        else
+        {
+            var salesQ = db.Sales.AsNoTracking().Where(s => s.Date >= f && s.Date < t);
+            var returnsQ = db.SaleReturns.AsNoTracking().Where(r => r.Date >= f && r.Date < t);
+            if (filter.WarehouseId is { } w) { salesQ = salesQ.Where(s => s.WarehouseId == w); returnsQ = returnsQ.Where(r => r.Sale!.WarehouseId == w); }
+            if (filter.UserId is { } u) { salesQ = salesQ.Where(s => s.UserId == u); returnsQ = returnsQ.Where(r => r.UserId == u); }
+            if (filter.CounterpartyId is { } c) { salesQ = salesQ.Where(s => s.CustomerId == c); returnsQ = returnsQ.Where(r => r.Sale!.CustomerId == c); }
+            var sales = await salesQ.Select(s => new { s.Total, s.CostTotal }).ToListAsync(ct);
+            var returns = await returnsQ.Select(r => new { r.Total, r.CostTotal }).ToListAsync(ct);
+            revenue = sales.Sum(s => s.Total);
+            returnsTotal = returns.Sum(r => r.Total);
+            cost = sales.Sum(s => s.CostTotal) - returns.Sum(r => r.CostTotal);
+            checks = sales.Count;
+            returnsCount = returns.Count;
+        }
+
+        // Расходы не привязаны к складу и товарам: при таком фильтре они не учитываются
+        var expenseRows = new List<ExpenseRow>();
+        if (filter.WarehouseId is null && !filter.ByItems)
+        {
+            var expQ = db.CashTransactions.AsNoTracking()
+                .Where(x => x.Date >= f && x.Date < t && x.Kind == CashOperationKind.Manual && x.Direction == CashDirection.Expense
+                            && x.Category != CashWithdrawal); // Изъятие наличных — не расход бизнеса
+            if (filter.UserId is { } u) expQ = expQ.Where(x => x.UserId == u);
+            if (filter.CounterpartyId is { } c) expQ = expQ.Where(x => x.CounterpartyId == c);
+            var expenses = await expQ.Select(x => new { x.Category, x.Amount }).ToListAsync(ct);
+            expenseRows = expenses.GroupBy(e => e.Category).Select(g => new ExpenseRow(g.Key, g.Sum(x => x.Amount)))
+                .OrderByDescending(r => r.Amount).ToList();
+            var totalExp = expenseRows.Sum(r => r.Amount);
+            if (totalExp != 0)
+                expenseRows = expenseRows.Select(r => r with { Share = Math.Round(r.Amount / totalExp * 100, 1) }).ToList();
+        }
 
         return new ProfitReport(
-            Revenue: sales.Sum(s => s.Total),
-            Returns: returns.Sum(r => r.Total),
-            CostOfSales: sales.Sum(s => s.CostTotal) - returns.Sum(r => r.CostTotal),
+            Revenue: revenue,
+            Returns: returnsTotal,
+            CostOfSales: cost,
             Expenses: expenseRows.Sum(r => r.Amount),
             ExpenseItems: expenseRows)
         {
-            Checks = sales.Count,
-            ReturnsCount = returns.Count
+            Checks = checks,
+            ReturnsCount = returnsCount
         };
     }
 
@@ -204,14 +324,20 @@ public class ReportService(IDbContextFactory<TradeDbContext> factory)
     /// Движение денег: остаток на начало, приход, расход, остаток на конец по каждой кассе и обороты по статьям.
     /// Остаток на начало восстанавливается от текущего остатка кассы по журналу операций.
     /// </summary>
-    public async Task<CashFlowReport> GetCashFlowAsync(DateTime from, DateTime to, CancellationToken ct = default)
+    public async Task<CashFlowReport> GetCashFlowAsync(DateTime from, DateTime to, ReportFilter? filter = null, CancellationToken ct = default)
     {
         await using var db = await factory.CreateDbContextAsync(ct);
         var (f, t) = Range(from, to);
+        filter ??= ReportFilter.None;
         var registers = await db.CashRegisters.AsNoTracking().Where(r => !r.IsDeleted)
             .Select(r => new { r.Id, r.Name, r.Balance }).ToListAsync(ct);
-        var tx = await db.CashTransactions.AsNoTracking().Where(x => x.Date >= f && x.Kind != CashOperationKind.CounterpartyAccrual)
-            .Select(x => new { x.CashRegisterId, x.Date, x.Direction, x.Kind, x.Category, x.Amount }).ToListAsync(ct);
+        var txQ = db.CashTransactions.AsNoTracking().Where(x => x.Date >= f && x.Kind != CashOperationKind.CounterpartyAccrual);
+        // Касса не привязана к складу и товарам — действуют только пользователь и контрагент.
+        // С таким фильтром остаток кассы не восстановить: показываются только обороты за период.
+        var partial = filter.UserId is not null || filter.CounterpartyId is not null;
+        if (filter.UserId is { } u) txQ = txQ.Where(x => x.UserId == u);
+        if (filter.CounterpartyId is { } c) txQ = txQ.Where(x => x.CounterpartyId == c);
+        var tx = await txQ.Select(x => new { x.CashRegisterId, x.Date, x.Direction, x.Kind, x.Category, x.Amount }).ToListAsync(ct);
 
         var rows = new List<CashFlowRow>();
         foreach (var r in registers.OrderBy(r => r.Name, StringComparer.CurrentCultureIgnoreCase))
@@ -221,6 +347,11 @@ public class ReportService(IDbContextFactory<TradeDbContext> factory)
             var inPeriod = mine.Where(x => x.Date < t).ToList();
             var income = inPeriod.Where(x => x.Direction == CashDirection.Income).Sum(x => x.Amount);
             var expense = inPeriod.Where(x => x.Direction == CashDirection.Expense).Sum(x => x.Amount);
+            if (partial)
+            {
+                if (inPeriod.Count > 0) rows.Add(new CashFlowRow(r.Name, 0, income, expense));
+                continue;
+            }
             if (afterFrom == 0 && r.Balance == 0 && inPeriod.Count == 0) continue;
             rows.Add(new CashFlowRow(r.Name, r.Balance - afterFrom, income, expense));
         }

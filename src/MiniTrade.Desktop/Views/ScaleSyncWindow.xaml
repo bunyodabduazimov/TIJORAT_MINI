@@ -1,0 +1,60 @@
+<Window x:Class="MiniTrade.Desktop.Views.ScaleSyncWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:l="clr-namespace:MiniTrade.Desktop.Infrastructure"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:vm="clr-namespace:MiniTrade.Desktop.ViewModels"
+        mc:Ignorable="d" d:DataContext="{d:DesignInstance vm:ScaleSyncViewModel}"
+        Title="{l:T 'Обновление весов'}" Width="980" Height="640"
+        Style="{StaticResource ChromeWindow}" Background="{DynamicResource SurfaceBrush}"
+        ResizeMode="CanResize" WindowState="Maximized"
+        ShowInTaskbar="False" WindowStartupLocation="CenterOwner">
+    <!-- Выгрузка в весы только товаров, изменённых за период -->
+    <Grid>
+        <Border>
+            <DockPanel>
+                <!-- Заголовок -->
+                <DockPanel DockPanel.Dock="Top" Background="Transparent" Margin="22,16,150,8">
+                    <StackPanel>
+                        <TextBlock Text="{l:T 'Обновление весов'}" FontSize="17" FontWeight="SemiBold"/>
+                        <TextBlock Text="{l:T 'Выгружаются весовые товары, изменённые за период. Весы не выбраны — обновятся все активные.'}"
+                                   Style="{StaticResource Muted}" TextWrapping="Wrap"/>
+                    </StackPanel>
+                </DockPanel>
+
+                <!-- Период, весы, действие -->
+                <DockPanel DockPanel.Dock="Top" Margin="22,4,22,10" LastChildFill="False">
+                    <DatePicker DockPanel.Dock="Left" SelectedDate="{Binding From}" Width="130" ToolTip="{l:T 'Изменены с'}"/>
+                    <TextBlock DockPanel.Dock="Left" Text="—" VerticalAlignment="Center" Margin="6,0"/>
+                    <DatePicker DockPanel.Dock="Left" SelectedDate="{Binding To}" Width="130" ToolTip="{l:T 'Изменены по'}"/>
+                    <ComboBox DockPanel.Dock="Left" Width="240" Margin="12,0,0,0" ItemsSource="{Binding Scales}" DisplayMemberPath="Name"
+                              SelectedItem="{Binding SelectedScale}" l:Ui.Clearable="True" l:Ui.Placeholder="{l:T 'Все весы'}"/>
+                    <Button DockPanel.Dock="Left" Margin="12,0,0,0" MinHeight="36" Command="{Binding SyncCommand}">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="&#xF0450;" FontFamily="{StaticResource IconFont}" VerticalAlignment="Center" Margin="0,1,8,0"/>
+                            <TextBlock Text="{l:T 'Обновить'}" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
+                    <TextBox DockPanel.Dock="Right" Width="220" Text="{Binding Search, UpdateSourceTrigger=PropertyChanged}"
+                             Style="{StaticResource TableSearch}" l:Ui.Placeholder="{l:T 'Поиск…'}"/>
+                </DockPanel>
+
+                <TextBlock DockPanel.Dock="Bottom" Margin="22,0,22,14" Style="{StaticResource Muted}">
+                    <Run Text="{l:T 'Товаров к выгрузке:'}"/> <Run Text="{Binding Count, Mode=OneWay}"/>
+                </TextBlock>
+
+                <DataGrid ItemsSource="{Binding ItemsView}" Margin="22,0,22,10" IsReadOnly="True">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="{l:T 'Наименование'}" Binding="{Binding Name}" Width="*" MinWidth="180"/>
+                        <DataGridTextColumn Header="{l:T 'Артикул'}" Binding="{Binding Sku}" Width="110"/>
+                        <DataGridTextColumn Header="{l:T 'Штрихкод'}" Binding="{Binding Barcode}" Width="100"/>
+                        <DataGridTextColumn Header="{l:T 'Ед.'}" Binding="{Binding Unit}" Width="60"/>
+                        <DataGridTextColumn Header="{l:T 'Цена'}" Binding="{Binding SalePrice, StringFormat={}{0:N2}}" Width="110" ElementStyle="{StaticResource RightCell}"/>
+                        <DataGridTextColumn Header="{l:T 'Дата изменения'}" Binding="{Binding UpdatedAt, StringFormat={}{0:dd.MM.yyyy HH:mm:ss}}" Width="160"/>
+                    </DataGrid.Columns>
+                </DataGrid>
+            </DockPanel>
+        </Border>
+    </Grid>
+</Window>

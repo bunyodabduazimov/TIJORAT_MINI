@@ -31,6 +31,11 @@ public partial class CatalogEditor<T> : ObservableObject where T : class, ICatal
 
     public string Title { get; }
 
+    // Права вкладки: catalog.<вкладка>.create/edit/delete
+    public bool CanCreate { get; } = Core.Services.Access.Can(Perm.Catalog(typeof(T), "create"));
+    public bool CanEdit { get; } = Core.Services.Access.Can(Perm.Catalog(typeof(T), "edit"));
+    public bool CanDelete { get; } = Core.Services.Access.Can(Perm.Catalog(typeof(T), "delete"));
+
     /// <summary>Записи текущей страницы.</summary>
     public ObservableCollection<T> Items { get; } = new();
 
@@ -54,6 +59,27 @@ public partial class CatalogEditor<T> : ObservableObject where T : class, ICatal
         : L.F("Показано {0}–{1} из {2:N0}", FirstNumber + 1, FirstNumber + Items.Count, TotalCount);
 
     public string PageLabel => L.F("{0} из {1}", Page, PageCount);
+
+    // ── Фильтр (пока только у товаров) ──
+    public bool SupportsFilter => typeof(T) == typeof(Product);
+    public ProductFilter ProductFilter { get; private set; } = new();
+    public bool HasActiveFilter => ProductFilter.ActiveCount > 0;
+    public int ActiveFilterCount => ProductFilter.ActiveCount;
+
+    [RelayCommand]
+    private async Task OpenFilterAsync()
+    {
+        if (!SupportsFilter) return;
+        var vm = new ProductFilterViewModel(ProductFilter,
+            await _catalog.GetAllAsync<Category>(), await _catalog.GetAllAsync<MeasureUnit>());
+        ModalHost.ShowDialog(new Views.FilterWindow { DataContext = vm });
+        if (vm.Result is not { } applied) return;
+        ProductFilter = applied;
+        OnPropertyChanged(nameof(HasActiveFilter));
+        OnPropertyChanged(nameof(ActiveFilterCount));
+        Page = 1;
+        await SafeLoadAsync();
+    }
 
     /// <summary>Вызывается после сохранения/удаления (для обновления зависимых списков).</summary>
     public event EventHandler? Changed;
@@ -81,7 +107,8 @@ public partial class CatalogEditor<T> : ObservableObject where T : class, ICatal
     {
         var version = ++_loadVersion;
         var selectedId = Selected?.Id;
-        var result = await _catalog.GetPageAsync<T>(Search, ShowArchived, (Page - 1) * PageSize, PageSize);
+        var result = await _catalog.GetPageAsync<T>(Search, ShowArchived, (Page - 1) * PageSize, PageSize,
+            productFilter: SupportsFilter ? ProductFilter : null);
         if (version != _loadVersion) return; // пришёл ответ на устаревший запрос
 
         // Страница опустела (удалили последние записи) — показываем последнюю непустую
@@ -121,10 +148,10 @@ public partial class CatalogEditor<T> : ObservableObject where T : class, ICatal
     [RelayCommand(CanExecute = nameof(CanNext))] private Task LastPageAsync() { Page = PageCount; return SafeLoadAsync(); }
 
     [RelayCommand]
-    private Task NewAsync() => OpenAsync(null);
+    private Task NewAsync() => CanCreate ? OpenAsync(null) : Task.CompletedTask;
 
     [RelayCommand]
-    private Task EditAsync(T? item) => item is null ? Task.CompletedTask : OpenAsync(item);
+    private Task EditAsync(T? item) => item is null || !CanEdit ? Task.CompletedTask : OpenAsync(item);
 
     private async Task OpenAsync(T? item)
     {
@@ -160,12 +187,17 @@ public partial class CatalogViewModel : PageViewModel
 
     private readonly CatalogTransferService _transfer;
 
-    public CatalogViewModel(CatalogService catalog, CatalogTransferService transfer, SettingsService settings, IDialogService dialogs, ICatalogDialogs catalogDialogs) : base(dialogs)
+    private readonly ScaleSyncService _scaleSync;
+
+    public CatalogViewModel(CatalogService catalog, CatalogTransferService transfer, SettingsService settings, ScaleSyncService scaleSync, IDialogService dialogs, ICatalogDialogs catalogDialogs) : base(dialogs)
     {
         _settings = settings;
         _transfer = transfer;
+        _scaleSync = scaleSync;
         Products = new(L.T("Товары"), catalog, dialogs, catalogDialogs);
         Categories = new(L.T("Категории"), catalog, dialogs, catalogDialogs);
+        Units = new(L.T("Единицы"), catalog, dialogs, catalogDialogs);
+        Scales = new(L.T("Весы"), catalog, dialogs, catalogDialogs);
         Counterparties = new(L.T("Контрагенты"), catalog, dialogs, catalogDialogs);
         CounterpartyGroups = new(L.T("Группы контрагентов"), catalog, dialogs, catalogDialogs);
         Warehouses = new(L.T("Склады"), catalog, dialogs, catalogDialogs);
@@ -173,6 +205,7 @@ public partial class CatalogViewModel : PageViewModel
         Articles = new(L.T("Статьи"), catalog, dialogs, catalogDialogs);
         // Название категории показывается в таблице товаров
         Categories.Changed += async (_, _) => await Products.LoadAsync();
+        Units.Changed += async (_, _) => await Products.LoadAsync(); // переименование единицы меняет товары
         CounterpartyGroups.Changed += async (_, _) => await Counterparties.LoadAsync();
     }
 
@@ -180,6 +213,8 @@ public partial class CatalogViewModel : PageViewModel
 
     public CatalogEditor<Product> Products { get; }
     public CatalogEditor<Category> Categories { get; }
+    public CatalogEditor<MeasureUnit> Units { get; }
+    public CatalogEditor<ScaleDevice> Scales { get; }
     public CatalogEditor<Counterparty> Counterparties { get; }
     public CatalogEditor<CounterpartyGroup> CounterpartyGroups { get; }
     public CatalogEditor<Warehouse> Warehouses { get; }
@@ -196,8 +231,55 @@ public partial class CatalogViewModel : PageViewModel
             Dialogs.Info(L.T("Выберите товар в таблице."));
             return;
         }
-        await RunAsync(async () => SaleReceiptPrinter.PrintLabels([(product, 1)], await _settings.GetCompanyAsync()));
+        if (!product.IsWeighted)
+        {
+            await RunAsync(async () => SaleReceiptPrinter.PrintLabels([(product, 1)], await _settings.GetCompanyAsync()));
+            return;
+        }
+
+        // Весовой товар: спросить вес и напечатать весовой штрихкод «ПП ККККК ВВВВВ К»
+        var company = await _settings.GetCompanyAsync();
+        if (company.ScalePrefix is not { Length: 2 } prefix)
+        {
+            Dialogs.Error(L.T("Не задан код весов (Настройки)."));
+            return;
+        }
+        var code = product.Barcode?.Trim() ?? "";
+        if (code.Length is < 1 or > 5 || !code.All(char.IsAsciiDigit))
+        {
+            Dialogs.Error(L.T("У весового товара штрихкод должен быть кодом весов: от 1 до 5 цифр."));
+            return;
+        }
+        var input = Dialogs.Prompt(L.F("Вес товара «{0}», кг (например 1,250):", product.Name), L.T("Этикетка весового товара"));
+        if (input is null) return;
+        if (!decimal.TryParse(input.Replace('.', ','), System.Globalization.NumberStyles.Number, new System.Globalization.CultureInfo("ru-RU"), out var kg)
+            || kg <= 0 || kg > 99.999m)
+        {
+            Dialogs.Error(L.T("Введите вес от 0,001 до 99,999 кг."));
+            return;
+        }
+        var grams = (int)Math.Round(kg * 1000m);
+        var digits = prefix + code.PadLeft(5, '0') + grams.ToString("D5");
+        var sum = 0;
+        for (var i = 0; i < 12; i++) sum += (digits[i] - '0') * (i % 2 == 0 ? 1 : 3);
+        var ean = digits + (char)('0' + (10 - sum % 10) % 10);
+
+        var label = new Product
+        {
+            Id = product.Id, Name = $"{product.Name} · {grams / 1000m:0.000} {product.Unit}", Sku = product.Sku, Unit = product.Unit,
+            Barcode = ean, SalePrice = Math.Round(product.SalePrice * grams / 1000m, 2), IsWeighted = true
+        };
+        await RunAsync(() => { SaleReceiptPrinter.PrintLabels([(label, 1)], company); return Task.CompletedTask; });
     }
+
+    /// <summary>Окно «Обновление весов»: выгрузка изменённых за период весовых товаров в выбранные весы или во все.</summary>
+    [RelayCommand]
+    private Task UpdateScalesAsync() => RunAsync(async () =>
+    {
+        var vm = new ScaleSyncViewModel(_scaleSync, Dialogs);
+        await vm.InitAsync();
+        ModalHost.ShowDialog(new Views.ScaleSyncWindow { DataContext = vm });
+    });
 
     // ================= Импорт / экспорт (CSV, открывается в Excel) =================
 
@@ -269,10 +351,80 @@ public partial class CatalogViewModel : PageViewModel
     {
         await Products.LoadAsync();
         await Categories.LoadAsync();
+        await Units.LoadAsync();
+        await Scales.LoadAsync();
         await Counterparties.LoadAsync();
         await CounterpartyGroups.LoadAsync();
         await Warehouses.LoadAsync();
         await CashRegisters.LoadAsync();
         await Articles.LoadAsync();
     });
+}
+
+/// <summary>Окно фильтра товаров и услуг.</summary>
+public partial class ProductFilterViewModel : ObservableObject, ICloseRequest
+{
+    private readonly IReadOnlyList<MeasureUnit> _units;
+
+    public ProductFilterViewModel(ProductFilter current, IEnumerable<Category> categories, IEnumerable<MeasureUnit> units)
+    {
+        _units = units.ToList();
+        CategoryChoices = [new(L.T("Все категории"), null), new(L.T("Без категории"), ProductFilter.NoCategory),
+            .. categories.Select(c => new FilterChoice<int>(c.Name, c.Id))];
+        UnitChoices = [new(L.T("Все единицы"), null), .. _units.Select(u => new FilterChoice<int>(u.Name, u.Id))];
+        TypeChoices = [new(L.T("Товары и услуги"), null), new(L.T("Только товары"), false), new(L.T("Только услуги"), true)];
+        WeightedChoices = [new(L.T("Все"), null), new(L.T("Весовые"), true), new(L.T("Не весовые"), false)];
+        ActiveChoices = [new(L.T("Активные"), true), new(L.T("Все"), null), new(L.T("Неактивные"), false)];
+        DeletedChoices = [new(L.T("Без удалённых"), false), new(L.T("С удалёнными"), null), new(L.T("Только удалённые"), true)];
+        PhotoChoices = [new(L.T("Все"), null), new(L.T("С фото"), true), new(L.T("Без фото"), false)];
+        BarcodeChoices = [new(L.T("Все"), null), new(L.T("Со штрихкодом"), true), new(L.T("Без штрихкода"), false)];
+        Load(current);
+    }
+
+    public string Title => L.T("Фильтр товаров и услуг");
+    public double DialogWidth => 460;
+    public event EventHandler<bool>? CloseRequested;
+
+    public IReadOnlyList<FilterChoice<int>> CategoryChoices { get; }
+    public IReadOnlyList<FilterChoice<int>> UnitChoices { get; }
+    public IReadOnlyList<FilterChoice<bool>> TypeChoices { get; }
+    public IReadOnlyList<FilterChoice<bool>> WeightedChoices { get; }
+    public IReadOnlyList<FilterChoice<bool>> ActiveChoices { get; }
+    public IReadOnlyList<FilterChoice<bool>> DeletedChoices { get; }
+    public IReadOnlyList<FilterChoice<bool>> PhotoChoices { get; }
+    public IReadOnlyList<FilterChoice<bool>> BarcodeChoices { get; }
+
+    [ObservableProperty] private FilterChoice<int>? _category;
+    [ObservableProperty] private FilterChoice<int>? _unit;
+    [ObservableProperty] private FilterChoice<bool>? _type;
+    [ObservableProperty] private FilterChoice<bool>? _weighted;
+    [ObservableProperty] private FilterChoice<bool>? _active;
+    [ObservableProperty] private FilterChoice<bool>? _deleted;
+    [ObservableProperty] private FilterChoice<bool>? _photo;
+    [ObservableProperty] private FilterChoice<bool>? _barcode;
+    public ProductFilter? Result { get; private set; }
+
+    private void Load(ProductFilter f)
+    {
+        Category = CategoryChoices.FirstOrDefault(c => c.Value == f.CategoryId) ?? CategoryChoices[0];
+        var unitId = _units.FirstOrDefault(u => u.Name == f.Unit)?.Id;
+        Unit = UnitChoices.FirstOrDefault(c => c.Value == unitId) ?? UnitChoices[0];
+        Type = TypeChoices.First(c => c.Value == f.IsService);
+        Weighted = WeightedChoices.First(c => c.Value == f.IsWeighted);
+        Active = ActiveChoices.First(c => c.Value == f.IsActive);
+        Deleted = DeletedChoices.First(c => c.Value == f.IsDeleted);
+        Photo = PhotoChoices.First(c => c.Value == f.HasPhoto);
+        Barcode = BarcodeChoices.First(c => c.Value == f.HasBarcode);
+    }
+
+    [RelayCommand]
+    private void Reset() => Load(new ProductFilter());
+
+    [RelayCommand]
+    private void Apply()
+    {
+        Result = new ProductFilter(Category?.Value, _units.FirstOrDefault(u => u.Id == Unit?.Value)?.Name,
+            Type?.Value, Weighted?.Value, Active?.Value, Photo?.Value, Barcode?.Value, Deleted?.Value);
+        CloseRequested?.Invoke(this, true);
+    }
 }

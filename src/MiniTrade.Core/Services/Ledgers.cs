@@ -23,6 +23,10 @@ internal static class StockLedger
         return balance;
     }
 
+    /// <summary>Услуга не хранится на складе: остатки, партии и движения по ней не ведутся.</summary>
+    public static async Task<bool> IsServiceAsync(TradeDbContext db, int productId, CancellationToken ct) =>
+        (await db.Products.FindAsync([productId], ct))?.IsService == true;
+
     /// <summary>Метод себестоимости из настроек (FIFO, если настройки ещё не созданы).</summary>
     public static async Task<CostingMethod> MethodAsync(TradeDbContext db, CancellationToken ct) =>
         db.CompanySettings.Local.FirstOrDefault()?.CostingMethod
@@ -33,6 +37,7 @@ internal static class StockLedger
         StockMovementType type, int documentId, string documentNumber, DateTime date, CancellationToken ct)
     {
         if (qty <= 0) throw new BusinessException("Количество прихода должно быть больше нуля.");
+        if (await IsServiceAsync(db, productId, ct)) return;
         var balance = await GetOrCreateAsync(db, productId, warehouseId, ct);
         AddToBalance(balance, qty, unitCost);
         await AddLotAsync(db, balance, qty, unitCost, date, type, documentId, ct);
@@ -52,6 +57,8 @@ internal static class StockLedger
         StockMovementType type, int documentId, string documentNumber, DateTime date, bool allowNegative, CancellationToken ct)
     {
         if (qty <= 0) throw new BusinessException("Количество расхода должно быть больше нуля.");
+        if (await db.Products.FindAsync([productId], ct) is { IsService: true } service)
+            return Money.RoundCost(service.PurchasePrice); // услуга: без остатков, себестоимость — цена закупки
         var balance = await GetOrCreateAsync(db, productId, warehouseId, ct);
         if (!allowNegative && balance.Quantity < qty)
         {
@@ -89,6 +96,7 @@ internal static class StockLedger
     public static async Task RemoveReceiptAsync(TradeDbContext db, int productId, int warehouseId, decimal qty, decimal unitCost,
         StockMovementType sourceType, int sourceDocumentId, CancellationToken ct)
     {
+        if (await IsServiceAsync(db, productId, ct)) return;
         var balance = await GetOrCreateAsync(db, productId, warehouseId, ct);
         var newQty = Money.RoundQty(balance.Quantity - qty);
         if (newQty > 0 && balance.Quantity > 0)
@@ -109,7 +117,7 @@ internal static class StockLedger
     public static async Task RestoreIssueAsync(TradeDbContext db, int productId, int warehouseId, decimal qty, decimal unitCost,
         DateTime date, StockMovementType type, int documentId, CancellationToken ct)
     {
-        if (qty <= 0) return;
+        if (qty <= 0 || await IsServiceAsync(db, productId, ct)) return;
         var balance = await GetOrCreateAsync(db, productId, warehouseId, ct);
         var usages = await db.StockLotUsages.Include(u => u.Lot)
             .Where(u => u.DocumentType == type && u.DocumentId == documentId && u.Lot!.ProductId == productId && u.Lot.WarehouseId == warehouseId)
@@ -226,7 +234,9 @@ internal static class DocumentNumbers
     public const string PurchaseReturn = "ВП";
     public const string Transfer = "ПМ";
     public const string Inventory = "ИН";
+    public const string WriteOff = "СП";
     public const string Cash = "КО";
+    public const string Production = "ПД";
 
     public static async Task<string> NextAsync(TradeDbContext db, string prefix, CancellationToken ct)
     {
