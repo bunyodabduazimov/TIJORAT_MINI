@@ -82,7 +82,7 @@ public class ProductionService(IDbContextFactory<TradeDbContext> factory, UserSe
         var q = db.ProductionOrders.AsNoTracking().Include(o => o.Warehouse).Include(o => o.Product).Include(o => o.Recipe).AsQueryable();
         if (from is not null) { var start = from.Value.Date; q = q.Where(o => o.Date >= start); }
         if (to is not null) { var end = to.Value.Date.AddDays(1); q = q.Where(o => o.Date < end); }
-        return await q.OrderByDescending(o => o.Date).Take(from is null && to is null ? 500 : 5000).ToListAsync(ct);
+        return await q.OrderByDescending(o => o.Date).ThenByDescending(o => o.Id).Take(from is null && to is null ? 500 : 5000).ToListAsync(ct);
     }
 
     public async Task<List<ProductionItem>> GetOrderItemsAsync(int orderId, CancellationToken ct = default)

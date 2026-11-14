@@ -94,7 +94,7 @@ public class DashboardService(IDbContextFactory<TradeDbContext> factory)
             .OrderByDescending(r => r.Revenue).Take(5).ToList();
 
         var recent = await db.Sales.AsNoTracking().Include(s => s.Customer)
-            .OrderByDescending(s => s.Id).Take(8).ToListAsync(ct);
+            .OrderByDescending(s => s.Date).ThenByDescending(s => s.Id).Take(8).ToListAsync(ct);
 
         return new DashboardSummary(
             Revenue(today, tomorrow), sales.Count(s => s.Date >= today), Revenue(yesterday, today),

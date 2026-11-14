@@ -159,7 +159,7 @@ public class WarehouseService(IDbContextFactory<TradeDbContext> factory)
             .Include(t => t.Items).AsQueryable();
         if (from is not null) { var start = from.Value.Date; q = q.Where(t => t.Date >= start); }
         if (to is not null) { var end = to.Value.Date.AddDays(1); q = q.Where(t => t.Date < end); }
-        return await q.OrderByDescending(t => t.Date).Take(from is null && to is null ? 500 : 5000).ToListAsync(ct);
+        return await q.OrderByDescending(t => t.Date).ThenByDescending(t => t.Id).Take(from is null && to is null ? 500 : 5000).ToListAsync(ct);
     }
 
     public async Task<List<StockTransferItem>> GetTransferItemsAsync(int transferId, CancellationToken ct = default)
@@ -175,7 +175,7 @@ public class WarehouseService(IDbContextFactory<TradeDbContext> factory)
         var q = db.InventoryCounts.AsNoTracking().Include(t => t.Warehouse).AsQueryable();
         if (from is not null) { var start = from.Value.Date; q = q.Where(t => t.Date >= start); }
         if (to is not null) { var end = to.Value.Date.AddDays(1); q = q.Where(t => t.Date < end); }
-        return await q.OrderByDescending(t => t.Date).Take(from is null && to is null ? 500 : 5000).ToListAsync(ct);
+        return await q.OrderByDescending(t => t.Date).ThenByDescending(t => t.Id).Take(from is null && to is null ? 500 : 5000).ToListAsync(ct);
     }
 
     /// <summary>Позиции проведённой инвентаризации (по умолчанию — только с расхождениями).</summary>
@@ -233,7 +233,7 @@ public class WarehouseService(IDbContextFactory<TradeDbContext> factory)
         var q = db.StockWriteOffs.AsNoTracking().Include(t => t.Warehouse).Include(t => t.Items).AsQueryable();
         if (from is not null) { var start = from.Value.Date; q = q.Where(t => t.Date >= start); }
         if (to is not null) { var end = to.Value.Date.AddDays(1); q = q.Where(t => t.Date < end); }
-        return await q.OrderByDescending(t => t.Date).Take(from is null && to is null ? 500 : 5000).ToListAsync(ct);
+        return await q.OrderByDescending(t => t.Date).ThenByDescending(t => t.Id).Take(from is null && to is null ? 500 : 5000).ToListAsync(ct);
     }
 
     public async Task<List<StockWriteOffItem>> GetWriteOffItemsAsync(int writeOffId, CancellationToken ct = default)

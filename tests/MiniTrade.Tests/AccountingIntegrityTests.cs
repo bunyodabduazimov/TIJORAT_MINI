@@ -359,6 +359,47 @@ public class AccountingIntegrityTests
         await Integrity.AssertConsistentAsync(t);
     }
 
+    [Fact]
+    public async Task Journals_show_latest_posting_first_when_dates_are_equal()
+    {
+        using var t = new TestDb();
+        var (p, s, _) = await SetupAsync(t, qty: 50);
+        var w2 = (await t.Catalog.SaveAsync(new Warehouse { Name = "Склад 2" })).Id;
+        var day = DateTime.Today.AddHours(10); // одна и та же дата и время у всех документов
+
+        var sales = new List<int>();
+        for (var i = 0; i < 3; i++)
+            sales.Add((await t.Sales.CreateSaleAsync(new SaleRequest(t.WarehouseId, t.CashId, [new DocumentLine(p.Id, 1, 50m)], Date: day))).Id);
+        var purchases = new List<int>();
+        for (var i = 0; i < 3; i++)
+            purchases.Add((await t.Purchases.CreatePurchaseAsync(new PurchaseRequest(s.Id, t.WarehouseId, [new DocumentLine(p.Id, 1, 10m)], Date: day))).Id);
+        var transfers = new List<int>();
+        for (var i = 0; i < 3; i++)
+            transfers.Add((await t.Warehouse.TransferAsync(t.WarehouseId, w2, [new TransferLine(p.Id, 1)], date: day)).Id);
+        var writeOffs = new List<int>();
+        for (var i = 0; i < 3; i++)
+            writeOffs.Add((await t.Warehouse.WriteOffAsync(t.WarehouseId, [new TransferLine(p.Id, 1)], "Брак", date: day)).Id);
+        var saleItems = t.Query(db => db.SaleItems.Where(x => sales.Contains(x.SaleId)).ToList());
+        var returns = new List<int>();
+        foreach (var it in saleItems)
+            returns.Add((await t.Sales.CreateReturnAsync(new SaleReturnRequest(it.SaleId, t.CashId, [new ReturnLine(it.Id, 1)], Date: day))).Id);
+
+        var desc = (List<int> ids) => ids.OrderByDescending(x => x).ToList();
+        Assert.Equal(desc(sales), (await t.Sales.GetSalesAsync(day, day)).Select(x => x.Id).ToList());
+        Assert.Equal(desc(sales), (await t.Sales.GetSalesPageAsync(new SaleFilter(day, day), 0, 10)).Items.Select(x => x.Id).ToList());
+        Assert.Equal(desc(returns), (await t.Sales.GetReturnsAsync(day, day)).Select(x => x.Id).ToList());
+        Assert.Equal(desc(purchases), (await t.Purchases.GetPurchasesAsync(day, day)).Where(x => purchases.Contains(x.Id)).Select(x => x.Id).ToList());
+        Assert.Equal(desc(purchases), (await t.Purchases.GetPurchasesPageAsync(new PurchaseFilter(day, day), 0, 10)).Items
+            .Where(x => purchases.Contains(x.Id)).Select(x => x.Id).ToList());
+        Assert.Equal(desc(transfers), (await t.Warehouse.GetTransfersAsync(day, day)).Select(x => x.Id).ToList());
+        Assert.Equal(desc(writeOffs), (await t.Warehouse.GetWriteOffsAsync(day, day)).Select(x => x.Id).ToList());
+        var ops = (await t.Finance.GetOperationsPageAsync(new CashOperationFilter(day, day), 0, 100)).Items.Where(x => x.Date == day).Select(x => x.Id).ToList();
+        Assert.Equal(ops.OrderByDescending(x => x).ToList(), ops);
+        var moves = (await t.Warehouse.GetMovementsAsync(day, day)).Where(x => x.Date == day).Select(x => x.Id).ToList();
+        Assert.Equal(moves.OrderByDescending(x => x).ToList(), moves);
+        Assert.Equal(desc(sales), (await new DashboardService(t).GetSummaryAsync()).RecentSales.Select(x => x.Id).ToList());
+    }
+
     internal static async Task SetNegativeStockAsync(TestDb t, bool allow, CostingMethod? method = null)
     {
         using var db = t.CreateDbContext();

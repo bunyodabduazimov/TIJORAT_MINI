@@ -318,7 +318,7 @@ public class SalesService(IDbContextFactory<TradeDbContext> factory, UserSession
         return await db.Sales.AsNoTracking()
             .Include(s => s.Customer).Include(s => s.Warehouse).Include(s => s.CashRegister)
             .Where(s => s.Date >= from.Date && s.Date < to.Date.AddDays(1))
-            .OrderByDescending(s => s.Date).ToListAsync(ct);
+            .OrderByDescending(s => s.Date).ThenByDescending(s => s.Id).ToListAsync(ct);
     }
 
     public async Task<Sale?> GetSaleAsync(int id, CancellationToken ct = default)
@@ -336,6 +336,6 @@ public class SalesService(IDbContextFactory<TradeDbContext> factory, UserSession
         return await db.SaleReturns.AsNoTracking()
             .Include(r => r.Sale).Include(r => r.CashRegister)
             .Where(r => r.Date >= from.Date && r.Date < to.Date.AddDays(1))
-            .OrderByDescending(r => r.Date).ToListAsync(ct);
+            .OrderByDescending(r => r.Date).ThenByDescending(r => r.Id).ToListAsync(ct);
     }
 }

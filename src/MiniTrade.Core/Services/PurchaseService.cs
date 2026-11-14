@@ -353,7 +353,7 @@ public class PurchaseService(IDbContextFactory<TradeDbContext> factory, UserSess
             .Include(r => r.Purchase).ThenInclude(p => p!.Supplier)
             .Include(r => r.CashRegister)
             .Where(r => r.Date >= from.Date && r.Date < to.Date.AddDays(1))
-            .OrderByDescending(r => r.Date).ToListAsync(ct);
+            .OrderByDescending(r => r.Date).ThenByDescending(r => r.Id).ToListAsync(ct);
     }
 
     public async Task<List<Purchase>> GetPurchasesAsync(DateTime from, DateTime to, CancellationToken ct = default)
