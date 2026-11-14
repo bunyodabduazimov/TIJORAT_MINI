@@ -50,7 +50,7 @@
                                 <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
                             <StackPanel Margin="0,0,8,0">
-                                <TextBlock Text="{l:T 'Штрихкод / артикул'}" Style="{StaticResource FieldLabel}"/>
+                                <TextBlock Text="{l:T 'Поиск товара'}" Style="{StaticResource FieldLabel}"/>
                                 <TextBox Text="{Binding Barcode, UpdateSourceTrigger=PropertyChanged}" l:Ui.Placeholder="{l:T 'Скан + Enter'}">
                                     <TextBox.InputBindings>
                                         <KeyBinding Key="Enter" Command="{Binding AddByBarcodeCommand}"/>
@@ -66,7 +66,7 @@
                                 </DockPanel>
                             </StackPanel>
                             <StackPanel Grid.Column="2" Margin="0,0,8,0">
-                                <TextBlock Text="{l:T 'Кол-во'}" Style="{StaticResource FieldLabel}"/>
+                                <TextBlock Text="{l:T 'Количество'}" Style="{StaticResource FieldLabel}"/>
                                 <TextBox l:Ui.Numeric="True" Text="{Binding NewQuantity, Converter={StaticResource Dec}, UpdateSourceTrigger=PropertyChanged}">
                                     <TextBox.InputBindings>
                                         <KeyBinding Key="Enter" Command="{Binding AddLineCommand}"/>
@@ -74,7 +74,7 @@
                                 </TextBox>
                             </StackPanel>
                             <StackPanel Grid.Column="3" Margin="0,0,8,0">
-                                <TextBlock Text="{l:T 'Цена закупки'}" Style="{StaticResource FieldLabel}"/>
+                                <TextBlock Text="{l:T 'Закупочная цена'}" Style="{StaticResource FieldLabel}"/>
                                 <TextBox l:Ui.Numeric="True" Text="{Binding NewPrice, Converter={StaticResource Dec}, UpdateSourceTrigger=PropertyChanged}">
                                     <TextBox.InputBindings>
                                         <KeyBinding Key="Enter" Command="{Binding AddLineCommand}"/>
@@ -98,7 +98,7 @@
                                         <DataTemplate><TextBox Style="{StaticResource CellTextBox}" l:Ui.Numeric="True" Text="{Binding Price, Converter={StaticResource Dec}, UpdateSourceTrigger=PropertyChanged}"/></DataTemplate>
                                     </DataGridTemplateColumn.CellTemplate>
                                 </DataGridTemplateColumn>
-                                <DataGridTemplateColumn Header="{l:T 'Продажная'}" Width="120">
+                                <DataGridTemplateColumn Header="{l:T 'Цена продажи'}" Width="120">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate><TextBox Style="{StaticResource CellTextBox}" l:Ui.Numeric="True" ToolTip="{l:T 'Цена продажи — сохранится в карточке товара'}"
                                                                Text="{Binding SalePrice, Converter={StaticResource Dec}, UpdateSourceTrigger=PropertyChanged}"/></DataTemplate>
@@ -127,14 +127,14 @@
                 <ScrollViewer Grid.Column="2" VerticalScrollBarVisibility="Auto">
                     <Border Style="{StaticResource Card}">
                         <StackPanel>
-                            <TextBlock Text="{l:T 'Оформление'}" Style="{StaticResource SectionTitle}"/>
+                            <TextBlock Text="{l:T 'Детали закупки'}" Style="{StaticResource SectionTitle}"/>
                             <TextBlock Text="{l:T 'Поставщик *'}" Style="{StaticResource FieldLabel}"/>
                             <DockPanel>
                                 <Button DockPanel.Dock="Right" Style="{StaticResource InputAddonButton}" Content="&#xF03EB;" ToolTip="{l:T 'Изменить поставщика'}" Command="{Binding EditSupplierCommand}" Visibility="{Binding Supplier, Converter={StaticResource BoolToVis}}"/>
                                 <Button DockPanel.Dock="Right" Style="{StaticResource InputAddonButton}" Content="&#xF0415;" ToolTip="{l:T 'Новый поставщик'}" Command="{Binding AddSupplierCommand}" Visibility="{Binding Supplier, Converter={StaticResource InvBoolToVis}}"/>
                                 <ComboBox ItemsSource="{Binding Suppliers}" SelectedItem="{Binding Supplier}" DisplayMemberPath="Name" l:Ui.Clearable="True"/>
                             </DockPanel>
-                            <TextBlock Text="{l:T 'Склад прихода *'}" Style="{StaticResource FieldLabel}"/>
+                            <TextBlock Text="{l:T 'Склад приёмки *'}" Style="{StaticResource FieldLabel}"/>
                             <DockPanel>
                                 <ComboBox ItemsSource="{Binding Warehouses}" SelectedItem="{Binding Warehouse}" DisplayMemberPath="Name"/>
                             </DockPanel>
@@ -145,12 +145,12 @@
                                      VerticalScrollBarVisibility="Auto"/>
 
                             <!-- Оплата — прямо над итогом -->
-                            <TextBlock Text="{l:T 'Касса оплаты'}" Style="{StaticResource FieldLabel}"/>
+                            <TextBlock Text="{l:T 'Счёт / касса'}" Style="{StaticResource FieldLabel}"/>
                             <DockPanel>
                                 <ComboBox ItemsSource="{Binding CashRegisters}" SelectedItem="{Binding CashRegister}" DisplayMemberPath="Name"/>
                             </DockPanel>
                             <StackPanel>
-                                <TextBlock Text="{l:T 'Сумма оплаты'}" Style="{StaticResource FieldLabel}" TextWrapping="Wrap"/>
+                                <TextBlock Text="{l:T 'Оплата сейчас'}" Style="{StaticResource FieldLabel}" TextWrapping="Wrap"/>
                                 <TextBox l:Ui.Numeric="True" Text="{Binding PaidAmount, Converter={StaticResource Dec}, UpdateSourceTrigger=PropertyChanged}"/>
                                 <TextBlock Text="{l:T 'Оплата больше суммы к оплате'}" Foreground="{DynamicResource DangerBrush}" FontSize="12" Margin="0,4,0,0"
                                            Visibility="{Binding Overpaid, Converter={StaticResource BoolToVis}}"/>
@@ -159,7 +159,7 @@
                             <!-- Итоги -->
                             <Border Background="{DynamicResource PrimaryLightBrush}" CornerRadius="8" Padding="14" Margin="0,14,0,0">
                                 <StackPanel>
-                                    <TextBlock Text="{l:T 'Сумма закупки'}" Style="{StaticResource Muted}"/>
+                                    <TextBlock Text="{l:T 'Итого к оплате'}" Style="{StaticResource Muted}"/>
                                     <TextBlock Text="{Binding Total, Converter={StaticResource Money}}" FontSize="26" FontWeight="Bold" Foreground="{DynamicResource PrimaryBrush}"/>
                                     <Grid Margin="0,8,0,0">
                                         <Grid.ColumnDefinitions>
@@ -177,7 +177,7 @@
                                                    Visibility="{Binding IsEditing, Converter={StaticResource BoolToVis}}"/>
                                         <TextBlock Grid.Row="1" Text="{l:T 'Оплата сейчас'}" Style="{StaticResource Muted}"/>
                                         <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding PaymentNow, Converter={StaticResource Money}}" FontWeight="SemiBold"/>
-                                        <TextBlock Grid.Row="2" Text="{l:T 'Долг поставщику'}" Style="{StaticResource Muted}"/>
+                                        <TextBlock Grid.Row="2" Text="{l:T 'Остаток долга'}" Style="{StaticResource Muted}"/>
                                         <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding DebtAfter, Converter={StaticResource Money}}" FontWeight="SemiBold" Foreground="{DynamicResource WarningBrush}"/>
                                     </Grid>
                                 </StackPanel>
@@ -189,7 +189,7 @@
         </TabItem>
 
         <!-- ══ Журнал закупок: период, фильтр, поиск, страницы; на всю ширину ══ -->
-        <TabItem Header="{l:T 'История закупок'}" Visibility="{l:Can purchases.history.view}">
+        <TabItem Header="{l:T 'Все закупки'}" Visibility="{l:Can purchases.history.view}">
             <Grid>
                 <Border Style="{StaticResource Card}">
                     <DockPanel>
@@ -293,7 +293,7 @@
         </TabItem>
 
         <!-- ══ Журнал возвратов поставщикам ══ -->
-        <TabItem Header="{l:T 'Возвраты'}" Visibility="{l:Can purchases.history.view}">
+        <TabItem Header="{l:T 'Возвраты поставщикам'}" Visibility="{l:Can purchases.history.view}">
             <Border Style="{StaticResource Card}">
                 <DockPanel>
                     <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,0,0,10">
@@ -326,7 +326,7 @@
         </TabItem>
 
         <!-- ══ Поставщики и долги: расчёты за всё время, оплата по FIFO ══ -->
-        <TabItem Header="{l:T 'Поставщики и долги'}" Visibility="{l:Can purchases.debts.view}">
+        <TabItem Header="{l:T 'Расчёты с поставщиками'}" Visibility="{l:Can purchases.debts.view}">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>

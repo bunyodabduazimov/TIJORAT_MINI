@@ -16,7 +16,7 @@
         <!-- Панель над таблицей: слева «Добавить» · справа архив, поиск, страницы -->
         <DataTemplate x:Key="Toolbar">
             <DockPanel Margin="0,0,0,10">
-                <Button DockPanel.Dock="Left" Content="{l:T '+ Добавить'}" Visibility="{Binding CanCreate, Converter={StaticResource BoolToVis}}" Command="{Binding NewCommand}"/>
+                <Button DockPanel.Dock="Left" Content="{Binding NewLabel}" Visibility="{Binding CanCreate, Converter={StaticResource BoolToVis}}" Command="{Binding NewCommand}"/>
                 <!-- Доп. кнопки вкладки (Этикетка, Импорт/экспорт) — сразу после «Добавить» -->
                 <ContentPresenter DockPanel.Dock="Left" Content="{Binding Tag, RelativeSource={RelativeSource AncestorType=ContentControl}}"/>
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
@@ -78,7 +78,7 @@
     </UserControl.Resources>
 
     <TabControl>
-        <TabItem Header="{l:T 'Товары и услуги'}" Visibility="{l:Can catalog.products.view}">
+        <TabItem Header="{l:T 'Номенклатура'}" Visibility="{l:Can catalog.products.view}">
             <Border Style="{StaticResource Card}" DataContext="{Binding Products}">
                 <DockPanel>
                     <ContentControl DockPanel.Dock="Top" Content="{Binding}" ContentTemplate="{StaticResource Toolbar}" Focusable="False">
@@ -90,7 +90,7 @@
                                         Command="{Binding DataContext.PrintLabelCommand, RelativeSource={RelativeSource AncestorType=UserControl}}">
                                     <StackPanel Orientation="Horizontal">
                                         <TextBlock Text="&#xF04FC;" FontFamily="{StaticResource IconFont}" Margin="0,1,8,0"/>
-                                        <TextBlock Text="{l:T 'Этикетка'}"/>
+                                        <TextBlock Text="{l:T 'Печать этикеток'}"/>
                                     </StackPanel>
                                 </Button>
                                 <!-- Выгрузка весовых товаров в весы TMA / CAS (вкладка «Весы») -->
@@ -99,7 +99,7 @@
                                         Command="{Binding DataContext.UpdateScalesCommand, RelativeSource={RelativeSource AncestorType=UserControl}}">
                                     <StackPanel Orientation="Horizontal">
                                         <TextBlock Text="&#xF05D1;" FontFamily="{StaticResource IconFont}" Margin="0,1,8,0"/>
-                                        <TextBlock Text="{l:T 'Обновить весы'}"/>
+                                        <TextBlock Text="{l:T 'Синхронизация весов'}"/>
                                     </StackPanel>
                                 </Button>
                                 <!-- Импорт / экспорт товаров (CSV для Excel) -->
@@ -168,10 +168,10 @@
                             <DataGridTextColumn Header="{l:T 'Артикул'}" Binding="{Binding Sku}" Width="110"/>
                             <DataGridTextColumn Header="{l:T 'Штрихкод'}" Binding="{Binding Barcode}" Width="140"/>
                             <DataGridTextColumn Header="{l:T 'Категория'}" Binding="{Binding Category.Name}" Width="*" MinWidth="120"/>
-                            <DataGridTextColumn Header="{l:T 'Ед.'}" Binding="{Binding Unit}" Width="50"/>
-                            <DataGridTextColumn Header="{l:T 'Закупка'}" Binding="{Binding PurchasePrice, StringFormat={}{0:N2}}" Width="100" ElementStyle="{StaticResource RightCell}"/>
-                            <DataGridTextColumn Header="{l:T 'Продажа'}" Binding="{Binding SalePrice, StringFormat={}{0:N2}}" Width="100" ElementStyle="{StaticResource RightCell}"/>
-                            <DataGridTextColumn Header="{l:T 'Активен'}" Binding="{Binding IsActive, Converter={StaticResource EnumName}}" Width="70"/>
+                            <DataGridTextColumn Header="{l:T 'Ед. изм.'}" Binding="{Binding Unit}" Width="70"/>
+                            <DataGridTextColumn Header="{l:T 'Цена закупки'}" Binding="{Binding PurchasePrice, StringFormat={}{0:N2}}" Width="110" ElementStyle="{StaticResource RightCell}"/>
+                            <DataGridTextColumn Header="{l:T 'Цена продажи'}" Binding="{Binding SalePrice, StringFormat={}{0:N2}}" Width="110" ElementStyle="{StaticResource RightCell}"/>
+                            <DataGridTextColumn Header="{l:T 'Статус'}" Binding="{Binding IsActive, Converter={StaticResource ActiveStatus}}" Width="90"/>
                         </DataGrid.Columns>
                     </DataGrid>
                 </DockPanel>
@@ -210,7 +210,7 @@
             </Border>
         </TabItem>
 
-        <TabItem Header="{l:T 'Единицы'}" Visibility="{l:Can catalog.units.view}">
+        <TabItem Header="{l:T 'Единицы измерения'}" Visibility="{l:Can catalog.units.view}">
             <Border Style="{StaticResource Card}" DataContext="{Binding Units}">
                 <DockPanel>
                     <ContentControl DockPanel.Dock="Top" Content="{Binding}" ContentTemplate="{StaticResource Toolbar}" Focusable="False"/>
@@ -220,14 +220,14 @@
                             <DataGridTemplateColumn Width="44" CanUserResize="False" CellTemplate="{StaticResource RowActions}"/>
                             <DataGridTextColumn Header="{l:T 'Краткое'}" Binding="{Binding Name}" Width="120"/>
                             <DataGridTextColumn Header="{l:T 'Полное наименование'}" Binding="{Binding Description}" Width="*" MinWidth="160"/>
-                            <DataGridTextColumn Header="{l:T 'Активен'}" Binding="{Binding IsActive, Converter={StaticResource EnumName}}" Width="80"/>
+                            <DataGridTextColumn Header="{l:T 'Статус'}" Binding="{Binding IsActive, Converter={StaticResource ActiveStatus}}" Width="90"/>
                         </DataGrid.Columns>
                     </DataGrid>
                 </DockPanel>
             </Border>
         </TabItem>
 
-        <TabItem Header="{l:T 'Весы'}" Visibility="{l:Can catalog.scales.view}">
+        <TabItem Header="{l:T 'Торговые весы'}" Visibility="{l:Can catalog.scales.view}">
             <Border Style="{StaticResource Card}" DataContext="{Binding Scales}">
                 <DockPanel>
                     <ContentControl DockPanel.Dock="Top" Content="{Binding}" ContentTemplate="{StaticResource Toolbar}" Focusable="False"/>
@@ -239,14 +239,14 @@
                             <DataGridTextColumn Header="{l:T 'Тип'}" Binding="{Binding Type}" Width="80"/>
                             <DataGridTextColumn Header="{l:T 'IP-адрес'}" Binding="{Binding Ip}" Width="160"/>
                             <DataGridTextColumn Header="{l:T 'Порт'}" Binding="{Binding Port}" Width="90"/>
-                            <DataGridTextColumn Header="{l:T 'Активен'}" Binding="{Binding IsActive, Converter={StaticResource EnumName}}" Width="80"/>
+                            <DataGridTextColumn Header="{l:T 'Статус'}" Binding="{Binding IsActive, Converter={StaticResource ActiveStatus}}" Width="90"/>
                         </DataGrid.Columns>
                     </DataGrid>
                 </DockPanel>
             </Border>
         </TabItem>
 
-        <TabItem Header="{l:T 'Контрагенты'}" Visibility="{l:Can catalog.counterparties.view}">
+        <TabItem Header="{l:T 'Клиенты и поставщики'}" Visibility="{l:Can catalog.counterparties.view}">
             <Border Style="{StaticResource Card}" DataContext="{Binding Counterparties}">
                 <DockPanel>
                     <DockPanel DockPanel.Dock="Top">
@@ -302,14 +302,14 @@
                                     </DataTemplate>
                                 </DataGridTemplateColumn.CellTemplate>
                             </DataGridTemplateColumn>
-                            <DataGridTextColumn Header="{l:T 'Активен'}" Binding="{Binding IsActive, Converter={StaticResource EnumName}}" Width="80"/>
+                            <DataGridTextColumn Header="{l:T 'Статус'}" Binding="{Binding IsActive, Converter={StaticResource ActiveStatus}}" Width="90"/>
                         </DataGrid.Columns>
                     </DataGrid>
                 </DockPanel>
             </Border>
         </TabItem>
 
-        <TabItem Header="{l:T 'Группы'}" Visibility="{l:Can catalog.groups.view}">
+        <TabItem Header="{l:T 'Группы контрагентов'}" Visibility="{l:Can catalog.groups.view}">
             <Border Style="{StaticResource Card}" DataContext="{Binding CounterpartyGroups}">
                 <DockPanel>
                     <ContentControl DockPanel.Dock="Top" Content="{Binding}" ContentTemplate="{StaticResource Toolbar}" Focusable="False"/>
@@ -340,14 +340,14 @@
                                                 ElementStyle="{StaticResource RightCell}"/>
                             <DataGridTextColumn Header="{l:T 'Остаток по ценам продажи'}" Binding="{Binding StockSaleValue, Converter={StaticResource Money}}" Width="190"
                                                 ElementStyle="{StaticResource RightCell}"/>
-                            <DataGridTextColumn Header="{l:T 'Активен'}" Binding="{Binding IsActive, Converter={StaticResource EnumName}}" Width="80"/>
+                            <DataGridTextColumn Header="{l:T 'Статус'}" Binding="{Binding IsActive, Converter={StaticResource ActiveStatus}}" Width="90"/>
                         </DataGrid.Columns>
                     </DataGrid>
                 </DockPanel>
             </Border>
         </TabItem>
 
-        <TabItem Header="{l:T 'Кассы'}" Visibility="{l:Can catalog.cashregisters.view}">
+        <TabItem Header="{l:T 'Кассы и счета'}" Visibility="{l:Can catalog.cashregisters.view}">
             <Border Style="{StaticResource Card}" DataContext="{Binding CashRegisters}">
                 <DockPanel>
                     <ContentControl DockPanel.Dock="Top" Content="{Binding}" ContentTemplate="{StaticResource Toolbar}" Focusable="False"/>
@@ -365,7 +365,7 @@
             </Border>
         </TabItem>
 
-        <TabItem Header="{l:T 'Статьи'}" Visibility="{l:Can catalog.articles.view}">
+        <TabItem Header="{l:T 'Статьи финансов'}" Visibility="{l:Can catalog.articles.view}">
             <Border Style="{StaticResource Card}" DataContext="{Binding Articles}">
                 <DockPanel>
                     <ContentControl DockPanel.Dock="Top" Content="{Binding}" ContentTemplate="{StaticResource Toolbar}" Focusable="False"/>

@@ -5,6 +5,8 @@ using MiniTrade.Core.Domain;
 using MiniTrade.Core.Services;
 using MiniTrade.Desktop.Infrastructure;
 using MiniTrade.Desktop.Views;
+using MiniTrade.Desktop.Infrastructure.Printing;
+using System.Windows;
 
 namespace MiniTrade.Desktop.ViewModels;
 
@@ -110,6 +112,85 @@ public partial class FinanceViewModel(
         Statement = s;
         Fill(StatementRows, s?.Rows ?? []);
     }
+
+    // ── Экспорт и печать: взаиморасчёты и выписка ──
+
+    private string StatementSubject => StatementKind == 0 ? StatementCash?.Name ?? "" : StatementCounterparty?.Name ?? "";
+    private string StatementTitle => StatementKind == 0 ? L.T("Выписка по кассе") : L.T("Акт сверки с контрагентом");
+    private string StatementPeriod => L.F("за период {0:dd.MM.yyyy} — {1:dd.MM.yyyy}", StatementFrom, StatementTo);
+
+    [RelayCommand]
+    private void ExportDebts()
+    {
+        var rows = CounterpartiesView.Cast<CounterpartyBalanceRow>().ToList();
+        var lines = rows.Select(r => CsvRow(r.Name, r.Group, r.Phone, r.Balance))
+            .Prepend(L.T("Контрагент;Группа;Телефон;Баланс"))
+            .Append(CsvRow(L.T("Нам должны"), null, null, Receivable))
+            .Append(CsvRow(L.T("Мы должны"), null, null, -Payable));
+        SaveExcel($"{L.T("Расчёты с контрагентами")}_{DebtDate:yyyyMMdd}.xlsx", lines);
+    }
+
+    [RelayCommand]
+    private async Task PrintDebtsAsync()
+    {
+        var rows = CounterpartiesView.Cast<CounterpartyBalanceRow>().ToList();
+        var n = 0;
+        var doc = PrintDocuments.TableReport(L.T("Взаиморасчёты с контрагентами"),
+            L.F("на {0:dd.MM.yyyy}", DebtDate) + (DebtGroup?.Value is null ? "" : " · " + DebtGroup.Name),
+            await settings.GetCompanyAsync(),
+            [("№", new(34), false), (L.T("Контрагент"), new(1, GridUnitType.Star), false), (L.T("Группа"), new(130), false),
+             (L.T("Телефон"), new(120), false), (L.T("Баланс"), new(110), true)],
+            rows.Select(r => new List<string> { (++n).ToString(), r.Name, r.Group ?? "", r.Phone ?? "", $"{r.Balance:N2}" }),
+            [L.F("Нам должны: {0}", MiniTrade.Core.Common.Money.Format(Receivable)), L.F("Мы должны: {0}", MiniTrade.Core.Common.Money.Format(Payable))]);
+        DocumentPrinter.Print(L.T("Расчёты с контрагентами"), doc);
+    }
+
+    [RelayCommand]
+    private void ExportStatement()
+    {
+        if (Statement is not { } s) { Dialogs.Info(L.T("Выберите кассу или контрагента.")); return; }
+        var lines = s.Rows.Select(r => CsvRow(r.Date.ToString("dd.MM.yyyy HH:mm"), r.Document, r.Operation, r.Comment, r.Income, r.Expense, r.Balance))
+            .Prepend(CsvRow(L.T("Начальный остаток"), null, null, null, null, null, s.Opening))
+            .Prepend(L.T("Дата;Документ;Операция;Комментарий;Приход;Расход;Остаток"))
+            .Append(CsvRow(L.T("Итого"), null, null, null, s.Income, s.Expense, s.Closing));
+        SaveExcel($"{L.T("Движение средств")}_{StatementSubject}_{StatementFrom:yyyyMMdd}-{StatementTo:yyyyMMdd}.xlsx", lines);
+    }
+
+    [RelayCommand]
+    private async Task PrintStatementAsync()
+    {
+        if (Statement is not { } s) { Dialogs.Info(L.T("Выберите кассу или контрагента.")); return; }
+        var M = (decimal v) => MiniTrade.Core.Common.Money.Format(v);
+        var rows = s.Rows.Select(r => new List<string> { r.Date.ToString("dd.MM.yyyy HH:mm"), r.Document ?? "", r.Operation, r.Comment ?? "",
+            r.Income == 0 ? "" : $"{r.Income:N2}", r.Expense == 0 ? "" : $"{r.Expense:N2}", $"{r.Balance:N2}" })
+            .Prepend([L.F("{0:dd.MM.yyyy}", StatementFrom), "", L.T("Начальный остаток"), "", "", "", $"{s.Opening:N2}"]);
+        var doc = PrintDocuments.TableReport(StatementTitle, $"{StatementSubject} · {StatementPeriod}", await settings.GetCompanyAsync(),
+            [(L.T("Дата"), new(100), false), (L.T("Документ"), new(80), false), (L.T("Операция"), new(1, GridUnitType.Star), false),
+             (L.T("Комментарий"), new(150), false), (L.T("Приход"), new(85), true), (L.T("Расход"), new(85), true), (L.T("Остаток"), new(90), true)],
+            rows,
+            [L.F("Приход: {0}   Расход: {1}", M(s.Income), M(s.Expense)), L.F("Конечный остаток: {0}", M(s.Closing))], landscape: true);
+        DocumentPrinter.Print(StatementTitle, doc);
+    }
+
+    private void SaveExcel(string name, IEnumerable<string> lines)
+    {
+        foreach (var ch in System.IO.Path.GetInvalidFileNameChars()) name = name.Replace(ch, '_');
+        var path = Dialogs.SaveFile(name, ExcelExport.Filter);
+        if (path is null) return;
+        try
+        {
+            ExcelExport.Save(path, lines, System.IO.Path.GetFileNameWithoutExtension(name));
+            Dialogs.Info(L.F("Файл сохранён: {0}", path));
+        }
+        catch (System.IO.IOException ex) { Dialogs.Error(ex.Message); }
+    }
+
+    private static string CsvRow(params object?[] values) => string.Join(';', values.Select(v => v switch
+    {
+        decimal d => d.ToString("0.##", System.Globalization.CultureInfo.GetCultureInfo("ru-RU")),
+        null => "",
+        _ => '"' + v.ToString()!.Replace("\"", "\"\"") + '"'
+    }));
 
     [RelayCommand]
     private Task ReloadAsync() => LoadAsync();

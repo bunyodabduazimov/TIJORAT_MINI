@@ -108,7 +108,7 @@
 
     <TabControl SelectedIndex="{Binding SelectedTab}">
         <!-- ═══ Продажи ═══ -->
-        <TabItem Header="{l:T 'Продажи'}" Visibility="{l:Can reports.sales}">
+        <TabItem Header="{l:T 'Анализ продаж'}" Visibility="{l:Can reports.sales}">
             <DockPanel>
                 <WrapPanel Style="{StaticResource KpiRow}">
                     <Border Style="{StaticResource Kpi}">
@@ -119,7 +119,7 @@
                     </Border>
                     <Border Style="{StaticResource Kpi}">
                         <StackPanel>
-                            <TextBlock Text="{l:T 'Себестоимость'}" Style="{StaticResource KpiLabel}"/>
+                            <TextBlock Text="{l:T 'Себестоимость продаж'}" Style="{StaticResource KpiLabel}"/>
                             <TextBlock Text="{Binding SalesCost, Converter={StaticResource Money}}" Style="{StaticResource KpiValue}"/>
                         </StackPanel>
                     </Border>
@@ -131,7 +131,7 @@
                     </Border>
                     <Border Style="{StaticResource Kpi}">
                         <StackPanel>
-                            <TextBlock Text="{l:T 'Маржа'}" Style="{StaticResource KpiLabel}"/>
+                            <TextBlock Text="{l:T 'Валовая маржа'}" Style="{StaticResource KpiLabel}"/>
                             <TextBlock Text="{Binding SalesMargin, StringFormat={}{0:0.#} %}" Style="{StaticResource KpiValue}"/>
                         </StackPanel>
                     </Border>
@@ -147,17 +147,17 @@
                         <DataGrid ItemsSource="{Binding SalesPager.Items}" l:Ui.RowNumberOffset="{Binding SalesPager.FirstNumber}">
                             <DataGrid.Columns>
                                 <DataGridTextColumn Header="{l:T 'Наименование'}" Binding="{Binding Product}" Width="*" MinWidth="180"/>
-                                <DataGridTextColumn Header="{l:T 'Кол-во'}" Binding="{Binding Quantity, StringFormat={}{0:0.###}}" Width="90" ElementStyle="{StaticResource RightCell}"
+                                <DataGridTextColumn Header="{l:T 'Продано'}" Binding="{Binding Quantity, StringFormat={}{0:0.###}}" Width="90" ElementStyle="{StaticResource RightCell}"
                                                     Visibility="{Binding Data.IsProductGrouping, Source={StaticResource Proxy}, Converter={StaticResource BoolToVis}}"/>
                                 <DataGridTextColumn Header="{l:T 'Ед.'}" Binding="{Binding Unit}" Width="50"
                                                     Visibility="{Binding Data.IsProductGrouping, Source={StaticResource Proxy}, Converter={StaticResource BoolToVis}}"/>
-                                <DataGridTextColumn Header="{l:T 'Чеков'}" Binding="{Binding Documents}" Width="70" ElementStyle="{StaticResource RightCell}"/>
+                                <DataGridTextColumn Header="{l:T 'Кол-во чеков'}" Binding="{Binding Documents}" Width="100" ElementStyle="{StaticResource RightCell}"/>
                                 <DataGridTextColumn Header="{l:T 'Выручка'}" Binding="{Binding Revenue, Converter={StaticResource Money}}" Width="140" ElementStyle="{StaticResource RightCell}"/>
-                                <DataGridTextColumn Header="{l:T 'Себестоимость'}" Binding="{Binding Cost, Converter={StaticResource Money}}" Width="140" ElementStyle="{StaticResource RightCell}"/>
+                                <DataGridTextColumn Header="{l:T 'Себестоимость продаж'}" Binding="{Binding Cost, Converter={StaticResource Money}}" Width="160" ElementStyle="{StaticResource RightCell}"/>
                                 <DataGridTextColumn Header="{l:T 'Прибыль'}" Binding="{Binding Profit, Converter={StaticResource Money}}" Width="140" ElementStyle="{StaticResource RightCell}"/>
-                                <DataGridTextColumn Header="{l:T 'Маржа, %'}" Binding="{Binding MarginPercent}" Width="80" ElementStyle="{StaticResource RightCell}"/>
-                                <DataGridTextColumn Header="{l:T 'Доля, %'}" Binding="{Binding SharePercent}" Width="75" ElementStyle="{StaticResource RightCell}"/>
-                                <DataGridTextColumn Header="ABC" Binding="{Binding Abc}" Width="50"
+                                <DataGridTextColumn Header="{l:T 'Валовая маржа, %'}" Binding="{Binding MarginPercent}" Width="120" ElementStyle="{StaticResource RightCell}"/>
+                                <DataGridTextColumn Header="{l:T 'Доля выручки, %'}" Binding="{Binding SharePercent}" Width="115" ElementStyle="{StaticResource RightCell}"/>
+                                <DataGridTextColumn Header="{l:T 'ABC-категория'}" Binding="{Binding Abc}" Width="110"
                                                     Visibility="{Binding Data.ShowAbc, Source={StaticResource Proxy}, Converter={StaticResource BoolToVis}}"/>
                             </DataGrid.Columns>
                         </DataGrid>
@@ -167,7 +167,7 @@
         </TabItem>
 
         <!-- ═══ Закупки ═══ -->
-        <TabItem Header="{l:T 'Закупки'}" Visibility="{l:Can reports.purchases}">
+        <TabItem Header="{l:T 'Анализ закупок'}" Visibility="{l:Can reports.purchases}">
             <DockPanel>
                 <WrapPanel Style="{StaticResource KpiRow}">
                     <Border Style="{StaticResource Kpi}">
@@ -208,7 +208,7 @@
         </TabItem>
 
         <!-- ═══ Прибыль ═══ -->
-        <TabItem Header="{l:T 'Прибыль'}" Visibility="{l:Can reports.profit}">
+        <TabItem Header="{l:T 'Прибыль и рентабельность'}" Visibility="{l:Can reports.profit}">
             <DockPanel>
                 <WrapPanel Style="{StaticResource KpiRow}">
                     <Border Style="{StaticResource Kpi}">
@@ -348,7 +348,7 @@
         </TabItem>
 
         <!-- ═══ Движение денег ═══ -->
-        <TabItem Header="{l:T 'Движение денег'}" Visibility="{l:Can reports.cash}">
+        <TabItem Header="{l:T 'Денежные потоки'}" Visibility="{l:Can reports.cash}">
             <DockPanel>
                 <WrapPanel Style="{StaticResource KpiRow}">
                     <Border Style="{StaticResource Kpi}">
@@ -424,7 +424,7 @@
         </TabItem>
 
         <!-- ═══ Остатки ═══ -->
-        <TabItem Header="{l:T 'Остатки'}" Visibility="{l:Can reports.stock}">
+        <TabItem Header="{l:T 'Анализ запасов'}" Visibility="{l:Can reports.stock}">
             <DockPanel>
                 <WrapPanel Style="{StaticResource KpiRow}">
                     <Border Style="{StaticResource Kpi}">

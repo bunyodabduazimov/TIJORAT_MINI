@@ -38,6 +38,7 @@
     <inf:BytesToImageConverter x:Key="Image"/>
     <inf:EqualsConverter x:Key="Equals"/>
     <inf:EnumNameConverter x:Key="EnumName"/>
+    <inf:ActiveStatusConverter x:Key="ActiveStatus"/>
 
     <!-- ═══════════════════════════ Окно и типографика ═══════════════════════════ -->
     <Style TargetType="Window" x:Key="AppWindow">
@@ -1025,13 +1026,20 @@
                                     <ColumnDefinition Width="*"/>
                                     <ColumnDefinition Width="Auto"/>
                                 </Grid.ColumnDefinitions>
+                                <!-- Дата только из календаря: текст не вводится и не выделяется -->
                                 <DatePickerTextBox x:Name="PART_TextBox" Style="{StaticResource DatePickerTextBoxStyle}"
                                                    Margin="{TemplateBinding Padding}" Foreground="{TemplateBinding Foreground}"
                                                    VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}"
                                                    HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
-                                                   Focusable="{TemplateBinding Focusable}"/>
-                                <Button x:Name="PART_Button" Grid.Column="1" Style="{StaticResource IconButton}" Content="&#xF0E18;"
-                                        FontSize="12" Width="24" Height="24" Margin="2,0,3,0" Focusable="False"/>
+                                                   IsReadOnly="True" IsHitTestVisible="False" Focusable="False"/>
+                                <TextBlock Grid.Column="1" Text="&#xF0E18;" FontFamily="{StaticResource IconFont}" FontSize="12"
+                                           Foreground="{DynamicResource MutedBrush}" VerticalAlignment="Center" Margin="8,0,9,0" IsHitTestVisible="False"/>
+                                <!-- Щелчок в любом месте поля открывает календарь -->
+                                <Button x:Name="PART_Button" Grid.ColumnSpan="2" Focusable="False" Cursor="Hand">
+                                    <Button.Template>
+                                        <ControlTemplate TargetType="Button"><Border Background="Transparent"/></ControlTemplate>
+                                    </Button.Template>
+                                </Button>
                             </Grid>
                         </Border>
                         <Popup x:Name="PART_Popup" AllowsTransparency="True" Placement="Bottom" HorizontalOffset="-8" VerticalOffset="4"

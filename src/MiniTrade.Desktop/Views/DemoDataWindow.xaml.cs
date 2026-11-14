@@ -75,6 +75,7 @@ public partial class DemoDataWindow : Window
         }
         catch (Exception ex)
         {
+            ErrorLog.Write(ex, GetType().Name);
             _running = false;
             MessageWindow.Show(L.F("Не удалось заполнить демо-данные:\n{0}", ex.InnerException?.Message ?? ex.Message), "TIJORAT.PRO", MessageKind.Error);
             DialogResult = false;

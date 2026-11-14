@@ -14,7 +14,7 @@ public partial class PurchasesViewModel(PurchaseService purchases, FinanceServic
     IDialogService dialogs, ICatalogDialogs catalogDialogs)
     : DocumentEditorBase(dialogs, catalogDialogs)
 {
-    public override string Title => L.T("Закуп");
+    public override string Title => L.T("Закупки");
 
     public ObservableCollection<Counterparty> Suppliers { get; } = new();
     public ObservableCollection<Warehouse> Warehouses { get; } = new();
@@ -66,7 +66,7 @@ public partial class PurchasesViewModel(PurchaseService purchases, FinanceServic
     private Purchase? _editingPurchase;
 
     public bool IsEditing => EditingPurchase is not null;
-    public string EditorTabTitle => EditingPurchase is { } p ? L.F("Изменение {0}", p.Number) : L.T("Новая закупка");
+    public string EditorTabTitle => EditingPurchase is { } p ? L.F("Изменение {0}", p.Number) : L.T("Приёмка товаров");
     public string PostLabel => IsEditing ? L.T("Сохранить изменения") : L.T("Провести закупку");
     public string PayLabel => IsEditing ? L.T("Доплатить полностью") : L.T("Оплатить полностью");
 
@@ -353,7 +353,7 @@ public partial class PurchasesViewModel(PurchaseService purchases, FinanceServic
             Fill(SelectedPayments, payments);
             OnPropertyChanged(nameof(HasPayments));
         }
-        catch (Exception ex) { Dialogs.Error(L.Message(ex)); }
+        catch (Exception ex) { ErrorLog.Write(ex, GetType().Name); Dialogs.Error(L.Message(ex)); }
     }
 
     /// <summary>Оплата долга выбранной закупки — в модальном окне.</summary>
@@ -639,7 +639,7 @@ public partial class PurchaseReturnViewModel : ObservableObject, ICloseRequest
         {
             await _purchases.CreateReturnAsync(new PurchaseReturnRequest(_purchase.Id, lines, Refund > 0 ? CashRegister?.Id : null, Reason));
         }
-        catch (Exception ex) { _dialogs.Error(L.Message(ex)); return; }
+        catch (Exception ex) { ErrorLog.Write(ex, GetType().Name); _dialogs.Error(L.Message(ex)); return; }
         Posted = true;
         CloseRequested?.Invoke(this, true);
     }

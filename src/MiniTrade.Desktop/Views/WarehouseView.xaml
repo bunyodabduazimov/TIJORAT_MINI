@@ -9,14 +9,14 @@
              mc:Ignorable="d" d:DataContext="{d:DesignInstance vm:WarehouseViewModel}">
     <TabControl SelectedIndex="{Binding SelectedTab}">
         <!-- ===================== ОСТАТКИ ===================== -->
-        <TabItem Header="{l:T 'Остатки'}" Visibility="{l:Can warehouse.stock}">
+        <TabItem Header="{l:T 'Остатки товаров'}" Visibility="{l:Can warehouse.stock}">
             <Border Style="{StaticResource Card}">
                 <DockPanel>
                     <!-- Слева действия · справа фильтр, поиск, страницы -->
                     <DockPanel DockPanel.Dock="Top" Margin="0,0,0,10">
                         <StackPanel DockPanel.Dock="Left" Orientation="Horizontal" VerticalAlignment="Center">
                             <Button Style="{StaticResource InputAddonButton}" Content="&#xF0450;" ToolTip="{l:T 'Обновить'}" Command="{Binding RefreshCommand}" Margin="0"/>
-                            <Button Content="{l:T 'Экспорт в Excel'}" Style="{StaticResource SecondaryButton}" Margin="6,0,0,0" Command="{Binding ExportBalancesCommand}"/>
+                            <Button Content="{l:T 'Экспорт'}" Style="{StaticResource SecondaryButton}" Margin="6,0,0,0" Command="{Binding ExportBalancesCommand}"/>
                         </StackPanel>
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
                             <!-- «Фильтр»: все условия — в выпадающей панели -->
@@ -78,9 +78,9 @@
                             <TextBlock Text="{Binding BalancesPager.PageInfo}" Style="{StaticResource Muted}" Margin="0,0,24,0"/>
                         </StackPanel>
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                            <TextBlock Text="{l:T 'По себестоимости: '}" Style="{StaticResource Muted}"/>
+                            <TextBlock Text="{l:T 'Стоимость запасов: '}" Style="{StaticResource Muted}"/>
                             <TextBlock Text="{Binding StockValue, Converter={StaticResource Money}}" FontWeight="SemiBold" Margin="0,0,20,0"/>
-                            <TextBlock Text="{l:T 'По ценам продажи: '}" Style="{StaticResource Muted}"/>
+                            <TextBlock Text="{l:T 'Потенциальная выручка: '}" Style="{StaticResource Muted}"/>
                             <TextBlock Text="{Binding StockSaleValue, Converter={StaticResource Money}}" FontWeight="SemiBold"/>
                         </StackPanel>
                     </DockPanel>
@@ -101,17 +101,17 @@
                             </Style>
                         </DataGrid.RowStyle>
                         <DataGrid.Columns>
-                            <DataGridTextColumn Header="{l:T 'Товар'}" Binding="{Binding Product}" Width="*" MinWidth="160"/>
+                            <DataGridTextColumn Header="{l:T 'Наименование'}" Binding="{Binding Product}" Width="*" MinWidth="160"/>
                             <DataGridTextColumn Header="{l:T 'Артикул'}" Binding="{Binding Sku}" Width="110"/>
                             <DataGridTextColumn Header="{l:T 'Категория'}" Binding="{Binding Category}" Width="130"/>
                             <DataGridTextColumn Header="{l:T 'Склад'}" Binding="{Binding Warehouse}" Width="140"/>
-                            <DataGridTextColumn Header="{l:T 'Остаток'}" Binding="{Binding Quantity, StringFormat={}{0:0.###}}" Width="90" ElementStyle="{StaticResource RightCell}"/>
-                            <DataGridTextColumn Header="{l:T 'Мин.'}" Binding="{Binding MinStock, StringFormat={}{0:0.###}}" Width="70" ElementStyle="{StaticResource RightCell}"/>
-                            <DataGridTextColumn Header="{l:T 'Ед.'}" Binding="{Binding Unit}" Width="50"/>
-                            <DataGridTextColumn Header="{l:T 'Ср. себест.'}" Binding="{Binding AvgCost, StringFormat={}{0:N2}}" Width="100" ElementStyle="{StaticResource RightCell}"/>
-                            <DataGridTextColumn Header="{l:T 'Сумма'}" Binding="{Binding CostValue, Converter={StaticResource Money}}" Width="130" ElementStyle="{StaticResource RightCell}"/>
-                            <DataGridTextColumn Header="{l:T 'Цена'}" Binding="{Binding SalePrice, StringFormat={}{0:N2}}" Width="90" ElementStyle="{StaticResource RightCell}"/>
-                            <DataGridTextColumn Header="{l:T 'Сумма по цене'}" Binding="{Binding SaleValue, Converter={StaticResource Money}}" Width="130" ElementStyle="{StaticResource RightCell}"/>
+                            <DataGridTextColumn Header="{l:T 'В наличии'}" Binding="{Binding Quantity, StringFormat={}{0:0.###}}" Width="90" ElementStyle="{StaticResource RightCell}"/>
+                            <DataGridTextColumn Header="{l:T 'Мин. остаток'}" Binding="{Binding MinStock, StringFormat={}{0:0.###}}" Width="100" ElementStyle="{StaticResource RightCell}"/>
+                            <DataGridTextColumn Header="{l:T 'Ед. изм.'}" Binding="{Binding Unit}" Width="70"/>
+                            <DataGridTextColumn Header="{l:T 'Средняя себестоимость'}" Binding="{Binding AvgCost, StringFormat={}{0:N2}}" Width="150" ElementStyle="{StaticResource RightCell}"/>
+                            <DataGridTextColumn Header="{l:T 'Стоимость запаса'}" Binding="{Binding CostValue, Converter={StaticResource Money}}" Width="130" ElementStyle="{StaticResource RightCell}"/>
+                            <DataGridTextColumn Header="{l:T 'Цена продажи'}" Binding="{Binding SalePrice, StringFormat={}{0:N2}}" Width="110" ElementStyle="{StaticResource RightCell}"/>
+                            <DataGridTextColumn Header="{l:T 'Розничная стоимость'}" Binding="{Binding SaleValue, Converter={StaticResource Money}}" Width="130" ElementStyle="{StaticResource RightCell}"/>
                         </DataGrid.Columns>
                     </DataGrid>
                 </DockPanel>
@@ -119,7 +119,7 @@
         </TabItem>
 
         <!-- ===================== ПЕРЕМЕЩЕНИЕ ===================== -->
-        <TabItem Header="{l:T 'Перемещение'}" Visibility="{l:Can warehouse.transfer}">
+        <TabItem Header="{l:T 'Перемещения'}" Visibility="{l:Can warehouse.transfer}">
           <Grid>
             <!-- ===== Реестр перемещений ===== -->
             <Grid Visibility="{Binding IsTransferEditorOpen, Converter={StaticResource InvBoolToVis}}">
@@ -593,7 +593,7 @@
         </TabItem>
 
         <!-- ===================== СПИСАНИЕ ===================== -->
-        <TabItem Header="{l:T 'Списание'}" Visibility="{l:Can warehouse.writeoff}">
+        <TabItem Header="{l:T 'Списания'}" Visibility="{l:Can warehouse.writeoff}">
           <Grid>
             <!-- ===== Реестр списаний ===== -->
             <Grid Visibility="{Binding IsWriteOffEditorOpen, Converter={StaticResource InvBoolToVis}}">
@@ -621,7 +621,7 @@
                                 </Button.ContextMenu>
                             </Button>
                             <Button Style="{StaticResource InputAddonButton}" Content="&#xF0450;" ToolTip="{l:T 'Обновить'}" Command="{Binding LoadWriteOffsCommand}" Margin="8,0,0,0"/>
-                            <Button Content="{l:T 'Экспорт в Excel'}" Style="{StaticResource SecondaryButton}" MinHeight="34" Margin="8,0,0,0" Command="{Binding ExportWriteOffsCommand}"/>
+                            <Button Content="{l:T 'Экспорт'}" Style="{StaticResource SecondaryButton}" MinHeight="34" Margin="8,0,0,0" Command="{Binding ExportWriteOffsCommand}"/>
                         </StackPanel>
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="12,0,0,0">
                             <ComboBox ItemsSource="{Binding Warehouses}" SelectedItem="{Binding WriteOffWarehouseFilter}" DisplayMemberPath="Name"
@@ -788,7 +788,7 @@
         </TabItem>
 
         <!-- ===================== ДВИЖЕНИЕ ===================== -->
-        <TabItem Header="{l:T 'Движение товаров'}" Visibility="{l:Can warehouse.movements}">
+        <TabItem Header="{l:T 'История движений'}" Visibility="{l:Can warehouse.movements}">
             <Border Style="{StaticResource Card}">
                 <DockPanel>
                     <!-- Слева период · справа фильтр, поиск, страницы -->
@@ -802,7 +802,7 @@
                             <Button Content="{l:T 'Неделя'}" Style="{StaticResource SmallButton}" Margin="4,0,0,0" Command="{Binding SetMovementPeriodCommand}" CommandParameter="week"/>
                             <Button Content="{l:T 'Месяц'}" Style="{StaticResource SmallButton}" Margin="4,0,0,0" Command="{Binding SetMovementPeriodCommand}" CommandParameter="month"/>
                             <Button Style="{StaticResource InputAddonButton}" Content="&#xF0450;" ToolTip="{l:T 'Показать'}" Command="{Binding LoadMovementsCommand}" Margin="8,0,0,0"/>
-                            <Button Content="{l:T 'Экспорт в Excel'}" Style="{StaticResource SecondaryButton}" Margin="6,0,0,0" Command="{Binding ExportMovementsCommand}"/>
+                            <Button Content="{l:T 'Экспорт'}" Style="{StaticResource SecondaryButton}" Margin="6,0,0,0" Command="{Binding ExportMovementsCommand}"/>
                         </StackPanel>
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="12,0,0,0">
                             <!-- «Фильтр»: склад, операция, товар — в выпадающей панели -->

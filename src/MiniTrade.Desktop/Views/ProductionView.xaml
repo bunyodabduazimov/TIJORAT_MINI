@@ -17,7 +17,7 @@
                 <DockPanel>
                     <DockPanel DockPanel.Dock="Top" Margin="0,0,0,10">
                         <StackPanel DockPanel.Dock="Left" Orientation="Horizontal" VerticalAlignment="Center">
-                            <Button Content="{l:T '+ Создать'}" MinHeight="34" Margin="0,0,16,0" Visibility="{l:Can production.produce}" Command="{Binding CreateOrderCommand}"/>
+                            <Button Content="{l:T '+ Новый выпуск'}" MinHeight="34" Margin="0,0,16,0" Visibility="{l:Can production.produce}" Command="{Binding CreateOrderCommand}"/>
                             <TextBlock Text="{l:T 'Период:'}" Style="{StaticResource Muted}" VerticalAlignment="Center" Margin="0,0,8,0"/>
                             <DatePicker SelectedDate="{Binding PeriodFrom}" Width="130"/>
                             <TextBlock Text="—" VerticalAlignment="Center" Margin="6,0"/>
@@ -40,29 +40,37 @@
                                  inf:Ui.Placeholder="{l:T 'Поиск: номер, продукция, склад'}"/>
                     </DockPanel>
                     <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Margin="0,8,0,0">
-                        <TextBlock Text="{l:T 'Документов: '}" Style="{StaticResource Muted}"/>
+                        <TextBlock Text="{l:T 'Всего выпусков: '}" Style="{StaticResource Muted}"/>
                         <TextBlock Text="{Binding OrdersCount}" FontWeight="SemiBold" Margin="0,0,20,0"/>
                         <TextBlock Text="{l:T 'Себестоимость выпуска: '}" Style="{StaticResource Muted}"/>
                         <TextBlock Text="{Binding OrdersCost, Converter={StaticResource Money}}" FontWeight="SemiBold"/>
                         <TextBlock Text="{l:T '   (двойной клик — открыть документ)'}" Style="{StaticResource Muted}"/>
                     </StackPanel>
+                    <Grid>
                     <DataGrid ItemsSource="{Binding OrdersView}" SelectedItem="{Binding SelectedOrder}" IsReadOnly="True">
                         <DataGrid.InputBindings>
                             <MouseBinding Gesture="LeftDoubleClick" Command="{Binding OpenOrderDetailCommand}"/>
                             <KeyBinding Key="Enter" Command="{Binding OpenOrderDetailCommand}"/>
                         </DataGrid.InputBindings>
                         <DataGrid.Columns>
-                            <DataGridTextColumn Header="{l:T 'Номер'}" Binding="{Binding Number}" Width="100"/>
-                            <DataGridTextColumn Header="{l:T 'Дата'}" Binding="{Binding Date, StringFormat={}{0:dd.MM.yyyy HH:mm}}" Width="130"/>
-                            <DataGridTextColumn Header="{l:T 'Продукция'}" Binding="{Binding Product.Name}" Width="*" MinWidth="160"/>
-                            <DataGridTextColumn Header="{l:T 'Кол-во'}" Binding="{Binding Quantity, StringFormat={}{0:0.###}}" Width="80" ElementStyle="{StaticResource RightCell}"/>
-                            <DataGridTextColumn Header="{l:T 'Себест. ед.'}" Binding="{Binding UnitCost, StringFormat={}{0:N2}}" Width="100" ElementStyle="{StaticResource RightCell}"/>
-                            <DataGridTextColumn Header="{l:T 'Сумма'}" Binding="{Binding TotalCost, Converter={StaticResource Money}}" Width="120" ElementStyle="{StaticResource RightCell}"/>
-                            <DataGridTextColumn Header="{l:T 'Склад'}" Binding="{Binding Warehouse.Name}" Width="140"/>
+                            <DataGridTextColumn Header="{l:T '№ документа'}" Binding="{Binding Number}" Width="100"/>
+                            <DataGridTextColumn Header="{l:T 'Дата выпуска'}" Binding="{Binding Date, StringFormat={}{0:dd.MM.yyyy HH:mm}}" Width="130"/>
+                            <DataGridTextColumn Header="{l:T 'Готовая продукция'}" Binding="{Binding Product.Name}" Width="*" MinWidth="160"/>
+                            <DataGridTextColumn Header="{l:T 'Количество'}" Binding="{Binding Quantity, StringFormat={}{0:0.###}}" Width="100" ElementStyle="{StaticResource RightCell}"/>
+                            <DataGridTextColumn Header="{l:T 'Себестоимость ед.'}" Binding="{Binding UnitCost, StringFormat={}{0:N2}}" Width="130" ElementStyle="{StaticResource RightCell}"/>
+                            <DataGridTextColumn Header="{l:T 'Общая себестоимость'}" Binding="{Binding TotalCost, Converter={StaticResource Money}}" Width="150" ElementStyle="{StaticResource RightCell}"/>
+                            <DataGridTextColumn Header="{l:T 'Склад поступления'}" Binding="{Binding Warehouse.Name}" Width="150"/>
                             <DataGridTextColumn Header="{l:T 'Техкарта'}" Binding="{Binding Recipe.Name}" Width="140"/>
-                            <DataGridTextColumn Header="{l:T 'Комментарий'}" Binding="{Binding Comment}" Width="160"/>
+                            <DataGridTextColumn Header="{l:T 'Примечание'}" Binding="{Binding Comment}" Width="160"/>
                         </DataGrid.Columns>
                     </DataGrid>
+                        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,40,0,0"
+                                    Visibility="{Binding OrdersCount, Converter={StaticResource InvBoolToVis}}">
+                            <TextBlock Text="{l:T 'Выпусков продукции пока нет'}" Style="{StaticResource Muted}" HorizontalAlignment="Center" TextAlignment="Center"/>
+                            <Button Content="{l:T 'Создать выпуск'}" HorizontalAlignment="Center" MinHeight="34" Margin="0,12,0,0"
+                                    Visibility="{l:Can production.produce}" Command="{Binding CreateOrderCommand}"/>
+                        </StackPanel>
+                    </Grid>
                 </DockPanel>
             </Border>
 
@@ -226,7 +234,7 @@
         </TabItem>
 
         <!-- ===================== ТЕХКАРТЫ ===================== -->
-        <TabItem Header="{l:T 'Техкарты'}">
+        <TabItem Header="{l:T 'Технологические карты'}">
           <Grid>
             <!-- ===== Список техкарт ===== -->
             <Border Style="{StaticResource Card}" Visibility="{Binding IsRecipeEditorOpen, Converter={StaticResource InvBoolToVis}}">

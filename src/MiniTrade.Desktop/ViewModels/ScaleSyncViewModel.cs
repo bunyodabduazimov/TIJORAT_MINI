@@ -67,7 +67,7 @@ public partial class ScaleSyncViewModel : ObservableObject
             foreach (var p in list) Items.Add(p);
             OnPropertyChanged(nameof(Count));
         }
-        catch (Exception ex) { _dialogs.Error(ex.Message); }
+        catch (Exception ex) { ErrorLog.Write(ex, GetType().Name); _dialogs.Error(ex.Message); }
     }
 
     private bool CanSync => !IsBusy;
@@ -103,7 +103,7 @@ public partial class ScaleSyncViewModel : ObservableObject
             else if (results.Any(r => !r.Online || r.Errors.Count > 0)) _dialogs.Error(sb.ToString().TrimEnd());
             else _dialogs.Info(L.T("Обновление весов завершено.") + "\n\n" + sb.ToString().TrimEnd());
         }
-        catch (Exception ex) { _dialogs.Error(ex.Message); }
+        catch (Exception ex) { ErrorLog.Write(ex, GetType().Name); _dialogs.Error(ex.Message); }
         finally { IsBusy = false; }
     }
 }

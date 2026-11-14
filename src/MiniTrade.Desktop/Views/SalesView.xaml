@@ -226,7 +226,7 @@
                                             </Style>
                                         </DataGridTextColumn.ElementStyle>
                                     </DataGridTextColumn>
-                                    <DataGridTextColumn Header="{l:T 'В чеке'}" Binding="{Binding InCartQuantity, StringFormat={}{0:0.###}}" Width="64" ElementStyle="{StaticResource RightCell}"/>
+                                    <DataGridTextColumn Header="{l:T 'Кол-во'}" Binding="{Binding InCartQuantity, StringFormat={}{0:0.###}}" Width="64" ElementStyle="{StaticResource RightCell}"/>
                                 </DataGrid.Columns>
                             </DataGrid>
 
@@ -249,7 +249,7 @@
                     <DockPanel>
                         <!-- Заголовок чека -->
                         <DockPanel DockPanel.Dock="Top" Margin="0,0,0,10">
-                            <Button DockPanel.Dock="Right" Style="{StaticResource SmallButton}" Content="{l:T 'Очистить'}" Command="{Binding NewSaleCommand}"
+                            <Button DockPanel.Dock="Right" Style="{StaticResource SmallButton}" Content="{l:T 'Очистить чек'}" Command="{Binding NewSaleCommand}"
                                     ToolTip="{l:T 'Начать новую продажу'}"/>
                             <!-- Черновики: отложенные чеки -->
                             <Grid DockPanel.Dock="Right" Margin="0,0,6,0">
@@ -260,7 +260,7 @@
                                                     BorderThickness="1" CornerRadius="6" Padding="10,0" MinHeight="32" TextElement.Foreground="{TemplateBinding Foreground}">
                                                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                                                     <TextBlock Text="&#xF0150;" FontFamily="{StaticResource IconFont}" FontSize="16" Foreground="{DynamicResource WarningBrush}" VerticalAlignment="Center" Margin="0,0,6,0"/>
-                                                    <TextBlock Text="{l:T 'Черновики'}" VerticalAlignment="Center"/>
+                                                    <TextBlock Text="{l:T 'Отложенные чеки'}" VerticalAlignment="Center"/>
                                                     <Border x:Name="Badge" CornerRadius="8" Background="{DynamicResource WarningBrush}" Padding="6,0" Margin="6,0,0,0" MinWidth="18"
                                                             Visibility="{Binding HasDrafts, Converter={StaticResource BoolToVis}}">
                                                         <TextBlock Text="{Binding DraftsCount}" Foreground="White" FontSize="11" FontWeight="SemiBold" HorizontalAlignment="Center"/>
@@ -327,7 +327,7 @@
                                 </Popup>
                             </Grid>
                             <TextBlock VerticalAlignment="Center" FontSize="16" FontWeight="SemiBold">
-                                <Run Text="{l:T 'Чек'}"/><Run Text="  "/><Run Text="{Binding ItemsCount, Mode=OneWay}" Foreground="{DynamicResource MutedBrush}" FontWeight="Normal" FontSize="13"/><Run Text=" " /><Run Text="{l:T 'поз.'}" Foreground="{DynamicResource MutedBrush}" FontWeight="Normal" FontSize="13"/>
+                                <Run Text="{l:T 'Текущий чек'}"/><Run Text="  "/><Run Text="{Binding ItemsCount, Mode=OneWay}" Foreground="{DynamicResource MutedBrush}" FontWeight="Normal" FontSize="13"/><Run Text=" " /><Run Text="{l:T 'поз.'}" Foreground="{DynamicResource MutedBrush}" FontWeight="Normal" FontSize="13"/>
                             </TextBlock>
                         </DockPanel>
 
@@ -380,14 +380,14 @@
                                 <Button Style="{StaticResource SecondaryButton}" MinHeight="48" Command="{Binding SaveDraftCommand}" ToolTip="{l:T 'Сохранить чек в черновики и начать новый'}">
                                     <StackPanel Orientation="Horizontal">
                                         <TextBlock Text="&#xF03E4;" FontFamily="{StaticResource IconFont}" FontSize="18" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                                        <TextBlock Text="{l:T 'Отложить'}"/>
+                                        <TextBlock Text="{l:T 'Отложить чек'}"/>
                                         <TextBlock Text="F8" Opacity="0.6" FontWeight="Normal" FontSize="12" Margin="8,1,0,0"/>
                                     </StackPanel>
                                 </Button>
                                 <Button Grid.Column="2" Style="{StaticResource SuccessButton}" MinHeight="48" FontSize="15" Command="{Binding CheckoutCommand}">
                                     <StackPanel Orientation="Horizontal">
                                         <TextBlock Text="&#xF012C;" FontFamily="{StaticResource IconFont}" FontSize="20" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                                        <TextBlock Text="{l:T 'Оформить'}" VerticalAlignment="Center"/>
+                                        <TextBlock Text="{l:T 'Перейти к оплате'}" VerticalAlignment="Center"/>
                                         <TextBlock Text="F9" Opacity="0.7" FontWeight="Normal" FontSize="12" Margin="10,2,0,0"/>
                                     </StackPanel>
                                 </Button>
@@ -463,7 +463,7 @@
         </TabItem>
 
         <!-- История продаж: журнал как в «Финансах» — период, фильтр, поиск, страницы; «⋯» в строке — действия -->
-        <TabItem Header="{l:T 'История продаж'}" Visibility="{l:Can sales.history.view}">
+        <TabItem Header="{l:T 'Все продажи'}" Visibility="{l:Can sales.history.view}">
             <Border Style="{StaticResource Card}">
                 <DockPanel>
                     <!-- Панель журнала: период слева, фильтр и поиск справа -->

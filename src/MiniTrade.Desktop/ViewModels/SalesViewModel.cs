@@ -71,7 +71,7 @@ public partial class SalesViewModel(SalesService sales, CatalogService catalog, 
     private Sale? _editingSale;
 
     public bool IsEditingSale => EditingSale is not null;
-    public string EditorTabTitle => EditingSale is { } s ? L.F("Изменение {0}", s.Number) : L.T("Новая продажа");
+    public string EditorTabTitle => EditingSale is { } s ? L.F("Изменение {0}", s.Number) : L.T("Касса (POS)");
 
     [RelayCommand]
     private async Task PostSaleAsync()
@@ -111,7 +111,7 @@ public partial class SalesViewModel(SalesService sales, CatalogService catalog, 
                     var full = await sales.GetSaleAsync(sale.Id);
                     if (full is not null) fiscalError = await FiscalPrinter.SaleAsync(full, payments, change, CashRegisters);
                 }
-                catch (Exception ex) { fiscalError = ex.Message; }
+                catch (Exception ex) { ErrorLog.Write(ex, GetType().Name); fiscalError = ex.Message; }
 
                 // Чек на ККТ не пробит — продажу не сохраняем: откатываем её, корзина остаётся для повтора
                 if (fiscalError is not null)
@@ -455,13 +455,13 @@ public partial class SaleReturnViewModel : ObservableObject, ICloseRequest
         {
             await _sales.CreateReturnAsync(new SaleReturnRequest(_sale.Id, CashRegister.Id, lines, Reason));
         }
-        catch (Exception ex) { _dialogs.Error(L.Message(ex)); return; }
+        catch (Exception ex) { ErrorLog.Write(ex, GetType().Name); _dialogs.Error(L.Message(ex)); return; }
         Posted = true;
         if (FiscalPrinter.Enabled)
         {
             string? fiscalError;
             try { fiscalError = await FiscalPrinter.ReturnAsync(_sale, lines, CashRegister); }
-            catch (Exception ex) { fiscalError = ex.Message; }
+            catch (Exception ex) { ErrorLog.Write(ex, GetType().Name); fiscalError = ex.Message; }
             if (fiscalError is not null)
                 _dialogs.Error(L.F("Возврат оформлен, но чек возврата на ККТ не пробит:\n{0}", fiscalError));
         }

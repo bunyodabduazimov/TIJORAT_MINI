@@ -120,7 +120,7 @@ public abstract partial class OperationViewModel : ObservableObject, ICloseReque
             CloseRequested?.Invoke(this, true);
         }
         catch (BusinessException ex) { ErrorMessage = L.Message(ex); }
-        catch (Exception ex) { ErrorMessage = L.F("Непредвиденная ошибка: {0}", ex.Message); }
+        catch (Exception ex) { ErrorLog.Write(ex, GetType().Name); ErrorMessage = L.F("Непредвиденная ошибка: {0}", ex.Message); }
         finally { IsBusy = false; }
     }
 }

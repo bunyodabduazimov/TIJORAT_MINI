@@ -14,6 +14,7 @@ public sealed record AuditRow(AuditLog Log, string ActionName, string ObjectType
 {
     public bool IsDelete => Log.Action is AuditAction.Delete or AuditAction.Archive;
     public bool IsCreate => Log.Action is AuditAction.Create or AuditAction.Restore;
+    public bool IsUpdate => Log.Action is AuditAction.Update;
 }
 
 
@@ -29,7 +30,7 @@ public partial class AuditLogViewModel : PageViewModel
         Pager = new(Match);
     }
 
-    public override string Title => L.T("Журнал действий");
+    public override string Title => L.T("История действий");
 
     public ReportPager<AuditRow> Pager { get; }
 
@@ -85,7 +86,7 @@ public partial class AuditLogViewModel : PageViewModel
         {
             "today" => DateTime.Today,
             "week" => DateTime.Today.AddDays(-6),
-            _ => DateTime.Today.AddMonths(-1).AddDays(1)
+            _ => DateTime.Today.AddDays(-29)
         };
         return LoadRowsAsync();
     }
@@ -149,7 +150,7 @@ public partial class AuditLogViewModel : PageViewModel
         nameof(FinanceArticle) => L.T("Статья"),
         nameof(Sale) => L.T("Продажа"),
         nameof(SaleReturn) => L.T("Возврат"),
-        nameof(Purchase) => L.T("Закуп"),
+        nameof(Purchase) => L.T("Закупки"),
         nameof(StockTransfer) => L.T("Перемещение"),
         nameof(InventoryCount) => L.T("Инвентаризация"),
         nameof(StockWriteOff) => L.T("Списание"),

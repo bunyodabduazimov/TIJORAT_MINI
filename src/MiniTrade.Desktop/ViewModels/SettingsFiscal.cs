@@ -80,7 +80,7 @@ public partial class SettingsViewModel
             if (r.Ok) Dialogs.Info(done + (r.FdNumberOrNull() is { } fd ? "\n" + L.F("Номер ФД: {0}", fd) : ""));
             else Dialogs.Error(r.Error);
         }
-        catch (Exception ex) { Dialogs.Error(ex.Message); }
+        catch (Exception ex) { ErrorLog.Write(ex, GetType().Name); Dialogs.Error(ex.Message); }
         finally { FiscalBusy = false; }
     }
 
@@ -108,7 +108,7 @@ public partial class SettingsViewModel
                 L.F("Срок ФН: {0} дн.", S("fnLifetimeInDays"))
             });
         }
-        catch (Exception ex) { FiscalStatus = ex.Message; }
+        catch (Exception ex) { ErrorLog.Write(ex, GetType().Name); FiscalStatus = ex.Message; }
         finally { FiscalBusy = false; }
     }
 

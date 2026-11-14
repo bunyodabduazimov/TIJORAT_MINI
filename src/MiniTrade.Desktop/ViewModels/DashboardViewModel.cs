@@ -23,7 +23,7 @@ public sealed record Numbered<T>(int No, T Item);
 public partial class DashboardViewModel(DashboardService dashboard, IDialogService dialogs) : PageViewModel(dialogs)
 {
     private const double ChartHeight = 160;
-    public override string Title => L.T("Главная");
+    public override string Title => L.T("Обзор");
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(TodayChangeText), nameof(TodayChangeKind), nameof(HasSalesThisWeek),

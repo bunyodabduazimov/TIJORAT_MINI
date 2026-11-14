@@ -55,7 +55,7 @@ public partial class ReportsViewModel : PageViewModel
         _grouping = Groupings[0];
     }
 
-    public override string Title => L.T("Отчёты");
+    public override string Title => L.T("Аналитика");
 
     public ObservableCollection<CashFlowRow> CashRows { get; } = new();
     public ObservableCollection<CashCategoryRow> CashCategories { get; } = new();
@@ -89,6 +89,7 @@ public partial class ReportsViewModel : PageViewModel
         }
         catch (Exception ex)
         {
+            ErrorLog.Write(ex, GetType().Name);
             Dialogs.Error(L.F("Непредвиденная ошибка: {0}", ex.Message));
             return;
         }
@@ -203,6 +204,7 @@ public partial class ReportsViewModel : PageViewModel
         }
         catch (Exception ex)
         {
+            ErrorLog.Write(ex, GetType().Name);
             Dialogs.Error(L.F("Непредвиденная ошибка: {0}", ex.Message));
         }
         // При открытии страницы данные могли измениться в других модулях
@@ -317,6 +319,7 @@ public partial class ReportsViewModel : PageViewModel
         }
         catch (Exception ex)
         {
+            ErrorLog.Write(ex, GetType().Name);
             Dialogs.Error(L.F("Непредвиденная ошибка: {0}", ex.Message));
         }
         finally
@@ -343,11 +346,11 @@ public partial class ReportsViewModel : PageViewModel
     {
         var (name, lines) = SelectedTab switch
         {
-            SalesTab => (L.T("Продажи") + " - " + Grouping.Name, SalesLines()),
-            PurchasesTab => (L.T("Закупки"), PurchaseLines()),
-            ProfitTab => (L.T("Прибыль"), ProfitLines()),
-            CashTab => (L.T("Движение денег"), CashLines()),
-            _ => (L.T("Остатки"), StockLines())
+            SalesTab => (L.T("Анализ продаж") + " - " + Grouping.Name, SalesLines()),
+            PurchasesTab => (L.T("Анализ закупок"), PurchaseLines()),
+            ProfitTab => (L.T("Прибыль и рентабельность"), ProfitLines()),
+            CashTab => (L.T("Денежные потоки"), CashLines()),
+            _ => (L.T("Анализ запасов"), StockLines())
         };
         var safeName = string.Concat(name.Split(Path.GetInvalidFileNameChars()));
         var suffix = SelectedTab == StockTab ? DateTime.Today.ToString("yyyyMMdd") : $"{From:yyyyMMdd}-{To:yyyyMMdd}";

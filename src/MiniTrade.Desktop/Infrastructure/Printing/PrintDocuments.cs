@@ -214,6 +214,23 @@ public static class PrintDocuments
         return doc;
     }
 
+    // ───────────────────────────── Таблица-отчёт ─────────────────────────────
+
+    /// <summary>Простой отчёт A4: организация, заголовок, подзаголовок, таблица и строки итогов.</summary>
+    public static FlowDocument TableReport(string title, string? subtitle, CompanySettings company,
+        List<(string Header, GridLength Width, bool Right)> cols, IEnumerable<List<string>> rows, IEnumerable<string> totals, bool landscape = false)
+    {
+        const double fs = 10;
+        var doc = A4Document(fs, landscape);
+        doc.Blocks.Add(P(company.Name, fs, muted: true, bottom: 6));
+        doc.Blocks.Add(P(title, fs + 6, bold: true, bottom: 2));
+        if (!string.IsNullOrWhiteSpace(subtitle)) doc.Blocks.Add(P(subtitle, fs, muted: true, bottom: 6));
+        doc.Blocks.Add(ItemsTable(cols, fs, rows, ContentWidth(doc), top: 8, grid: true));
+        foreach (var t in totals) doc.Blocks.Add(P(t, fs + 1, bold: true, top: 4, align: TextAlignment.Right));
+        doc.Blocks.Add(P(L.F("Сформировано {0:dd.MM.yyyy HH:mm}", DateTime.Now), fs - 1, muted: true, top: 12));
+        return doc;
+    }
+
     // ───────────────────────────── Этикетки ─────────────────────────────
 
     /// <summary>Каждая этикетка — отдельная страница размером с этикетку (для принтеров этикеток).</summary>

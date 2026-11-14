@@ -87,13 +87,13 @@ public partial class ProfileViewModel : ViewModelBase, ICloseRequest
 
     public IReadOnlyList<Choice<string>> StartPages { get; } =
     [
-        new(nameof(DashboardViewModel), L.T("Главная")),
+        new(nameof(DashboardViewModel), L.T("Обзор")),
         new(nameof(FinanceViewModel), L.T("Финансы")),
         new(nameof(SalesViewModel), L.T("Продажи")),
-        new(nameof(PurchasesViewModel), L.T("Закуп")),
+        new(nameof(PurchasesViewModel), L.T("Закупки")),
         new(nameof(WarehouseViewModel), L.T("Склад")),
-        new(nameof(CatalogViewModel), L.T("Справочники")),
-        new(nameof(ReportsViewModel), L.T("Отчёты")),
+        new(nameof(CatalogViewModel), L.T("Каталоги")),
+        new(nameof(ReportsViewModel), L.T("Аналитика")),
     ];
     [ObservableProperty] private Choice<string>? _startPage;
     [ObservableProperty] private bool _menuCollapsed;

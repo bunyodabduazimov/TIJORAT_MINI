@@ -28,6 +28,7 @@ public abstract partial class ViewModelBase : ObservableObject
         }
         catch (Exception ex)
         {
+            ErrorLog.Write(ex, GetType().Name);
             Dialogs.Error(L.F("Непредвиденная ошибка: {0}", ex.Message));
         }
         finally

@@ -95,6 +95,15 @@ public sealed class EnumNameConverter : IValueConverter
     public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture) => Binding.DoNothing;
 }
 
+/// <summary>Флаг активности → «Активен» / «Неактивен».</summary>
+public sealed class ActiveStatusConverter : IValueConverter
+{
+    public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture) =>
+        value is true ? L.T("Активен") : L.T("Неактивен");
+
+    public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture) => Binding.DoNothing;
+}
+
 /// <summary>[доля 0..1, ширина дорожки] → ширина заполненной части (полоски на главной).</summary>
 public static class Ratio
 {

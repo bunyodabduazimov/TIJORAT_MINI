@@ -158,12 +158,12 @@ public static class PermissionCatalog
 
     public static readonly IReadOnlyList<PermModule> Modules =
     [
-        new("dashboard", "Главная", [new(Perm.DashboardView, "Просмотр")]),
+        new("dashboard", "Обзор", [new(Perm.DashboardView, "Просмотр")]),
         new("sales", "Продажи", [], [
             new("sales.pos", "Продажа", [new(Perm.SalesCreate, "Оформление продажи"), new(Perm.SalesEdit, "Изменение продажи")]),
             new("sales.history", "История продаж", [new(Perm.SalesHistory, "Просмотр"), new(Perm.SalesDelete, "Удаление")]),
             new("sales.returns", "Возвраты", [new(Perm.SalesReturnsView, "Просмотр"), new(Perm.SalesReturn, "Оформление возврата")])]),
-        new("purchases", "Закуп", [], [
+        new("purchases", "Закупки", [], [
             new("purchases.editor", "Новая закупка", [new(Perm.PurchasesCreate, "Создание"), new(Perm.PurchasesEdit, "Изменение")]),
             new("purchases.history", "История закупок", [
                 new(Perm.PurchasesHistory, "Просмотр"), new(Perm.PurchasesDelete, "Удаление"), new(Perm.PurchasesReturn, "Возврат поставщику")]),
@@ -190,7 +190,7 @@ public static class PermissionCatalog
                 new(Perm.FinanceAccrualEdit, "Изменение"), new(Perm.FinanceAccrualDelete, "Удаление")]),
             new("finance.transfer", "Перевод между кассами", [
                 new(Perm.FinanceTransferView, "Просмотр"), new(Perm.FinanceTransferCreate, "Создание")])]),
-        new("catalog", "Справочники", [], [
+        new("catalog", "Каталоги", [], [
             Crud("catalog.products", "Товары и услуги", new PermAction(Perm.CatalogProductsImport, "Импорт"), new PermAction(Perm.CatalogProductsPrices, "Изменение цен")),
             Crud("catalog.categories", "Категории"),
             Crud("catalog.units", "Единицы"),
@@ -200,10 +200,10 @@ public static class PermissionCatalog
             Crud("catalog.warehouses", "Склады"),
             Crud("catalog.cashregisters", "Кассы"),
             Crud("catalog.articles", "Статьи доходов и расходов")]),
-        new("reports", "Отчёты", [
+        new("reports", "Аналитика", [
             new(Perm.ReportsSales, "Продажи"), new(Perm.ReportsPurchases, "Закупки"),
             new(Perm.ReportsProfit, "Прибыль"), new(Perm.ReportsCash, "Движение денег"), new(Perm.ReportsStock, "Остатки")]),
-        new("audit", "Журнал действий", [new(Perm.AuditView, "Просмотр")]),
+        new("audit", "История действий", [new(Perm.AuditView, "Просмотр")]),
         new("settings", "Настройки", [
             new(Perm.SettingsCompany, "Компания"), new(Perm.SettingsUsers, "Пользователи"), new(Perm.SettingsRoles, "Роли"),
             new(Perm.SettingsPrint, "Печать"), new(Perm.SettingsLicense, "Лицензия"), new(Perm.SettingsDatabase, "База данных"),

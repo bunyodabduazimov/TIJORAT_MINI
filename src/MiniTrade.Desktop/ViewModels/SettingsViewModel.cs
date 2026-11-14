@@ -539,12 +539,29 @@ public partial class SettingsViewModel(
     }
 
     [RelayCommand]
-    private void OpenBackupFolder()
+    private void OpenBackupFolder() => OpenInExplorer(BackupFolder, createFolder: true);
+
+    // ── Журнал ошибок ──
+    public string ErrorLogFolder => ErrorLog.Folder;
+    public string ErrorLogHint => L.F("Непредвиденные ошибки записываются в текстовые файлы — на каждый день отдельный файл. Файлы старше {0} дней удаляются автоматически. При обращении в поддержку отправьте файл за нужный день.", ErrorLog.KeepDays);
+
+    [RelayCommand]
+    private void OpenErrorLogFolder() => OpenInExplorer(ErrorLog.Folder, createFolder: true);
+
+    [RelayCommand]
+    private void OpenTodayErrorLog()
+    {
+        if (!File.Exists(ErrorLog.TodayFile)) { Dialogs.Info(L.T("За сегодня ошибок нет.")); return; }
+        try { System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(ErrorLog.TodayFile) { UseShellExecute = true }); }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or System.ComponentModel.Win32Exception) { Dialogs.Error(ex.Message); }
+    }
+
+    private void OpenInExplorer(string folder, bool createFolder)
     {
         try
         {
-            Directory.CreateDirectory(BackupFolder);
-            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("explorer.exe", $"\"{BackupFolder}\"") { UseShellExecute = true });
+            if (createFolder) Directory.CreateDirectory(folder);
+            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("explorer.exe", $"\"{folder}\"") { UseShellExecute = true });
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or System.ComponentModel.Win32Exception)
         {
@@ -634,6 +651,7 @@ public partial class SettingsViewModel(
         }
         catch (Exception ex)
         {
+            ErrorLog.Write(ex, GetType().Name);
             DemoRunning = false;
             Dialogs.Error(L.F("Не удалось заполнить демо-данные:\n{0}", ex.InnerException?.Message ?? ex.Message));
             return;

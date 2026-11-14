@@ -42,11 +42,11 @@ public static class Ui
     public static void SetClearsText(DependencyObject d, bool value) => d.SetValue(ClearsTextProperty, value);
 
     /// <summary>
-    /// Кнопка «×» в выпадающем списке: сбрасывает выбор. Показывается, когда что-то выбрано и пустое значение допустимо —
-    /// у списка задан Placeholder («Все склады», «Розничный покупатель») или явно Ui.Clearable="True".
+    /// Кнопка «×» в выпадающем списке: сбрасывает выбор. Показывается во всех списках, когда что-то выбрано;
+    /// отключается явно: Ui.Clearable="False".
     /// </summary>
     public static readonly DependencyProperty ClearableProperty = DependencyProperty.RegisterAttached(
-        "Clearable", typeof(bool), typeof(Ui), new PropertyMetadata(false));
+        "Clearable", typeof(bool), typeof(Ui), new PropertyMetadata(true));
 
     public static bool GetClearable(DependencyObject d) => (bool)d.GetValue(ClearableProperty);
     public static void SetClearable(DependencyObject d, bool value) => d.SetValue(ClearableProperty, value);
@@ -76,7 +76,8 @@ public static class Ui
         public object Convert(object[] v, Type t, object? p, System.Globalization.CultureInfo c)
         {
             var selected = v.Length > 0 && v[0] is not null && v[0] != DependencyProperty.UnsetValue;
-            var allowed = (v.Length > 1 && v[1] is string s && s.Length > 0) || (v.Length > 2 && v[2] is true);
+            // Сбросить выбор можно в любом списке, кроме явно запрещённых (Ui.Clearable="False")
+            var allowed = v.Length <= 2 || v[2] is not false;
             var enabled = v.Length <= 3 || v[3] is true;
             return selected && allowed && enabled ? Visibility.Visible : Visibility.Collapsed;
         }

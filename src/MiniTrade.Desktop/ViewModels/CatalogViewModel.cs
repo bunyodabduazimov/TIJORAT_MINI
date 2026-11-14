@@ -31,6 +31,9 @@ public partial class CatalogEditor<T> : ObservableObject where T : class, ICatal
 
     public string Title { get; }
 
+    /// <summary>Текст кнопки создания на панели вкладки.</summary>
+    public string NewLabel { get; init; } = L.T("+ Добавить");
+
     // Права вкладки: catalog.<вкладка>.create/edit/delete
     public bool CanCreate { get; } = Core.Services.Access.Can(Perm.Catalog(typeof(T), "create"));
     public bool CanEdit { get; } = Core.Services.Access.Can(Perm.Catalog(typeof(T), "edit"));
@@ -136,7 +139,7 @@ public partial class CatalogEditor<T> : ObservableObject where T : class, ICatal
     private async Task SafeLoadAsync()
     {
         try { await LoadAsync(); }
-        catch (Exception ex) { _dialogs.Error(L.F("Непредвиденная ошибка: {0}", ex.Message)); }
+        catch (Exception ex) { ErrorLog.Write(ex, GetType().Name); _dialogs.Error(L.F("Непредвиденная ошибка: {0}", ex.Message)); }
     }
 
     private bool CanPrev() => Page > 1;
@@ -194,22 +197,22 @@ public partial class CatalogViewModel : PageViewModel
         _settings = settings;
         _transfer = transfer;
         _scaleSync = scaleSync;
-        Products = new(L.T("Товары"), catalog, dialogs, catalogDialogs);
-        Categories = new(L.T("Категории"), catalog, dialogs, catalogDialogs);
-        Units = new(L.T("Единицы"), catalog, dialogs, catalogDialogs);
-        Scales = new(L.T("Весы"), catalog, dialogs, catalogDialogs);
-        Counterparties = new(L.T("Контрагенты"), catalog, dialogs, catalogDialogs);
-        CounterpartyGroups = new(L.T("Группы контрагентов"), catalog, dialogs, catalogDialogs);
-        Warehouses = new(L.T("Склады"), catalog, dialogs, catalogDialogs);
-        CashRegisters = new(L.T("Кассы"), catalog, dialogs, catalogDialogs);
-        Articles = new(L.T("Статьи"), catalog, dialogs, catalogDialogs);
+        Products = new(L.T("Товары"), catalog, dialogs, catalogDialogs) { NewLabel = L.T("+ Новый товар") };
+        Categories = new(L.T("Категории"), catalog, dialogs, catalogDialogs) { NewLabel = L.T("+ Новая категория") };
+        Units = new(L.T("Единицы"), catalog, dialogs, catalogDialogs) { NewLabel = L.T("+ Новая единица") };
+        Scales = new(L.T("Весы"), catalog, dialogs, catalogDialogs) { NewLabel = L.T("+ Новые весы") };
+        Counterparties = new(L.T("Контрагенты"), catalog, dialogs, catalogDialogs) { NewLabel = L.T("+ Новый контрагент") };
+        CounterpartyGroups = new(L.T("Группы контрагентов"), catalog, dialogs, catalogDialogs) { NewLabel = L.T("+ Новая группа") };
+        Warehouses = new(L.T("Склады"), catalog, dialogs, catalogDialogs) { NewLabel = L.T("+ Новый склад") };
+        CashRegisters = new(L.T("Кассы"), catalog, dialogs, catalogDialogs) { NewLabel = L.T("+ Новая касса") };
+        Articles = new(L.T("Статьи"), catalog, dialogs, catalogDialogs) { NewLabel = L.T("+ Новая статья") };
         // Название категории показывается в таблице товаров
         Categories.Changed += async (_, _) => await Products.LoadAsync();
         Units.Changed += async (_, _) => await Products.LoadAsync(); // переименование единицы меняет товары
         CounterpartyGroups.Changed += async (_, _) => await Counterparties.LoadAsync();
     }
 
-    public override string Title => L.T("Справочники");
+    public override string Title => L.T("Каталоги");
 
     public CatalogEditor<Product> Products { get; }
     public CatalogEditor<Category> Categories { get; }

@@ -225,7 +225,7 @@ public partial class CatalogEditViewModel<T> : ObservableObject, ICloseRequest w
             CloseRequested?.Invoke(this, true);
         }
         catch (BusinessException ex) { ErrorMessage = L.Message(ex); }
-        catch (Exception ex) { ErrorMessage = L.F("Не удалось сохранить: {0}", ex.Message); }
+        catch (Exception ex) { ErrorLog.Write(ex, GetType().Name); ErrorMessage = L.F("Не удалось сохранить: {0}", ex.Message); }
         finally { IsBusy = false; }
     }
 
@@ -242,7 +242,7 @@ public partial class CatalogEditViewModel<T> : ObservableObject, ICloseRequest w
             CloseRequested?.Invoke(this, true);
         }
         catch (BusinessException ex) { ErrorMessage = L.Message(ex); }
-        catch (Exception ex) { ErrorMessage = L.F("Не удалось удалить: {0}", ex.Message); }
+        catch (Exception ex) { ErrorLog.Write(ex, GetType().Name); ErrorMessage = L.F("Не удалось удалить: {0}", ex.Message); }
         finally { IsBusy = false; }
     }
 
@@ -280,6 +280,7 @@ public partial class CatalogEditViewModel<T> : ObservableObject, ICloseRequest w
         }
         catch (Exception ex)
         {
+            ErrorLog.Write(ex, GetType().Name);
             TestOk = false;
             TestMessage = ex.Message;
         }
@@ -311,7 +312,7 @@ public partial class CatalogEditViewModel<T> : ObservableObject, ICloseRequest w
         ErrorMessage = null;
         try { return await _catalog.GenerateBarcodeAsync(p.IsWeighted, p.Id); }
         catch (BusinessException ex) { ErrorMessage = L.Message(ex); }
-        catch (Exception ex) { ErrorMessage = ex.Message; }
+        catch (Exception ex) { ErrorLog.Write(ex, GetType().Name); ErrorMessage = ex.Message; }
         return null;
     }
 

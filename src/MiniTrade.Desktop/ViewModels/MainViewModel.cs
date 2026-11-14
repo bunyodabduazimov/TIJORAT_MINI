@@ -28,18 +28,18 @@ public partial class MainViewModel : ObservableObject, IDisposable
         UserRole = session.CurrentUser is { IsAdmin: true } ? L.T("Администратор") : session.CurrentUser?.AccessRole?.Name ?? "";
         NavItems =
         [
-            new(L.T("Главная"), "\U000F0A1D", typeof(DashboardViewModel)),
+            new(L.T("Обзор"), "\U000F0A1D", typeof(DashboardViewModel)),
             new(L.T("Финансы"), "\U000F019B", typeof(FinanceViewModel)),
             new(L.T("Продажи"), "\U000F0111", typeof(SalesViewModel)),
-            new(L.T("Закуп"), "\U000F129B", typeof(PurchasesViewModel)),
+            new(L.T("Закупки"), "\U000F129B", typeof(PurchasesViewModel)),
             new(L.T("Склад"), "\U000F03D7", typeof(WarehouseViewModel)),
             new(L.T("Производство"), "\U000F0247", typeof(ProductionViewModel)),
-            new(L.T("Справочники"), "\U000F1CCC", typeof(CatalogViewModel)),
-            new(L.T("Отчёты"), "\U000F0127", typeof(ReportsViewModel)),
+            new(L.T("Каталоги"), "\U000F1CCC", typeof(CatalogViewModel)),
+            new(L.T("Аналитика"), "\U000F0127", typeof(ReportsViewModel)),
             new(L.T("Настройки"), "\U000F08BB", typeof(SettingsViewModel)),
         ];
         // Журнал действий — внизу меню
-        NavItems.Add(new(L.T("Журнал действий"), "\U000F02DA", typeof(AuditLogViewModel)));
+        NavItems.Add(new(L.T("История действий"), "\U000F02DA", typeof(AuditLogViewModel)));
         // Разделы, на которые у пользователя нет прав, скрываем («Настройки» доступны всем — смена своего пароля)
         if (session.CurrentUser is { } user)
             foreach (var item in NavItems.Where(n => PermissionOf(n.PageType) is { } p && !user.Can(p)).ToList())

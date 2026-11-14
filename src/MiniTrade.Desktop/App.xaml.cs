@@ -125,6 +125,15 @@ public partial class App : Application
         CultureInfo.DefaultThreadCurrentCulture = culture;
         Thread.CurrentThread.CurrentCulture = culture;
         DispatcherUnhandledException += OnUnhandledException;
+        AppDomain.CurrentDomain.UnhandledException += (_, a) =>
+        {
+            if (a.ExceptionObject is Exception ex) ErrorLog.Write(ex, "AppDomain, критическая");
+        };
+        TaskScheduler.UnobservedTaskException += (_, a) =>
+        {
+            ErrorLog.Write(a.Exception, "фоновая задача");
+            a.SetObserved();
+        };
 
         // Интерфейс: язык и тема — до создания первого окна
         Ui = UiSettings.Load();
@@ -146,6 +155,7 @@ public partial class App : Application
         }
         catch (Exception ex)
         {
+            ErrorLog.Write(ex, $"открытие базы данных: {connection.Display}");
             var reason = ex.InnerException?.Message ?? ex.Message;
             if (connection.IsRemote)
             {
@@ -209,6 +219,7 @@ public partial class App : Application
             }
             catch (Exception ex)
             {
+                ErrorLog.Write(ex, "генерация тестовых данных");
                 MessageWindow.Show($"Ошибка генерации тестовых данных:\n{ex.InnerException?.Message ?? ex.Message}", "TIJORAT.PRO", MessageKind.Error);
             }
         }
@@ -275,6 +286,7 @@ public partial class App : Application
 
     private void OnUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)
     {
+        ErrorLog.Write(e.Exception, "необработанная ошибка интерфейса");
         MessageWindow.Show(L.F("Непредвиденная ошибка:\n{0}", e.Exception.Message), "TIJORAT.PRO", MessageKind.Error);
         e.Handled = true;
     }

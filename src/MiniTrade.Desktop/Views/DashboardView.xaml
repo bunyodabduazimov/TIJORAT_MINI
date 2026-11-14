@@ -161,7 +161,7 @@
 
             <!-- ═══ KPI ═══ -->
             <UniformGrid Columns="4" Margin="-6,6,-6,0">
-                <!-- Выручка сегодня -->
+                <!-- Продажи сегодня -->
                 <Button Style="{StaticResource TileButton}" Command="{Binding OpenCommand}" CommandParameter="{x:Type vm:SalesViewModel}">
                     <DockPanel>
                         <Path DockPanel.Dock="Right" Style="{StaticResource Spark}" Stroke="{DynamicResource PrimaryBrush}"/>
@@ -171,7 +171,7 @@
                                     <Border Style="{StaticResource KpiIcon}" Tag="{DynamicResource PrimaryBrush}"/>
                                     <TextBlock Text="&#xF0111;" Style="{StaticResource KpiGlyph}" Foreground="{DynamicResource PrimaryBrush}"/>
                                 </Grid>
-                                <TextBlock Text="{l:T 'Выручка сегодня'}" Style="{StaticResource KpiLabel}"/>
+                                <TextBlock Text="{l:T 'Продажи сегодня'}" Style="{StaticResource KpiLabel}"/>
                             </StackPanel>
                             <TextBlock Text="{Binding Summary.TodayRevenue, Converter={StaticResource Money}}" Style="{StaticResource KpiValue}"/>
                             <DockPanel Margin="0,4,0,0">
@@ -273,7 +273,7 @@
                                     <Border Style="{StaticResource KpiIcon}" Tag="{DynamicResource PrimaryBrush}"/>
                                     <TextBlock Text="&#xF019B;" Style="{StaticResource KpiGlyph}" Foreground="{DynamicResource PrimaryBrush}"/>
                                 </Grid>
-                                <TextBlock Text="{l:T 'Деньги в кассах'}" Style="{StaticResource KpiLabel}"/>
+                                <TextBlock Text="{l:T 'Остатки денежных средств'}" Style="{StaticResource KpiLabel}"/>
                             </StackPanel>
                             <TextBlock Text="{Binding Summary.CashTotal, Converter={StaticResource Money}}" Style="{StaticResource KpiValue}" Foreground="{DynamicResource PrimaryBrush}"/>
                             <TextBlock Text="{l:T 'Остаток по всем кассам'}" Style="{StaticResource KpiHint}"/>
@@ -291,7 +291,7 @@
                                     <Border Style="{StaticResource KpiIcon}" Tag="{DynamicResource PrimaryBrush}"/>
                                     <TextBlock Text="&#xF03D7;" Style="{StaticResource KpiGlyph}" Foreground="{DynamicResource PrimaryBrush}"/>
                                 </Grid>
-                                <TextBlock Text="{l:T 'Товар на складе (себест.)'}" Style="{StaticResource KpiLabel}"/>
+                                <TextBlock Text="{l:T 'Стоимость запасов'}" Style="{StaticResource KpiLabel}"/>
                             </StackPanel>
                             <TextBlock Text="{Binding Summary.StockCostValue, Converter={StaticResource Money}}" Style="{StaticResource KpiValue}"/>
                             <TextBlock Style="{StaticResource KpiHint}">
@@ -341,7 +341,7 @@
                                     <Border Style="{StaticResource KpiIcon}" Tag="{DynamicResource DangerBrush}"/>
                                     <TextBlock Text="&#xF002A;" Style="{StaticResource KpiGlyph}" Foreground="{DynamicResource DangerBrush}"/>
                                 </Grid>
-                                <TextBlock Text="{l:T 'Мало на складе'}" Style="{StaticResource KpiLabel}"/>
+                                <TextBlock Text="{l:T 'Низкие остатки'}" Style="{StaticResource KpiLabel}"/>
                             </StackPanel>
                             <TextBlock Text="{Binding Summary.LowStockCount}" Style="{StaticResource KpiValue}" Foreground="{DynamicResource DangerBrush}"/>
                             <TextBlock Text="{l:T 'Остаток ниже минимума'}" Style="{StaticResource KpiHint}"/>
@@ -443,7 +443,7 @@
                             <Button DockPanel.Dock="Right" Content="{l:T 'Отчёт'}" Style="{StaticResource LinkButton}"
                                     Command="{Binding OpenCommand}" CommandParameter="{x:Type vm:ReportsViewModel}"/>
                             <TextBlock Text="&#xF04D2;" Style="{StaticResource PanelGlyph}"/>
-                            <TextBlock Text="{l:T 'Топ товаров за месяц'}" Style="{StaticResource PanelTitle}"/>
+                            <TextBlock Text="{l:T 'Лидеры продаж'}" Style="{StaticResource PanelTitle}"/>
                         </DockPanel>
                         <Grid>
                             <ItemsControl ItemsSource="{Binding TopProducts}">
@@ -548,7 +548,7 @@
                             <Button DockPanel.Dock="Right" Content="{l:T 'Склад'}" Style="{StaticResource LinkButton}"
                                     Command="{Binding OpenCommand}" CommandParameter="{x:Type vm:WarehouseViewModel}"/>
                             <TextBlock Text="&#xF03D7;" Style="{StaticResource PanelGlyph}"/>
-                            <TextBlock Text="{l:T 'Заканчиваются товары'}" Style="{StaticResource PanelTitle}"/>
+                            <TextBlock Text="{l:T 'Товары с низким остатком'}" Style="{StaticResource PanelTitle}"/>
                         </DockPanel>
                         <Grid>
                             <DataGrid ItemsSource="{Binding LowStock}" BorderThickness="0" IsReadOnly="True" MaxHeight="240">

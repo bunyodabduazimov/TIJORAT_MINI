@@ -28,21 +28,21 @@
                         </Grid.ColumnDefinitions>
                         <!-- Левая колонка: реквизиты -->
                         <StackPanel>
-                            <TextBlock Text="{l:T 'Реквизиты компании'}" Style="{StaticResource SectionTitle}"/>
-                            <TextBlock Text="{l:T 'Название *'}" Style="{StaticResource FieldLabel}"/>
+                            <TextBlock Text="{l:T 'Информация о компании'}" Style="{StaticResource SectionTitle}"/>
+                            <TextBlock Text="{l:T 'Название организации *'}" Style="{StaticResource FieldLabel}"/>
                             <TextBox Text="{Binding Company.Name, UpdateSourceTrigger=PropertyChanged}"/>
                             <TextBlock Text="{l:T 'ИНН'}" Style="{StaticResource FieldLabel}"/>
                             <TextBox Text="{Binding Company.TaxId, UpdateSourceTrigger=PropertyChanged}"/>
                             <TextBlock Text="{l:T 'Адрес'}" Style="{StaticResource FieldLabel}"/>
                             <TextBox Text="{Binding Company.Address, UpdateSourceTrigger=PropertyChanged}"/>
-                            <TextBlock Text="{l:T 'Телефон'}" Style="{StaticResource FieldLabel}"/>
+                            <TextBlock Text="{l:T 'Контактный телефон'}" Style="{StaticResource FieldLabel}"/>
                             <TextBox Text="{Binding Company.Phone, UpdateSourceTrigger=PropertyChanged}"/>
-                            <TextBlock Text="{l:T 'E-mail'}" Style="{StaticResource FieldLabel}"/>
+                            <TextBlock Text="{l:T 'Электронная почта'}" Style="{StaticResource FieldLabel}"/>
                             <TextBox Text="{Binding Company.Email, UpdateSourceTrigger=PropertyChanged}"/>
                         </StackPanel>
                         <!-- Правая колонка: учёт -->
                         <StackPanel Grid.Column="2">
-                            <TextBlock Text="{l:T 'Учёт'}" Style="{StaticResource SectionTitle}"/>
+                            <TextBlock Text="{l:T 'Параметры учёта'}" Style="{StaticResource SectionTitle}"/>
                             <TextBlock Text="{l:T 'Страна'}" Style="{StaticResource FieldLabel}"/>
                             <ComboBox ItemsSource="{Binding CountryList}" SelectedItem="{Binding Country}">
                                 <ComboBox.ItemTemplate>
@@ -58,24 +58,24 @@
                                 <Run Text="{l:T 'Задаёт валюту и код телефона. Код подставляется в телефон нового контрагента:'}"/>
                                 <Run Text="{Binding Country.PhoneCode, Mode=OneWay}" FontWeight="SemiBold"/>
                             </TextBlock>
-                            <TextBlock Text="{l:T 'Валюта учёта'}" Style="{StaticResource FieldLabel}"/>
+                            <TextBlock Text="{l:T 'Основная валюта'}" Style="{StaticResource FieldLabel}"/>
                             <ComboBox ItemsSource="{Binding Currencies}" DisplayMemberPath="Name" SelectedValuePath="Code" SelectedValue="{Binding Currency}"/>
                             <TextBlock Text="{l:T 'Меняется только обозначение в суммах — пересчёта по курсу нет.'}"
                                        Style="{StaticResource Muted}" FontSize="11" TextWrapping="Wrap" Margin="0,4,0,0"/>
-                            <TextBlock Text="{l:T 'Метод списания себестоимости'}" Style="{StaticResource FieldLabel}"/>
+                            <TextBlock Text="{l:T 'Метод расчёта себестоимости'}" Style="{StaticResource FieldLabel}"/>
                             <ComboBox ItemsSource="{Binding CostingMethods}" DisplayMemberPath="Name" SelectedValuePath="Value"
                                       SelectedValue="{Binding Company.CostingMethod}"/>
                             <TextBlock Text="{l:T 'FIFO — сначала списывается товар из самых ранних приходов. Средняя — по средневзвешенной цене остатка. Смена метода действует на новые документы.'}"
                                        Style="{StaticResource Muted}" FontSize="11" TextWrapping="Wrap" Margin="0,4,0,0"/>
-                            <CheckBox Content="{l:T 'Разрешить продажу при отрицательном остатке'}" IsChecked="{Binding Company.AllowNegativeStock}" Margin="0,14,0,0"/>
-                            <TextBlock Text="{l:T 'Код весов (префикс штрихкода)'}" Style="{StaticResource FieldLabel}"/>
+                            <CheckBox Content="{l:T 'Разрешить отрицательные остатки'}" IsChecked="{Binding Company.AllowNegativeStock}" Margin="0,14,0,0"/>
+                            <TextBlock Text="{l:T 'Префикс весового штрихкода'}" Style="{StaticResource FieldLabel}"/>
                             <TextBox Text="{Binding Company.ScalePrefix, UpdateSourceTrigger=PropertyChanged}" MaxLength="2" Width="80" HorizontalAlignment="Left"
                                      l:Ui.Numeric="True"/>
                             <TextBlock Text="{l:T 'Штрихкод весов из 13 цифр: 2 — код весов, 5 — код товара (штрихкод весового товара), 5 — вес в граммах, 1 — контрольная. Пусто — весы не используются.'}"
                                        Style="{StaticResource Muted}" FontSize="11" TextWrapping="Wrap" Margin="0,4,0,0"/>
                         </StackPanel>
                     </Grid>
-                    <Button Content="{l:T 'Сохранить'}" HorizontalAlignment="Left" Width="140" Margin="0,20,0,0" Command="{Binding SaveCompanyCommand}" IsEnabled="{Binding CanEditCompany}"/>
+                    <Button Content="{l:T 'Сохранить изменения'}" HorizontalAlignment="Left" MinWidth="140" Margin="0,20,0,0" Command="{Binding SaveCompanyCommand}" IsEnabled="{Binding CanEditCompany}"/>
                 </StackPanel>
             </Border>
         </TabItem>
@@ -168,7 +168,7 @@
             </Grid>
         </TabItem>
 
-        <TabItem Header="{l:T 'Роли'}" Visibility="{l:Can settings.roles}">
+        <TabItem Header="{l:T 'Роли и права'}" Visibility="{l:Can settings.roles}">
             <Grid IsEnabled="{Binding CanManageRoles}">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
@@ -289,7 +289,7 @@
             </Grid>
         </TabItem>
 
-        <TabItem Header="{l:T 'Печать'}" Visibility="{l:Can settings.print}">
+        <TabItem Header="{l:T 'Печать и документы'}" Visibility="{l:Can settings.print}">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="460"/>
@@ -503,44 +503,62 @@
             </Grid>
         </TabItem>
 
-        <TabItem Header="{l:T 'Лицензия'}" Visibility="{l:Can settings.license}">
-            <Border Style="{StaticResource Card}" Width="620" HorizontalAlignment="Left" VerticalAlignment="Top">
-                <StackPanel>
-                    <TextBlock Text="{l:T 'Лицензия'}" Style="{StaticResource SectionTitle}"/>
-                    <Grid>
-                        <Grid.ColumnDefinitions><ColumnDefinition Width="190"/><ColumnDefinition/></Grid.ColumnDefinitions>
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="30"/><RowDefinition Height="30"/><RowDefinition Height="30"/><RowDefinition Height="30"/>
-                            <RowDefinition Height="Auto"/><RowDefinition Height="30"/><RowDefinition Height="30"/><RowDefinition Height="30"/>
-                        </Grid.RowDefinitions>
-                        <TextBlock Text="{l:T 'Тип'}" Style="{StaticResource Muted}" VerticalAlignment="Center"/>
-                        <TextBlock Grid.Column="1" Text="{Binding LicenseType}" FontWeight="SemiBold" VerticalAlignment="Center"/>
-                        <TextBlock Grid.Row="1" Text="{l:T 'Ключ'}" Style="{StaticResource Muted}" VerticalAlignment="Center"/>
-                        <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding LicenseKey, Mode=OneWay}" Style="{StaticResource SelectableText}" FontFamily="Consolas"/>
-                        <TextBlock Grid.Row="2" Text="{l:T 'Владелец'}" Style="{StaticResource Muted}" VerticalAlignment="Center"/>
-                        <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding LicenseOwner}" VerticalAlignment="Center"/>
-                        <TextBlock Grid.Row="3" Text="{l:T 'Срок действия'}" Style="{StaticResource Muted}" VerticalAlignment="Center"/>
-                        <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding LicenseTerm}" VerticalAlignment="Center"/>
-                        <TextBlock Grid.Row="4" Text="{l:T 'Состояние'}" Style="{StaticResource Muted}" Margin="0,6"/>
-                        <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding LicenseStatus}" TextWrapping="Wrap" Margin="0,6"/>
-                        <TextBlock Grid.Row="5" Text="{l:T 'Последняя онлайн-проверка'}" Style="{StaticResource Muted}" VerticalAlignment="Center"/>
-                        <TextBlock Grid.Row="5" Grid.Column="1" Text="{Binding LastCheck}" VerticalAlignment="Center"/>
-                        <TextBlock Grid.Row="6" Text="{l:T 'ID установки'}" Style="{StaticResource Muted}" VerticalAlignment="Center"/>
-                        <TextBox Grid.Row="6" Grid.Column="1" Text="{Binding InstallationId, Mode=OneWay}" Style="{StaticResource SelectableText}" FontFamily="Consolas"/>
-                        <TextBlock Grid.Row="7" Text="{l:T 'Сервер лицензий'}" Style="{StaticResource Muted}" VerticalAlignment="Center"/>
-                        <TextBlock Grid.Row="7" Grid.Column="1" Text="{Binding ServerUrl}" VerticalAlignment="Center"/>
-                    </Grid>
-                    <StackPanel Orientation="Horizontal" Margin="0,16,0,0">
-                        <Button Content="{l:T 'Проверить онлайн'}" Command="{Binding CheckLicenseCommand}"/>
-                        <Button Content="{l:T 'Ввести новый ключ'}" Style="{StaticResource SecondaryButton}" Margin="10,0,0,0" Command="{Binding EnterNewKeyCommand}"/>
+        <!-- Кассовый аппарат: фискальный принтер Fiscat этого компьютера -->
+        <TabItem Header="{l:T 'Кассовое оборудование'}" Visibility="{l:Can settings.fiscal}">
+            <ScrollViewer VerticalScrollBarVisibility="Auto">
+            <Border Style="{StaticResource Card}" HorizontalAlignment="Stretch" VerticalAlignment="Top">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" MinWidth="300"/>
+                        <ColumnDefinition Width="32"/>
+                        <ColumnDefinition Width="*" MinWidth="300"/>
+                    </Grid.ColumnDefinitions>
+                    <StackPanel>
+                        <TextBlock Text="{l:T 'Фискальный принтер Fiscat'}" Style="{StaticResource SectionTitle}"/>
+                        <CheckBox Content="{l:T 'Пробивать чеки продаж и возвратов на ККТ'}" IsChecked="{Binding FiscalEnabled}" FontWeight="SemiBold"/>
+                        <TextBlock Text="{l:T 'Выключено — продажи проводятся без ККТ. Настройка хранится на этом компьютере.'}"
+                                   Style="{StaticResource Muted}" FontSize="11" TextWrapping="Wrap" Margin="0,4,0,0"/>
+                        <Grid>
+                            <Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="12"/><ColumnDefinition Width="120"/></Grid.ColumnDefinitions>
+                            <StackPanel>
+                                <TextBlock Text="{l:T 'IP-адрес ККТ *'}" Style="{StaticResource FieldLabel}"/>
+                                <TextBox Text="{Binding FiscalHost, UpdateSourceTrigger=PropertyChanged}" l:Ui.Placeholder="192.168.1.100"/>
+                            </StackPanel>
+                            <StackPanel Grid.Column="2">
+                                <TextBlock Text="{l:T 'Порт'}" Style="{StaticResource FieldLabel}"/>
+                                <TextBox Text="{Binding FiscalPort, UpdateSourceTrigger=PropertyChanged}" l:Ui.Numeric="True"/>
+                            </StackPanel>
+                        </Grid>
+                        <TextBlock Text="{l:T 'Система налогообложения'}" Style="{StaticResource FieldLabel}"/>
+                        <ComboBox ItemsSource="{Binding FiscalTaxTypes}" DisplayMemberPath="Name" SelectedValuePath="Value" SelectedValue="{Binding FiscalTaxType}"/>
+                        <TextBlock Text="{l:T 'Ставка НДС товаров'}" Style="{StaticResource FieldLabel}"/>
+                        <ComboBox ItemsSource="{Binding FiscalVatCodes}" DisplayMemberPath="Name" SelectedValuePath="Value" SelectedValue="{Binding FiscalVatCode}"/>
+                        <CheckBox Content="{l:T 'Печатать бумажный чек'}" IsChecked="{Binding FiscalPrintSlip}" Margin="0,14,0,0"/>
+                        <CheckBox Content="{l:T 'Открывать денежный ящик при оплате наличными'}" IsChecked="{Binding FiscalOpenDrawer}" Margin="0,8,0,0"/>
+                        <TextBlock Text="{l:T 'Безналичная оплата — оплата в кассы с флажком «Безналичная касса» (Справочники → Кассы). Смена открывается автоматически при первом чеке.'}"
+                                   Style="{StaticResource Muted}" FontSize="11" TextWrapping="Wrap" Margin="0,10,0,0"/>
+                        <Button Content="{l:T 'Сохранить'}" HorizontalAlignment="Left" Width="140" Margin="0,20,0,0" Command="{Binding SaveFiscalCommand}"/>
                     </StackPanel>
-                    <TextBlock Style="{StaticResource Muted}" FontSize="11" TextWrapping="Wrap" Margin="0,12,0,0"
-                               Text="{l:T 'После активации программа работает офлайн. Онлайн-проверка выполняется при запуске; без связи с сервером лицензия действует до 30 дней.'}"/>
-                </StackPanel>
+                    <StackPanel Grid.Column="2" IsEnabled="{Binding FiscalBusy, Converter={StaticResource Not}}">
+                        <TextBlock Text="{l:T 'Операции'}" Style="{StaticResource SectionTitle}"/>
+                        <WrapPanel>
+                            <Button Style="{StaticResource SecondaryButton}" Content="{l:T 'Проверить связь'}" Margin="0,0,8,8" Command="{Binding FiscalCheckCommand}"/>
+                            <Button Style="{StaticResource SecondaryButton}" Content="{l:T 'Открыть смену'}" Margin="0,0,8,8" Command="{Binding FiscalOpenShiftCommand}"/>
+                            <Button Style="{StaticResource SecondaryButton}" Content="{l:T 'X-отчёт'}" Margin="0,0,8,8" Command="{Binding FiscalXReportCommand}"/>
+                            <Button Style="{StaticResource SecondaryButton}" Content="{l:T 'Закрыть смену (Z-отчёт)'}" Margin="0,0,8,8" Command="{Binding FiscalCloseShiftCommand}"/>
+                            <Button Style="{StaticResource SecondaryButton}" Content="{l:T 'Внесение наличных'}" Margin="0,0,8,8" Command="{Binding FiscalAddCashCommand}"/>
+                            <Button Style="{StaticResource SecondaryButton}" Content="{l:T 'Изъятие наличных'}" Margin="0,0,8,8" Command="{Binding FiscalRemoveCashCommand}"/>
+                            <Button Style="{StaticResource SecondaryButton}" Content="{l:T 'Повтор последнего ФД'}" Margin="0,0,8,8" Command="{Binding FiscalPrintLastCommand}"/>
+                            <Button Style="{StaticResource SecondaryButton}" Content="{l:T 'Открыть денежный ящик'}" Margin="0,0,8,8" Command="{Binding FiscalOpenDrawerCommand}"/>
+                        </WrapPanel>
+                        <TextBlock Text="{Binding FiscalStatus}" TextWrapping="Wrap" Margin="0,12,0,0"/>
+                    </StackPanel>
+                </Grid>
             </Border>
+            </ScrollViewer>
         </TabItem>
 
-        <TabItem Header="{l:T 'База данных'}" Visibility="{l:Can settings.database}">
+        <TabItem Header="{l:T 'Данные и резервные копии'}" Visibility="{l:Can settings.database}">
             <ScrollViewer VerticalScrollBarVisibility="Auto">
             <!-- Слева база и подключение, справа — резервное копирование -->
             <Grid>
@@ -635,6 +653,20 @@
                 </StackPanel>
             </Border>
 
+            <!-- Журнал ошибок: текстовые файлы по дням -->
+            <Border Style="{StaticResource Card}" Margin="0,0,0,16">
+                <StackPanel>
+                    <TextBlock Text="{l:T 'Журнал ошибок'}" Style="{StaticResource SectionTitle}"/>
+                    <TextBlock Text="{l:T 'Папка журналов'}" Style="{StaticResource FieldLabel}"/>
+                    <DockPanel>
+                        <Button DockPanel.Dock="Right" Content="{l:T 'Сегодняшний файл'}" Style="{StaticResource SecondaryButton}" Margin="10,0,0,0" Command="{Binding OpenTodayErrorLogCommand}"/>
+                        <Button DockPanel.Dock="Right" Content="{l:T 'Открыть'}" Style="{StaticResource SecondaryButton}" Margin="10,0,0,0" Command="{Binding OpenErrorLogFolderCommand}"/>
+                        <TextBox Text="{Binding ErrorLogFolder, Mode=OneWay}" IsReadOnly="True"/>
+                    </DockPanel>
+                    <TextBlock Style="{StaticResource Muted}" FontSize="11" TextWrapping="Wrap" Margin="0,12,0,0" Text="{Binding ErrorLogHint}"/>
+                </StackPanel>
+            </Border>
+
             <!-- Полная очистка базы: только администратор, с паролем и обязательной резервной копией -->
             <Border Style="{StaticResource Card}" Margin="0,0,0,16" BorderBrush="{DynamicResource DangerBrush}"
                     Visibility="{Binding IsAdmin, Converter={StaticResource BoolToVis}}">
@@ -685,59 +717,41 @@
             </ScrollViewer>
         </TabItem>
 
-        <!-- Кассовый аппарат: фискальный принтер Fiscat этого компьютера -->
-        <TabItem Header="{l:T 'Кассовый аппарат'}" Visibility="{l:Can settings.fiscal}">
-            <ScrollViewer VerticalScrollBarVisibility="Auto">
-            <Border Style="{StaticResource Card}" HorizontalAlignment="Stretch" VerticalAlignment="Top">
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*" MinWidth="300"/>
-                        <ColumnDefinition Width="32"/>
-                        <ColumnDefinition Width="*" MinWidth="300"/>
-                    </Grid.ColumnDefinitions>
-                    <StackPanel>
-                        <TextBlock Text="{l:T 'Фискальный принтер Fiscat'}" Style="{StaticResource SectionTitle}"/>
-                        <CheckBox Content="{l:T 'Пробивать чеки продаж и возвратов на ККТ'}" IsChecked="{Binding FiscalEnabled}" FontWeight="SemiBold"/>
-                        <TextBlock Text="{l:T 'Выключено — продажи проводятся без ККТ. Настройка хранится на этом компьютере.'}"
-                                   Style="{StaticResource Muted}" FontSize="11" TextWrapping="Wrap" Margin="0,4,0,0"/>
-                        <Grid>
-                            <Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="12"/><ColumnDefinition Width="120"/></Grid.ColumnDefinitions>
-                            <StackPanel>
-                                <TextBlock Text="{l:T 'IP-адрес ККТ *'}" Style="{StaticResource FieldLabel}"/>
-                                <TextBox Text="{Binding FiscalHost, UpdateSourceTrigger=PropertyChanged}" l:Ui.Placeholder="192.168.1.100"/>
-                            </StackPanel>
-                            <StackPanel Grid.Column="2">
-                                <TextBlock Text="{l:T 'Порт'}" Style="{StaticResource FieldLabel}"/>
-                                <TextBox Text="{Binding FiscalPort, UpdateSourceTrigger=PropertyChanged}" l:Ui.Numeric="True"/>
-                            </StackPanel>
-                        </Grid>
-                        <TextBlock Text="{l:T 'Система налогообложения'}" Style="{StaticResource FieldLabel}"/>
-                        <ComboBox ItemsSource="{Binding FiscalTaxTypes}" DisplayMemberPath="Name" SelectedValuePath="Value" SelectedValue="{Binding FiscalTaxType}"/>
-                        <TextBlock Text="{l:T 'Ставка НДС товаров'}" Style="{StaticResource FieldLabel}"/>
-                        <ComboBox ItemsSource="{Binding FiscalVatCodes}" DisplayMemberPath="Name" SelectedValuePath="Value" SelectedValue="{Binding FiscalVatCode}"/>
-                        <CheckBox Content="{l:T 'Печатать бумажный чек'}" IsChecked="{Binding FiscalPrintSlip}" Margin="0,14,0,0"/>
-                        <CheckBox Content="{l:T 'Открывать денежный ящик при оплате наличными'}" IsChecked="{Binding FiscalOpenDrawer}" Margin="0,8,0,0"/>
-                        <TextBlock Text="{l:T 'Безналичная оплата — оплата в кассы с флажком «Безналичная касса» (Справочники → Кассы). Смена открывается автоматически при первом чеке.'}"
-                                   Style="{StaticResource Muted}" FontSize="11" TextWrapping="Wrap" Margin="0,10,0,0"/>
-                        <Button Content="{l:T 'Сохранить'}" HorizontalAlignment="Left" Width="140" Margin="0,20,0,0" Command="{Binding SaveFiscalCommand}"/>
+        <TabItem Header="{l:T 'Лицензия и подписка'}" Visibility="{l:Can settings.license}">
+            <Border Style="{StaticResource Card}" Width="620" HorizontalAlignment="Left" VerticalAlignment="Top">
+                <StackPanel>
+                    <TextBlock Text="{l:T 'Лицензия'}" Style="{StaticResource SectionTitle}"/>
+                    <Grid>
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="190"/><ColumnDefinition/></Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="30"/><RowDefinition Height="30"/><RowDefinition Height="30"/><RowDefinition Height="30"/>
+                            <RowDefinition Height="Auto"/><RowDefinition Height="30"/><RowDefinition Height="30"/><RowDefinition Height="30"/>
+                        </Grid.RowDefinitions>
+                        <TextBlock Text="{l:T 'Тип'}" Style="{StaticResource Muted}" VerticalAlignment="Center"/>
+                        <TextBlock Grid.Column="1" Text="{Binding LicenseType}" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                        <TextBlock Grid.Row="1" Text="{l:T 'Ключ'}" Style="{StaticResource Muted}" VerticalAlignment="Center"/>
+                        <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding LicenseKey, Mode=OneWay}" Style="{StaticResource SelectableText}" FontFamily="Consolas"/>
+                        <TextBlock Grid.Row="2" Text="{l:T 'Владелец'}" Style="{StaticResource Muted}" VerticalAlignment="Center"/>
+                        <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding LicenseOwner}" VerticalAlignment="Center"/>
+                        <TextBlock Grid.Row="3" Text="{l:T 'Срок действия'}" Style="{StaticResource Muted}" VerticalAlignment="Center"/>
+                        <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding LicenseTerm}" VerticalAlignment="Center"/>
+                        <TextBlock Grid.Row="4" Text="{l:T 'Состояние'}" Style="{StaticResource Muted}" Margin="0,6"/>
+                        <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding LicenseStatus}" TextWrapping="Wrap" Margin="0,6"/>
+                        <TextBlock Grid.Row="5" Text="{l:T 'Последняя онлайн-проверка'}" Style="{StaticResource Muted}" VerticalAlignment="Center"/>
+                        <TextBlock Grid.Row="5" Grid.Column="1" Text="{Binding LastCheck}" VerticalAlignment="Center"/>
+                        <TextBlock Grid.Row="6" Text="{l:T 'ID установки'}" Style="{StaticResource Muted}" VerticalAlignment="Center"/>
+                        <TextBox Grid.Row="6" Grid.Column="1" Text="{Binding InstallationId, Mode=OneWay}" Style="{StaticResource SelectableText}" FontFamily="Consolas"/>
+                        <TextBlock Grid.Row="7" Text="{l:T 'Сервер лицензий'}" Style="{StaticResource Muted}" VerticalAlignment="Center"/>
+                        <TextBlock Grid.Row="7" Grid.Column="1" Text="{Binding ServerUrl}" VerticalAlignment="Center"/>
+                    </Grid>
+                    <StackPanel Orientation="Horizontal" Margin="0,16,0,0">
+                        <Button Content="{l:T 'Проверить онлайн'}" Command="{Binding CheckLicenseCommand}"/>
+                        <Button Content="{l:T 'Ввести новый ключ'}" Style="{StaticResource SecondaryButton}" Margin="10,0,0,0" Command="{Binding EnterNewKeyCommand}"/>
                     </StackPanel>
-                    <StackPanel Grid.Column="2" IsEnabled="{Binding FiscalBusy, Converter={StaticResource Not}}">
-                        <TextBlock Text="{l:T 'Операции'}" Style="{StaticResource SectionTitle}"/>
-                        <WrapPanel>
-                            <Button Style="{StaticResource SecondaryButton}" Content="{l:T 'Проверить связь'}" Margin="0,0,8,8" Command="{Binding FiscalCheckCommand}"/>
-                            <Button Style="{StaticResource SecondaryButton}" Content="{l:T 'Открыть смену'}" Margin="0,0,8,8" Command="{Binding FiscalOpenShiftCommand}"/>
-                            <Button Style="{StaticResource SecondaryButton}" Content="{l:T 'X-отчёт'}" Margin="0,0,8,8" Command="{Binding FiscalXReportCommand}"/>
-                            <Button Style="{StaticResource SecondaryButton}" Content="{l:T 'Закрыть смену (Z-отчёт)'}" Margin="0,0,8,8" Command="{Binding FiscalCloseShiftCommand}"/>
-                            <Button Style="{StaticResource SecondaryButton}" Content="{l:T 'Внесение наличных'}" Margin="0,0,8,8" Command="{Binding FiscalAddCashCommand}"/>
-                            <Button Style="{StaticResource SecondaryButton}" Content="{l:T 'Изъятие наличных'}" Margin="0,0,8,8" Command="{Binding FiscalRemoveCashCommand}"/>
-                            <Button Style="{StaticResource SecondaryButton}" Content="{l:T 'Повтор последнего ФД'}" Margin="0,0,8,8" Command="{Binding FiscalPrintLastCommand}"/>
-                            <Button Style="{StaticResource SecondaryButton}" Content="{l:T 'Открыть денежный ящик'}" Margin="0,0,8,8" Command="{Binding FiscalOpenDrawerCommand}"/>
-                        </WrapPanel>
-                        <TextBlock Text="{Binding FiscalStatus}" TextWrapping="Wrap" Margin="0,12,0,0"/>
-                    </StackPanel>
-                </Grid>
+                    <TextBlock Style="{StaticResource Muted}" FontSize="11" TextWrapping="Wrap" Margin="0,12,0,0"
+                               Text="{l:T 'После активации программа работает офлайн. Онлайн-проверка выполняется при запуске; без связи с сервером лицензия действует до 30 дней.'}"/>
+                </StackPanel>
             </Border>
-            </ScrollViewer>
         </TabItem>
 
         <!-- О программе: версия, контакты, другие приложения (контакты — appsettings.json → "About") -->

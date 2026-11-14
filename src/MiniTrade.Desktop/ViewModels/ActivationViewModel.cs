@@ -83,6 +83,7 @@ public partial class ActivationViewModel : ViewModelBase
         }
         catch (Exception ex)
         {
+            ErrorLog.Write(ex, GetType().Name);
             IsError = true;
             StatusMessage = L.F("Ошибка активации: {0}", ex.Message);
         }
