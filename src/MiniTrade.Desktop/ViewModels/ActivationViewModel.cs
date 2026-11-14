@@ -7,7 +7,7 @@ using MiniTrade.Licensing;
 
 namespace MiniTrade.Desktop.ViewModels;
 
-/// <summary>Регистрация (пробный период 14 дней) и активация лицензионным ключом.</summary>
+/// <summary>Регистрация (пробный период 7 дней) и активация лицензионным ключом.</summary>
 public partial class ActivationViewModel : ViewModelBase
 {
     private readonly LicenseManager _license;
@@ -49,7 +49,7 @@ public partial class ActivationViewModel : ViewModelBase
     {
         if (!LicenseKeyGenerator.IsWellFormed(LicenseKey))
             return new LicenseResponse(false, L.T("Введите ключ в формате MT-XXXXX-XXXXX-XXXXX-XXXXX."));
-        return await _license.ActivateAsync(LicenseKey, NullIfEmpty(FullName), NullIfEmpty(Company), NullIfEmpty(Phone));
+        return await _license.ActivateAsync(LicenseKey, null, null, null);
     });
 
     [RelayCommand]

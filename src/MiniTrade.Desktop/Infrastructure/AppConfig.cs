@@ -7,7 +7,7 @@ namespace MiniTrade.Desktop.Infrastructure;
 /// <summary>Настройки приложения из appsettings.json рядом с исполняемым файлом.</summary>
 public sealed class AppConfig
 {
-    public string LicenseServerUrl { get; set; } = "https://localhost:7155";
+    public string LicenseServerUrl { get; set; } = "https://api.tijorat.pro";
     public string? DatabasePath { get; set; }
     /// <summary>Контакты и другие приложения для вкладки «О программе».</summary>
     public AboutSettings? About { get; set; }

@@ -121,7 +121,7 @@
                     </Style>
                 </DockPanel.Style>
                 <Button Command="{Binding ToggleMenuCommand}"
-                        ToolTip="{Binding MenuToggleText}" VerticalAlignment="Center" Width="52" Height="52" Padding="0">
+                        ToolTip="{Binding MenuToggleText}" VerticalAlignment="Center" Width="34" Height="34" Padding="0">
                     <Button.Style>
                         <Style TargetType="Button" BasedOn="{StaticResource SidebarButton}">
                             <Setter Property="HorizontalContentAlignment" Value="Center"/>
@@ -135,7 +135,7 @@
                             </Style.Triggers>
                         </Style>
                     </Button.Style>
-                    <TextBlock FontFamily="{StaticResource IconFont}" FontSize="32" Width="34" Text="&#xF035C;" TextAlignment="Center" VerticalAlignment="Center"/>
+                    <TextBlock FontFamily="{StaticResource IconFont}" FontSize="20" Width="22" Text="&#xF035C;" TextAlignment="Center" VerticalAlignment="Center"/>
                 </Button>
                 <StackPanel Orientation="Horizontal" Style="{StaticResource ExpandedOnly}">
                     <Image Source="{StaticResource LogoMark}" Width="38" Height="38"/>

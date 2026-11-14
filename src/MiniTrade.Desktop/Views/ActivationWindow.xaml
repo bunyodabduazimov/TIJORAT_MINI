@@ -21,7 +21,7 @@
             <Border Style="{StaticResource Card}">
                 <StackPanel>
                     <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
-                        <RadioButton Content="{l:T 'Пробный период — 14 дней'}" IsChecked="{Binding IsKeyMode, Converter={StaticResource Equals}, ConverterParameter=False}" GroupName="mode" Margin="0,0,20,0" FontWeight="SemiBold"/>
+                        <RadioButton Content="{l:T 'Пробный период — 7 дней'}" IsChecked="{Binding IsKeyMode, Converter={StaticResource Equals}, ConverterParameter=False}" GroupName="mode" Margin="0,0,20,0" FontWeight="SemiBold"/>
                         <RadioButton Content="{l:T 'У меня есть лицензионный ключ'}" IsChecked="{Binding IsKeyMode}" GroupName="mode" FontWeight="SemiBold"/>
                     </StackPanel>
 
@@ -30,12 +30,15 @@
                         <TextBox Text="{Binding LicenseKey, UpdateSourceTrigger=PropertyChanged}" FontFamily="Consolas" FontSize="15" CharacterCasing="Upper"/>
                     </StackPanel>
 
-                    <TextBlock Text="{l:T 'ФИО *'}" Style="{StaticResource FieldLabel}"/>
-                    <TextBox Text="{Binding FullName, UpdateSourceTrigger=PropertyChanged}"/>
-                    <TextBlock Text="{l:T 'Компания'}" Style="{StaticResource FieldLabel}"/>
-                    <TextBox Text="{Binding Company, UpdateSourceTrigger=PropertyChanged}"/>
-                    <TextBlock Text="{l:T 'Телефон *'}" Style="{StaticResource FieldLabel}"/>
-                    <TextBox Text="{Binding Phone, UpdateSourceTrigger=PropertyChanged}"/>
+                    <!-- Данные клиента — только для пробного периода; у ключа они уже есть на сервере -->
+                    <StackPanel Visibility="{Binding IsKeyMode, Converter={StaticResource InvBoolToVis}}">
+                        <TextBlock Text="{l:T 'ФИО *'}" Style="{StaticResource FieldLabel}"/>
+                        <TextBox Text="{Binding FullName, UpdateSourceTrigger=PropertyChanged}"/>
+                        <TextBlock Text="{l:T 'Компания'}" Style="{StaticResource FieldLabel}"/>
+                        <TextBox Text="{Binding Company, UpdateSourceTrigger=PropertyChanged}"/>
+                        <TextBlock Text="{l:T 'Телефон *'}" Style="{StaticResource FieldLabel}"/>
+                        <TextBox Text="{Binding Phone, UpdateSourceTrigger=PropertyChanged}"/>
+                    </StackPanel>
 
                     <Grid Margin="0,18,0,0">
                         <Button Content="{l:T 'Начать пробный период'}" Command="{Binding RegisterTrialCommand}"

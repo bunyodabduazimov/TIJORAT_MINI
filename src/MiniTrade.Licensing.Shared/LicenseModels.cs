@@ -4,7 +4,7 @@ namespace MiniTrade.Licensing;
 
 public enum LicenseType
 {
-    /// <summary>Пробный период (14 дней).</summary>
+    /// <summary>Пробный период (7 дней).</summary>
     Trial = 1,
     /// <summary>Годовая лицензия.</summary>
     Annual = 2,
@@ -20,7 +20,7 @@ public enum LicenseStatus
 
 public static class LicenseDefaults
 {
-    public const int TrialDays = 14;
+    public const int TrialDays = 7;
     public const int AnnualDays = 365;
     /// <summary>Сколько дней токен действует офлайн без повторной онлайн-проверки.</summary>
     public const int OfflineDays = 30;
