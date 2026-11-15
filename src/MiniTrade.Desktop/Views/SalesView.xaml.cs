@@ -29,6 +29,7 @@ public partial class SalesView : UserControl
     private SalesViewModel? Vm => DataContext as SalesViewModel;
 
     /// <summary>Запоминаем ширину колонки чека после перетаскивания разделителя.</summary>
+
     private void OnSplitterDragCompleted(object sender, System.Windows.Controls.Primitives.DragCompletedEventArgs e)
     {
         App.Ui.SalesCartWidth = Math.Round(CartColumn.ActualWidth);

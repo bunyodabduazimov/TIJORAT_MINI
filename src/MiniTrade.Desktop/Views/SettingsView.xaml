@@ -41,32 +41,52 @@
                             <TextBlock Text="{l:T 'Электронная почта'}" Style="{StaticResource FieldLabel}"/>
                             <TextBox Text="{Binding Company.Email, UpdateSourceTrigger=PropertyChanged}"/>
 
-                            <Border Height="1" Background="{DynamicResource BorderBrush}" Margin="0,22,0,18"/>
+                            <Border Height="18"/>
                             <TextBlock Text="{l:T 'Параметры учёта'}" Style="{StaticResource SectionTitle}"/>
-                            <TextBlock Text="{l:T 'Страна'}" Style="{StaticResource FieldLabel}"/>
-                            <ComboBox ItemsSource="{Binding CountryList}" SelectedItem="{Binding Country}"
-                                      ToolTip="{l:T 'Задаёт валюту и код телефона. Код подставляется в телефон нового контрагента:'}">
-                                <ComboBox.ItemTemplate>
-                                    <DataTemplate>
-                                        <DockPanel>
-                                            <TextBlock DockPanel.Dock="Right" Text="{Binding PhoneCode}" Style="{StaticResource Muted}" Margin="12,0,0,0"/>
-                                            <TextBlock Text="{Binding Name}"/>
-                                        </DockPanel>
-                                    </DataTemplate>
-                                </ComboBox.ItemTemplate>
-                            </ComboBox>
-                            <TextBlock Text="{l:T 'Основная валюта'}" Style="{StaticResource FieldLabel}"/>
-                            <ComboBox ItemsSource="{Binding Currencies}" DisplayMemberPath="Name" SelectedValuePath="Code" SelectedValue="{Binding Currency}"
-                                      ToolTip="{l:T 'Меняется только обозначение в суммах — пересчёта по курсу нет.'}"/>
-                            <TextBlock Text="{l:T 'Метод расчёта себестоимости'}" Style="{StaticResource FieldLabel}"/>
-                            <ComboBox ItemsSource="{Binding CostingMethods}" DisplayMemberPath="Name" SelectedValuePath="Value"
-                                      SelectedValue="{Binding Company.CostingMethod}"
-                                      ToolTip="{l:T 'FIFO — сначала списывается товар из самых ранних приходов. Средняя — по средневзвешенной цене остатка. Смена метода действует на новые документы.'}"/>
+                            <!-- 2 × 2: Страна | Валюта, Метод себестоимости | Префикс весов -->
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="16"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+                                <StackPanel>
+                                    <TextBlock Text="{l:T 'Страна'}" Style="{StaticResource FieldLabel}"/>
+                                    <ComboBox ItemsSource="{Binding CountryList}" SelectedItem="{Binding Country}"
+                                              ToolTip="{l:T 'Задаёт валюту и код телефона. Код подставляется в телефон нового контрагента:'}">
+                                        <ComboBox.ItemTemplate>
+                                            <DataTemplate>
+                                                <DockPanel>
+                                                    <TextBlock DockPanel.Dock="Right" Text="{Binding PhoneCode}" Style="{StaticResource Muted}" Margin="12,0,0,0"/>
+                                                    <TextBlock Text="{Binding Name}"/>
+                                                </DockPanel>
+                                            </DataTemplate>
+                                        </ComboBox.ItemTemplate>
+                                    </ComboBox>
+                                </StackPanel>
+                                <StackPanel Grid.Column="2">
+                                    <TextBlock Text="{l:T 'Основная валюта'}" Style="{StaticResource FieldLabel}"/>
+                                    <ComboBox ItemsSource="{Binding Currencies}" DisplayMemberPath="Name" SelectedValuePath="Code" SelectedValue="{Binding Currency}"
+                                              ToolTip="{l:T 'Меняется только обозначение в суммах — пересчёта по курсу нет.'}"/>
+                                </StackPanel>
+                                <StackPanel Grid.Row="1">
+                                    <TextBlock Text="{l:T 'Метод расчёта себестоимости'}" Style="{StaticResource FieldLabel}"/>
+                                    <ComboBox ItemsSource="{Binding CostingMethods}" DisplayMemberPath="Name" SelectedValuePath="Value"
+                                              SelectedValue="{Binding Company.CostingMethod}"
+                                              ToolTip="{l:T 'FIFO — сначала списывается товар из самых ранних приходов. Средняя — по средневзвешенной цене остатка. Смена метода действует на новые документы.'}"/>
+                                </StackPanel>
+                                <StackPanel Grid.Row="1" Grid.Column="2">
+                                    <TextBlock Text="{l:T 'Префикс весового штрихкода'}" Style="{StaticResource FieldLabel}"/>
+                                    <TextBox Text="{Binding Company.ScalePrefix, UpdateSourceTrigger=PropertyChanged}" MaxLength="2"
+                                             l:Ui.Numeric="True"
+                                             ToolTip="{l:T 'Штрихкод весов из 13 цифр: 2 — код весов, 5 — код товара (штрихкод весового товара), 5 — вес в граммах, 1 — контрольная. Пусто — весы не используются.'}"/>
+                                </StackPanel>
+                            </Grid>
                             <CheckBox Content="{l:T 'Разрешить отрицательные остатки'}" IsChecked="{Binding Company.AllowNegativeStock}" Margin="0,14,0,0"/>
-                            <TextBlock Text="{l:T 'Префикс весового штрихкода'}" Style="{StaticResource FieldLabel}"/>
-                            <TextBox Text="{Binding Company.ScalePrefix, UpdateSourceTrigger=PropertyChanged}" MaxLength="2" Width="80" HorizontalAlignment="Left"
-                                     l:Ui.Numeric="True"
-                                     ToolTip="{l:T 'Штрихкод весов из 13 цифр: 2 — код весов, 5 — код товара (штрихкод весового товара), 5 — вес в граммах, 1 — контрольная. Пусто — весы не используются.'}"/>
 
                             <Button Content="{l:T 'Сохранить изменения'}" HorizontalAlignment="Left" MinWidth="140" Margin="0,22,0,0" Command="{Binding SaveCompanyCommand}"/>
                         </StackPanel>

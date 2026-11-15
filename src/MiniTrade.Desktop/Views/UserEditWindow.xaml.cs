@@ -22,6 +22,10 @@ public partial class UserEditWindow : Window, IModalWindow
         };
     }
 
+    /// <summary>В поле времени — только цифры и двоеточие.</summary>
+    private void OnTimeInput(object sender, TextCompositionEventArgs e) =>
+        e.Handled = e.Text.Any(c => !char.IsDigit(c) && c != ':');
+
     private void OnCloseRequested(object? sender, bool result) => DialogResult = result;
 
     private void OnHeaderMouseDown(object sender, MouseButtonEventArgs e)

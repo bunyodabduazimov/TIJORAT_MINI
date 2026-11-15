@@ -88,6 +88,10 @@ public partial class UserEditViewModel : ViewModelBase, ICloseRequest
     [ObservableProperty] private string _workFrom;
     [ObservableProperty] private string _workTo;
 
+    /// <summary>Варианты для выбора времени: каждые 30 минут (можно и ввести своё).</summary>
+    public static IReadOnlyList<string> TimeOptions { get; } =
+        Enumerable.Range(0, 48).Select(i => TimeSpan.FromMinutes(i * 30).ToString(@"hh\:mm")).ToList();
+
     private static string FormatTime(TimeSpan? t) => t is { } v ? v.ToString(@"hh\:mm") : "";
 
     /// <summary>«8», «8:30», «08:30», «0830» → время; пусто → null.</summary>

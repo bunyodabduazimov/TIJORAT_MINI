@@ -93,9 +93,14 @@
                             <TextBlock Text="{l:T 'Время работы'}" Style="{StaticResource SectionTitle}" Margin="0,20,0,0"/>
                             <StackPanel Orientation="Horizontal">
                                 <TextBlock Text="{l:T 'с'}" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                                <TextBox Text="{Binding WorkFrom, UpdateSourceTrigger=PropertyChanged}" Width="80" l:Ui.Placeholder="08:00"/>
+                                <!-- Выбор времени: список каждые 30 минут, можно ввести своё (ЧЧ:ММ) -->
+                                <ComboBox IsEditable="True" Width="110" MaxDropDownHeight="240" ItemsSource="{Binding TimeOptions}"
+                                          Text="{Binding WorkFrom, UpdateSourceTrigger=PropertyChanged}" l:Ui.Placeholder="08:00"
+                                          PreviewTextInput="OnTimeInput" ToolTip="{l:T 'Выберите или введите время (ЧЧ:ММ)'}"/>
                                 <TextBlock Text="{l:T 'до'}" VerticalAlignment="Center" Margin="12,0,8,0"/>
-                                <TextBox Text="{Binding WorkTo, UpdateSourceTrigger=PropertyChanged}" Width="80" l:Ui.Placeholder="18:00"/>
+                                <ComboBox IsEditable="True" Width="110" MaxDropDownHeight="240" ItemsSource="{Binding TimeOptions}"
+                                          Text="{Binding WorkTo, UpdateSourceTrigger=PropertyChanged}" l:Ui.Placeholder="18:00"
+                                          PreviewTextInput="OnTimeInput" ToolTip="{l:T 'Выберите или введите время (ЧЧ:ММ)'}"/>
                             </StackPanel>
                             <TextBlock Text="{l:T 'Вне этого времени вход запрещён. Пусто — круглосуточно.'}" Style="{StaticResource Muted}" FontSize="11" TextWrapping="Wrap" Margin="0,4,0,0"/>
                             <TextBlock Text="{l:T 'Склад и касса по умолчанию подставляются в продажу и закупку. Недоступные склады и кассы пользователь не видит и не может выбрать.'}"

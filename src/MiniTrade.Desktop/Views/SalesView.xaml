@@ -249,58 +249,29 @@
                     <DockPanel>
                         <!-- Заголовок чека -->
                         <DockPanel DockPanel.Dock="Top" Margin="0,0,0,10">
-                            <Button DockPanel.Dock="Right" Style="{StaticResource SmallButton}" Content="{l:T 'Очистить чек'}" Command="{Binding NewSaleCommand}"
-                                    ToolTip="{l:T 'Начать новую продажу'}"/>
-                            <!-- Тип цены: розница / опт -->
-                            <Border DockPanel.Dock="Right" Margin="0,0,6,0" CornerRadius="6" BorderThickness="1" Padding="2"
-                                    BorderBrush="{DynamicResource InputBorderBrush}" Background="{DynamicResource SurfaceBrush}"
-                                    ToolTip="{l:T 'Тип цены в чеке: розничная или оптовая'}">
-                                <Border.Resources>
-                                    <Style x:Key="PriceSeg" TargetType="RadioButton">
-                                        <Setter Property="Cursor" Value="Hand"/>
-                                        <Setter Property="GroupName" Value="PriceType"/>
-                                        <Setter Property="Template">
-                                            <Setter.Value>
-                                                <ControlTemplate TargetType="RadioButton">
-                                                    <Border x:Name="Bd" CornerRadius="4" Padding="10,0" MinHeight="26" Background="Transparent" TextElement.Foreground="{DynamicResource TextBrush}">
-                                                        <ContentPresenter VerticalAlignment="Center"/>
-                                                    </Border>
-                                                    <ControlTemplate.Triggers>
-                                                        <Trigger Property="IsMouseOver" Value="True">
-                                                            <Setter TargetName="Bd" Property="Background" Value="{DynamicResource SurfaceAltBrush}"/>
-                                                        </Trigger>
-                                                        <Trigger Property="IsChecked" Value="True">
-                                                            <Setter TargetName="Bd" Property="Background" Value="{DynamicResource PrimaryBrush}"/>
-                                                            <Setter TargetName="Bd" Property="TextElement.Foreground" Value="White"/>
-                                                            <Setter TargetName="Bd" Property="TextElement.FontWeight" Value="SemiBold"/>
-                                                        </Trigger>
-                                                    </ControlTemplate.Triggers>
-                                                </ControlTemplate>
-                                            </Setter.Value>
-                                        </Setter>
-                                    </Style>
-                                </Border.Resources>
-                                <StackPanel Orientation="Horizontal">
-                                    <RadioButton Style="{StaticResource PriceSeg}" Content="{l:T 'Розница'}" IsChecked="{Binding IsRetail}"/>
-                                    <RadioButton Style="{StaticResource PriceSeg}" Content="{l:T 'Опт'}" IsChecked="{Binding IsWholesale}"/>
-                                </StackPanel>
-                            </Border>
-                            <!-- Черновики: отложенные чеки -->
+                            <!-- Очистить чек (только иконка) -->
+                            <Button DockPanel.Dock="Right" Style="{StaticResource SecondaryButton}" Width="32" Height="32" MinHeight="32" Padding="0"
+                                    Command="{Binding NewSaleCommand}" ToolTip="{l:T 'Очистить чек'}">
+                                <TextBlock Text="&#xF0A7A;" FontFamily="{StaticResource IconFont}" FontSize="17" Foreground="{DynamicResource DangerBrush}"
+                                           HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Button>
+                            <!-- Отложенные чеки (только иконка + число) -->
                             <Grid DockPanel.Dock="Right" Margin="0,0,6,0">
                                 <ToggleButton x:Name="DraftsToggle" IsChecked="{Binding IsDraftsOpen}" Cursor="Hand" Foreground="{DynamicResource TextBrush}" ToolTip="{l:T 'Отложенные чеки'}">
                                     <ToggleButton.Template>
                                         <ControlTemplate TargetType="ToggleButton">
-                                            <Border x:Name="Bd" Background="{DynamicResource SurfaceBrush}" BorderBrush="{DynamicResource InputBorderBrush}"
-                                                    BorderThickness="1" CornerRadius="6" Padding="10,0" MinHeight="32" TextElement.Foreground="{TemplateBinding Foreground}">
-                                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                                    <TextBlock Text="&#xF0150;" FontFamily="{StaticResource IconFont}" FontSize="16" Foreground="{DynamicResource WarningBrush}" VerticalAlignment="Center" Margin="0,0,6,0"/>
-                                                    <TextBlock Text="{l:T 'Отложенные чеки'}" VerticalAlignment="Center"/>
-                                                    <Border x:Name="Badge" CornerRadius="8" Background="{DynamicResource WarningBrush}" Padding="6,0" Margin="6,0,0,0" MinWidth="18"
-                                                            Visibility="{Binding HasDrafts, Converter={StaticResource BoolToVis}}">
-                                                        <TextBlock Text="{Binding DraftsCount}" Foreground="White" FontSize="11" FontWeight="SemiBold" HorizontalAlignment="Center"/>
-                                                    </Border>
-                                                </StackPanel>
-                                            </Border>
+                                            <Grid>
+                                                <Border x:Name="Bd" Background="{DynamicResource SurfaceBrush}" BorderBrush="{DynamicResource InputBorderBrush}"
+                                                        BorderThickness="1" CornerRadius="6" Width="32" Height="32" TextElement.Foreground="{TemplateBinding Foreground}">
+                                                    <TextBlock Text="&#xF0150;" FontFamily="{StaticResource IconFont}" FontSize="18" Foreground="{DynamicResource WarningBrush}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                </Border>
+                                                <!-- Число отложенных чеков — в углу кнопки -->
+                                                <Border x:Name="Badge" CornerRadius="8" Background="{DynamicResource WarningBrush}" Padding="4,0" MinWidth="16" Height="16"
+                                                        HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,-6,-6,0"
+                                                        Visibility="{Binding HasDrafts, Converter={StaticResource BoolToVis}}">
+                                                    <TextBlock Text="{Binding DraftsCount}" Foreground="White" FontSize="10" FontWeight="SemiBold" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                </Border>
+                                            </Grid>
                                             <ControlTemplate.Triggers>
                                                 <Trigger Property="IsMouseOver" Value="True">
                                                     <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource InputHoverBrush}"/>
@@ -313,10 +284,11 @@
                                     </ToggleButton.Template>
                                 </ToggleButton>
                                 <Popup IsOpen="{Binding IsDraftsOpen}" StaysOpen="False" PlacementTarget="{Binding ElementName=DraftsToggle}"
-                                       Placement="Bottom" HorizontalOffset="-250" AllowsTransparency="True" PopupAnimation="Fade">
+                                       Placement="Bottom" HorizontalOffset="-318" AllowsTransparency="True" PopupAnimation="Fade">
                                     <Grid Margin="8,4,8,12" Width="380">
                                         <Border Background="{DynamicResource SurfaceBrush}" CornerRadius="10" Effect="{DynamicResource PopupShadow}"/>
-                                        <Border Background="{DynamicResource SurfaceBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" CornerRadius="10" Padding="6">
+                                        <Border Background="{DynamicResource SurfaceBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" CornerRadius="10" Padding="6"
+                                                TextElement.Foreground="{DynamicResource TextBrush}">
                                             <DockPanel>
                                                 <TextBlock DockPanel.Dock="Top" Text="{l:T 'Отложенные чеки'}" FontWeight="SemiBold" Margin="8,6,8,6"/>
                                                 <TextBlock DockPanel.Dock="Top" Text="{l:T 'Черновиков нет. Нажмите «Отложить» (F8), чтобы сохранить чек.'}" Style="{StaticResource Muted}"
@@ -360,6 +332,40 @@
                                     </Grid>
                                 </Popup>
                             </Grid>
+                            <!-- Тип цены: розница / опт -->
+                            <Border DockPanel.Dock="Right" Margin="0,0,6,0" CornerRadius="6" BorderThickness="1" Padding="2"
+                                    BorderBrush="{DynamicResource InputBorderBrush}" Background="{DynamicResource SurfaceBrush}"
+                                    ToolTip="{l:T 'Тип цены в чеке: розничная или оптовая'}">
+                                <Border.Resources>
+                                    <Style x:Key="PriceSeg" TargetType="RadioButton">
+                                        <Setter Property="Cursor" Value="Hand"/>
+                                        <Setter Property="GroupName" Value="PriceType"/>
+                                        <Setter Property="Template">
+                                            <Setter.Value>
+                                                <ControlTemplate TargetType="RadioButton">
+                                                    <Border x:Name="Bd" CornerRadius="4" Padding="10,0" MinHeight="26" Background="Transparent" TextElement.Foreground="{DynamicResource TextBrush}">
+                                                        <ContentPresenter VerticalAlignment="Center"/>
+                                                    </Border>
+                                                    <ControlTemplate.Triggers>
+                                                        <Trigger Property="IsMouseOver" Value="True">
+                                                            <Setter TargetName="Bd" Property="Background" Value="{DynamicResource SurfaceAltBrush}"/>
+                                                        </Trigger>
+                                                        <Trigger Property="IsChecked" Value="True">
+                                                            <Setter TargetName="Bd" Property="Background" Value="{DynamicResource PrimaryBrush}"/>
+                                                            <Setter TargetName="Bd" Property="TextElement.Foreground" Value="White"/>
+                                                            <Setter TargetName="Bd" Property="TextElement.FontWeight" Value="SemiBold"/>
+                                                        </Trigger>
+                                                    </ControlTemplate.Triggers>
+                                                </ControlTemplate>
+                                            </Setter.Value>
+                                        </Setter>
+                                    </Style>
+                                </Border.Resources>
+                                <StackPanel Orientation="Horizontal">
+                                    <RadioButton Style="{StaticResource PriceSeg}" Content="{l:T 'Розница'}" IsChecked="{Binding IsRetail}"/>
+                                    <RadioButton Style="{StaticResource PriceSeg}" Content="{l:T 'Опт'}" IsChecked="{Binding IsWholesale}"/>
+                                </StackPanel>
+                            </Border>
                             <TextBlock VerticalAlignment="Center" FontSize="16" FontWeight="SemiBold">
                                 <Run Text="{l:T 'Текущий чек'}"/><Run Text="  "/><Run Text="{Binding ItemsCount, Mode=OneWay}" Foreground="{DynamicResource MutedBrush}" FontWeight="Normal" FontSize="13"/><Run Text=" " /><Run Text="{l:T 'поз.'}" Foreground="{DynamicResource MutedBrush}" FontWeight="Normal" FontSize="13"/>
                             </TextBlock>

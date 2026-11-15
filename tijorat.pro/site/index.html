@@ -604,6 +604,7 @@ nav.links a.ai-link::after { content: ""; position: absolute; right: -11px; top:
 .step-in input::-webkit-inner-spin-button { -webkit-appearance: none; }
 .step-in button { width: 44px; flex: none; border-radius: 12px; border: 1px solid var(--line); background: var(--card); color: var(--fg); font-size: 20px; cursor: pointer; }
 .step-in button:hover { border-color: var(--brand); color: var(--brand); }
+.step-in button:disabled { opacity: .4; cursor: not-allowed; border-color: var(--line); color: var(--fg); }
 .calc-out { padding: clamp(20px, 3vw, 32px); display: grid; gap: 12px; align-content: start; color: var(--night-fg); background: linear-gradient(150deg, var(--night), color-mix(in srgb, var(--brand) 45%, var(--night))); }
 .calc-out small { font: 600 12px var(--f-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--sun); }
 .calc-sum { font-size: 16px; color: color-mix(in srgb, var(--night-fg) 75%, transparent); }
@@ -1827,7 +1828,11 @@ header.top .lf-dark { display: none; }
   }
   function calcRender() {
     const u = L.ui, sh = D.shared, inc = sh.included[calc.plan];
-    calc.users = Math.max(1, Math.min(500, calc.users | 0 || 1)); calc.points = Math.max(1, Math.min(100, calc.points | 0 || 1));
+    // Пользователей и точек — не меньше, чем входит в тариф
+    calc.users = Math.max(inc[0], Math.min(500, calc.users | 0 || inc[0])); calc.points = Math.max(inc[1], Math.min(100, calc.points | 0 || inc[1]));
+    $("c-users").min = inc[0]; $("c-points").min = inc[1];
+    document.querySelector("[data-st=\"c-users:-1\"]").disabled = calc.users <= inc[0];
+    document.querySelector("[data-st=\"c-points:-1\"]").disabled = calc.points <= inc[1];
     $("c-users").value = calc.users; $("c-points").value = calc.points;
     const xu = Math.max(0, calc.users - inc[0]), xp = Math.max(0, calc.points - inc[1]);
     const x = u.calcX, base = sh.prices[calc.plan];
@@ -1846,9 +1851,10 @@ header.top .lf-dark { display: none; }
     document.querySelectorAll("#cx-mods .cx").forEach(b => b.setAttribute("aria-pressed", String(calc.extras.has(b.dataset.x))));
     document.querySelectorAll("#cx-pkgs .cx").forEach(b => b.setAttribute("aria-checked", String(+b.dataset.pk === calc.pkg)));
   }
-  $("c-plan").addEventListener("change", e => { calc.plan = +e.target.value; const inc = D.shared.included[calc.plan]; if (calc.users < inc[0]) calc.users = inc[0]; calcRender(); });
-  $("c-users").addEventListener("input", e => { calc.users = +e.target.value; calcRender(); });
-  $("c-points").addEventListener("input", e => { calc.points = +e.target.value; calcRender(); });
+  // Смена тарифа: количество по умолчанию — сколько входит в тариф
+  $("c-plan").addEventListener("change", e => { calc.plan = +e.target.value; const inc = D.shared.included[calc.plan]; calc.users = inc[0]; calc.points = inc[1]; calcRender(); });
+  $("c-users").addEventListener("change", e => { calc.users = +e.target.value; calcRender(); });
+  $("c-points").addEventListener("change", e => { calc.points = +e.target.value; calcRender(); });
   $("calc").addEventListener("click", e => {
     const xb = e.target.closest("[data-x]");
     if (xb) { const id = xb.dataset.x; calc.extras.has(id) ? calc.extras.delete(id) : calc.extras.add(id); calcRender(); return; }
