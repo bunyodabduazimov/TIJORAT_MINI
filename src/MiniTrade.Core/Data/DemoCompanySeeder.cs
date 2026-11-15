@@ -42,7 +42,8 @@ public static class DemoCompanySeeder
         public string Unit = "шт";
         public decimal Cost, Price;
         public double Weight;           // популярность
-        public int Supplier;            // индекс в списке поставщиков
+        public int Supplier;            // индекс в списке поставщиков; -1 — не закупается (услуга или своя продукция)
+        public bool IsService;          // услуга: без остатков и закупок
         public decimal Stock;
         public decimal Sold28;          // продано за последние 4 недели (скользящее окно)
         public decimal MinLot;          // минимальная партия закупки
@@ -62,6 +63,7 @@ public static class DemoCompanySeeder
     {
         private readonly List<Prod> _products = [];
         private readonly List<Party> _customers = [];
+        private readonly List<Batch> _recipes = [];
         private readonly List<int> _suppliers = [];
         private readonly Dictionary<int, decimal> _supplierDebt = [];
         private readonly SortedDictionary<DateTime, List<Func<Task>>> _scheduled = [];
@@ -91,7 +93,7 @@ public static class DemoCompanySeeder
 
             // Единицы измерения каталога
             var units = await db.MeasureUnits.Select(u => u.Name).ToListAsync(ct);
-            foreach (var (name, full) in new[] { ("мешок", "Мешок"), ("м", "Метр"), ("м²", "Квадратный метр"), ("л", "Литр") })
+            foreach (var (name, full) in new[] { ("мешок", "Мешок"), ("м", "Метр"), ("м²", "Квадратный метр"), ("л", "Литр"), ("усл", "Услуга") })
                 if (!units.Contains(name)) db.MeasureUnits.Add(new MeasureUnit { Name = name, Description = full });
 
             // Категории и товары
@@ -109,7 +111,7 @@ public static class DemoCompanySeeder
                         all.Add((cat, name, unit, cost * factor));
                 }
             // 200–400 товаров (или все, если вариантов меньше); каждая категория представлена
-            var target = Math.Min(all.Count, rnd.Next(200, 401));
+            var target = profile.IsManufacturing ? all.Count : Math.Min(all.Count, rnd.Next(200, 401));
             var chosen = all.OrderBy(_ => rnd.Next()).Take(target)
                 .Concat(profile.Categories.Select(c => all.First(a => a.Cat == c)))
                 .Distinct().OrderBy(a => Array.IndexOf(profile.Categories, a.Cat)).ThenBy(a => a.Name).ToList();
@@ -136,7 +138,24 @@ public static class DemoCompanySeeder
             int seq = 0;
             foreach (var (cat, name, unit, cost0) in chosen)
             {
+                var isService = unit == "усл";
                 var cost = RoundPrice(cost0 * (decimal)(0.92 + rnd.NextDouble() * 0.16));
+                if (isService)
+                {
+                    // Для услуги в шаблоне — цена; себестоимость (работа мастера) в учёт не попадает
+                    var service = new Product
+                    {
+                        Name = name, Unit = unit, Category = cats[cat], IsService = true,
+                        Sku = $"{Abbrev(cat.Name)}-{++seq:D4}", PurchasePrice = 0, SalePrice = cost
+                    };
+                    prods.Add((service, new Prod
+                    {
+                        Unit = unit, Cost = 0, Price = cost, IsService = true, Supplier = -1, Stock = 1_000_000,
+                        Weight = Math.Pow(rnd.NextDouble(), 2) * 3 + 1.5
+                    }));
+                    db.Products.Add(service);
+                    continue;
+                }
                 var markup = profile.MarkupMin + (profile.MarkupMax - profile.MarkupMin) * (decimal)rnd.NextDouble();
                 var price = RoundPrice(cost * (1 + markup));
                 if (price <= cost) price = cost + Step(cost);
@@ -151,12 +170,51 @@ public static class DemoCompanySeeder
                 {
                     Unit = unit, Cost = cost, Price = price,
                     // Дешёвые ходовые товары продаются чаще; у каждого — свой «спрос»
-                    Weight = Math.Pow(rnd.NextDouble(), 2) * 3 + 0.2 + (price < 50 ? 1.5 : price < 500 ? 0.6 : 0.1),
+                    // Сырьё производства покупателям не продаётся — расходуется в цехе
+                    Weight = profile.IsManufacturing ? 0 : Math.Pow(rnd.NextDouble(), 2) * 3 + 0.2 + (price < 50 ? 1.5 : price < 500 ? 0.6 : 0.1),
                     Supplier = Array.IndexOf(profile.Categories, cat) % profile.Suppliers.Length
                 };
                 info.MinLot = MinLot(info);
                 prods.Add((entity, info));
                 db.Products.Add(entity);
+            }
+
+            // Готовая продукция по техкартам: себестоимость = материалы + ~15% (работа, электроэнергия)
+            var recipeDrafts = new List<(Product Entity, Prod Info, DemoRecipe Recipe, List<(Product Mat, Prod Info, decimal Qty)> Mats)>();
+            foreach (var recipe in profile.Recipes ?? [])
+            {
+                var mats = recipe.Materials.Select(m =>
+                {
+                    var i = m.LastIndexOf('|');
+                    var name = m[..i];
+                    var mat = prods.FirstOrDefault(x => x.Entity.Name == name);
+                    if (mat.Entity is null) throw new InvalidOperationException($"Демо: нет материала «{name}» для «{recipe.Product}».");
+                    return (mat.Entity, mat.Info, decimal.Parse(m[(i + 1)..], System.Globalization.CultureInfo.InvariantCulture));
+                }).ToList();
+                var cost = RoundPrice(mats.Sum(m => m.Info.Cost * m.Item3) / recipe.Batch * 1.15m);
+                var markup = profile.MarkupMin + (profile.MarkupMax - profile.MarkupMin) * (decimal)rnd.NextDouble();
+                var price = RoundPrice(cost * (1 + markup));
+                if (!cats.Keys.Any(k => k.Name == recipe.Category))
+                {
+                    var key = new DemoCategory(recipe.Category, []);
+                    cats[key] = new Category { Name = recipe.Category };
+                    db.Categories.Add(cats[key]);
+                }
+                var category = cats.First(c => c.Key.Name == recipe.Category).Value;
+                var entity = new Product
+                {
+                    Name = recipe.Product, Unit = recipe.Unit, Category = category,
+                    Sku = $"ГП-{++seq:D4}", Barcode = Ean13("488" + rnd.Next(1000, 9999).ToString() + seq.ToString("D5")),
+                    PurchasePrice = cost, SalePrice = price
+                };
+                var info = new Prod
+                {
+                    Unit = recipe.Unit, Cost = cost, Price = price, Supplier = -1,
+                    Weight = Math.Pow(rnd.NextDouble(), 2) * 3 + 0.5 + (price < 10 ? 3 : price < 100 ? 1 : 0.3)
+                };
+                prods.Add((entity, info));
+                db.Products.Add(entity);
+                recipeDrafts.Add((entity, info, recipe, mats.Select(m => (m.Entity, m.Info, m.Item3)).ToList()));
             }
 
             // Покупатели: 50–100, из них ~15% — организации (оптовики)
@@ -198,8 +256,23 @@ public static class DemoCompanySeeder
             // Ожидаемый спрос: ~7,5 чека × ~3 позиции в день, распределённые по популярности
             foreach (var p in _products)
                 p.Demand = (decimal)(23 * p.Weight / _totalWeight) * AvgQty(p);
-            foreach (var (e, info) in prods) e.MinStock = Math.Max(1, Math.Ceiling(info.Daily * 7));
+            // Спрос на сырьё — из спроса на продукцию по техкартам
+            foreach (var (_, fin, recipe, mats) in recipeDrafts)
+                foreach (var (_, mat, q) in mats) mat.Demand += fin.Demand / recipe.Batch * q;
+            foreach (var (e, info) in prods) e.MinStock = info.IsService ? 0 : Math.Max(1, Math.Ceiling(info.Daily * 7));
             await db.SaveChangesAsync(ct);
+
+            if (recipeDrafts.Count > 0)
+            {
+                Report(0.04, "Техкарты");
+                var production = new ProductionService(factory, session);
+                foreach (var (entity, fin, recipe, mats) in recipeDrafts)
+                {
+                    var saved = await production.SaveRecipeAsync(new Recipe { Name = recipe.Product, ProductId = entity.Id, OutputQuantity = recipe.Batch },
+                        mats.Select(m => new MaterialLine(m.Mat.Id, m.Qty)).ToList(), ct);
+                    _recipes.Add(new Batch(fin, saved.Id, recipe.Batch, mats.Select(m => (m.Info, m.Qty)).ToList()));
+                }
+            }
         }
 
         // ───────────────────────────── Год работы ─────────────────────────────
@@ -215,7 +288,7 @@ public static class DemoCompanySeeder
             for (int i = 0; i < sold.Length; i++) sold[i] = [];
 
             // Стартовый капитал и первый завоз всего ассортимента
-            var initialStockCost = _products.Sum(p => InitialQty(p) * p.Cost);
+            var initialStockCost = _products.Where(p => p.Supplier >= 0).Sum(p => InitialQty(p) * p.Cost);
             var capital = RoundTo(initialStockCost * 0.8m, 1000);
             await finance.AddOperationAsync(_bankId, CashDirection.Income, "Начальный остаток", capital,
                 "Уставный капитал / собственные средства", start.AddHours(9), ct);
@@ -228,6 +301,9 @@ public static class DemoCompanySeeder
                 var lines = _products.Where(p => p.Supplier == s).Select(p => (p, InitialQty(p))).ToList();
                 if (lines.Count > 0) await PurchaseAsync(purchases, finance, s, lines, start.AddHours(10 + s * 0.3), firstDelivery: true);
             }
+
+            var production = _recipes.Count > 0 ? new ProductionService(factory, session) : null;
+            if (production is not null) await ProduceAsync(production, start.AddHours(13), sold[0], 7);
 
             for (int day = 0; day <= Days; day++)
             {
@@ -261,6 +337,9 @@ public static class DemoCompanySeeder
                             .Select(p => (p, Need: Reorder(p))).Where(x => x.Need > 0).ToList();
                         if (lines.Count > 0) await PurchaseAsync(purchases, finance, s, lines, date.AddHours(9).AddMinutes(rnd.Next(0, 90)), false);
                     }
+
+                // Цех: утренний выпуск того, что заканчивается
+                if (production is not null && day > 0) await ProduceAsync(production, date.AddHours(6), bucket, 5);
 
                 // Продажи: 5–10 чеков в день
                 if (day > 0)
@@ -491,6 +570,33 @@ public static class DemoCompanySeeder
             }
         }
 
+        /// <summary>Выпуск продукции: если запаса меньше чем на 3 дня — производим до <paramref name="days"/> дней (сколько хватает сырья).</summary>
+        private async Task ProduceAsync(ProductionService production, DateTime date, Dictionary<int, decimal> bucket, int days)
+        {
+            foreach (var b in _recipes)
+            {
+                var fin = b.Product;
+                if (fin.Stock > fin.Daily * 3) continue;
+                var batches = Math.Ceiling(Math.Max(0, fin.Daily * days - fin.Stock) / b.Size);
+                foreach (var (mat, q) in b.Materials) batches = Math.Min(batches, Math.Floor(mat.Stock / q));
+                if (batches <= 0) continue;
+                var qty = batches * b.Size;
+                var materials = b.Materials.Select(m => new MaterialLine(m.Mat.Id, m.Qty * batches)).ToList();
+                await production.ProduceAsync(new ProductionRequest(_warehouseId, fin.Id, qty, materials,
+                    ExtraCost: RoundTo(qty * fin.Cost * 0.12m, 1), Comment: "Выпуск по техкарте", Date: date.AddMinutes(rnd.Next(0, 60)), RecipeId: b.RecipeId), ct);
+                fin.Stock += qty;
+                foreach (var (mat, q) in b.Materials)
+                {
+                    var used = q * batches;
+                    mat.Stock -= used;
+                    mat.Sold28 += used;   // расход сырья — основа для заказа поставщику
+                    bucket[mat.Id] = bucket.GetValueOrDefault(mat.Id) + used;
+                }
+            }
+        }
+
+        private sealed record Batch(Prod Product, int RecipeId, decimal Size, List<(Prod Mat, decimal Qty)> Materials);
+
         // ───────────────────────────── Вспомогательное ─────────────────────────────
 
         private void Schedule(DateTime when, Func<Task> action)
@@ -513,6 +619,7 @@ public static class DemoCompanySeeder
             var k = wholesale ? rnd.Next(4, 16) : 1;
             return p.Unit switch
             {
+                "усл" => wholesale ? rnd.Next(1, 4) : 1,
                 "кг" => Math.Round((decimal)(0.3 + rnd.NextDouble() * 2.7) * k, 1),
                 "м" => rnd.Next(2, 26) * k,
                 "м²" => rnd.Next(4, 31) * (wholesale ? 3 : 1),

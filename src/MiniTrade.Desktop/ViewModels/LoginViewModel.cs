@@ -6,8 +6,47 @@ using MiniTrade.Desktop.Infrastructure;
 
 namespace MiniTrade.Desktop.ViewModels;
 
-public partial class LoginViewModel(SettingsService settings, IDialogService dialogs) : ViewModelBase(dialogs)
+public partial class LoginViewModel(SettingsService settings, UpdateService updates, IDialogService dialogs) : ViewModelBase(dialogs)
 {
+    private UpdateInfo? _update;
+
+    /// <summary>Версия на сервере, если она новее текущей (показывается кнопка «Обновить до vX.Y.Z»).</summary>
+    [ObservableProperty] private string? _updateVersion;
+    [ObservableProperty] private bool _isUpdating;
+    [ObservableProperty] private double _updateProgress;
+
+    /// <summary>Тихо проверяет обновление при открытии окна входа.</summary>
+    public async Task CheckForUpdateAsync()
+    {
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(8));
+        try { _update = await updates.CheckAsync(AppVersion, cts.Token); } catch { _update = null; }
+        UpdateVersion = _update?.Version;
+    }
+
+    /// <summary>Скачивает установщик, запускает тихое обновление и закрывает программу (установщик откроет её снова).</summary>
+    [RelayCommand]
+    private async Task UpdateAsync()
+    {
+        if (_update is null || IsUpdating) return;
+        IsUpdating = true;
+        ErrorMessage = null;
+        try
+        {
+            var path = await updates.DownloadAsync(_update, new Progress<double>(p => UpdateProgress = p));
+            UpdateService.RunInstaller(path);
+            System.Windows.Application.Current.Shutdown();
+        }
+        catch (System.ComponentModel.Win32Exception)
+        {
+            ErrorMessage = L.T("Обновление отменено.");
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = L.F("Не удалось обновить программу: {0}", ex.Message);
+        }
+        finally { IsUpdating = false; }
+    }
+
     public event EventHandler? LoggedIn;
 
     [ObservableProperty] private string _login = SavedLogin.Load()?.Login ?? DbInitializer.DefaultAdminLogin;

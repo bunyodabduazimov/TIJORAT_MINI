@@ -7,6 +7,18 @@ session_name('mt_admin');
 session_set_cookie_params(['httponly' => true, 'samesite' => 'Strict', 'secure' => !empty($_SERVER['HTTPS'])]);
 session_start();
 
+// Выход при бездействии: 30 минут без запросов → сессия удаляется, нужен повторный вход.
+const ADMIN_IDLE_TIMEOUT = 30 * 60;
+if (!empty($_SESSION['admin'])) {
+    if (time() - ($_SESSION['last_activity'] ?? 0) > ADMIN_IDLE_TIMEOUT) {
+        $_SESSION = [];
+        session_regenerate_id(true);
+        $_SESSION['flash'] = 'Сессия завершена: 30 минут без активности. Войдите снова.';
+    } else {
+        $_SESSION['last_activity'] = time();
+    }
+}
+
 function h($v): string { return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); }
 
 function csrf(): string
@@ -138,5 +150,9 @@ function page_end(): void
 {
     // Копирование ключа по кнопке ⧉
     echo '</main><script>document.addEventListener("click",e=>{const b=e.target.closest("[data-copy]");if(!b)return;'
-        . 'navigator.clipboard.writeText(b.dataset.copy);b.textContent="✓";setTimeout(()=>b.textContent="⧉",1200)});</script></body></html>';
+        . 'navigator.clipboard.writeText(b.dataset.copy);b.textContent="✓";setTimeout(()=>b.textContent="⧉",1200)});</script>';
+    // Открытая вкладка сама вернётся на вход, когда серверная сессия истечёт
+    if (!empty($_SESSION['admin']))
+        echo '<script>setTimeout(()=>location.reload(),' . (ADMIN_IDLE_TIMEOUT + 5) * 1000 . ');</script>';
+    echo '</body></html>';
 }

@@ -15,6 +15,7 @@ public partial class LoginWindow : Window
             if (e.NewValue is not LoginViewModel vm) return;
             vm.LoggedIn += (_, _) => DialogResult = true;
             if (vm.SavedPassword is { } saved) Pwd.Password = saved;
+            _ = vm.CheckForUpdateAsync();
         };
     }
 

@@ -17,11 +17,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             set_setting('admin_password_hash', password_hash($p, PASSWORD_DEFAULT));
             session_regenerate_id(true);
             $_SESSION['admin'] = true;
+            $_SESSION['last_activity'] = time();
             redirect('index.php', 'Пароль администратора сохранён.');
         }
     } elseif (password_verify((string)($_POST['password'] ?? ''), $hash)) {
         session_regenerate_id(true);
         $_SESSION['admin'] = true;
+            $_SESSION['last_activity'] = time();
         log_event('admin_login', null, null, null);
         redirect('index.php');
     } else {

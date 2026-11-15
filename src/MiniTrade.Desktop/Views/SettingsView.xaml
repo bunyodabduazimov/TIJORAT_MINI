@@ -843,6 +843,21 @@
                         <TextBlock Text="{l:T 'Вопросы, предложения, техническая поддержка.'}" Style="{StaticResource Muted}" Margin="0,0,0,10"/>
                         <WrapPanel>
                             <WrapPanel.Resources>
+                                <!-- Круглый значок в фирменном цвете сервиса -->
+                                <Style x:Key="BrandBadge" TargetType="Border">
+                                    <Setter Property="Width" Value="22"/>
+                                    <Setter Property="Height" Value="22"/>
+                                    <Setter Property="CornerRadius" Value="11"/>
+                                    <Setter Property="Margin" Value="0,0,8,0"/>
+                                    <Setter Property="VerticalAlignment" Value="Center"/>
+                                </Style>
+                                <Style x:Key="BrandGlyph" TargetType="TextBlock">
+                                    <Setter Property="FontFamily" Value="{StaticResource IconFont}"/>
+                                    <Setter Property="FontSize" Value="13"/>
+                                    <Setter Property="Foreground" Value="White"/>
+                                    <Setter Property="HorizontalAlignment" Value="Center"/>
+                                    <Setter Property="VerticalAlignment" Value="Center"/>
+                                </Style>
                                 <Style TargetType="Button" BasedOn="{StaticResource SecondaryButton}">
                                     <Setter Property="Margin" Value="0,0,10,10"/>
                                     <Setter Property="Command" Value="{Binding OpenCommand, Source={x:Static inf:AboutInfo.Current}}"/>
@@ -855,13 +870,13 @@
                             </WrapPanel.Resources>
                             <Button Tag="{Binding Website}">
                                 <StackPanel Orientation="Horizontal">
-                                    <TextBlock Text="&#xF059F;" FontFamily="{StaticResource IconFont}" Margin="0,1,8,0"/>
+                                    <Border Style="{StaticResource BrandBadge}" Background="#2F6FED"><TextBlock Text="&#xF059F;" Style="{StaticResource BrandGlyph}"/></Border>
                                     <TextBlock Text="{l:T 'Сайт'}"/>
                                 </StackPanel>
                             </Button>
                             <Button Tag="{Binding Phone}">
                                 <StackPanel Orientation="Horizontal">
-                                    <TextBlock Text="&#xF03F2;" FontFamily="{StaticResource IconFont}" Margin="0,1,8,0"/>
+                                    <Border Style="{StaticResource BrandBadge}" Background="#25A244"><TextBlock Text="&#xF03F2;" Style="{StaticResource BrandGlyph}"/></Border>
                                     <TextBlock Text="{Binding Phone}"/>
                                 </StackPanel>
                             </Button>
@@ -871,7 +886,7 @@
                                     <DataTemplate>
                                         <Button Tag="{Binding}">
                                             <StackPanel Orientation="Horizontal">
-                                                <TextBlock Text="&#xF03F2;" FontFamily="{StaticResource IconFont}" Margin="0,1,8,0"/>
+                                                <Border Style="{StaticResource BrandBadge}" Background="#25A244"><TextBlock Text="&#xF03F2;" Style="{StaticResource BrandGlyph}"/></Border>
                                                 <TextBlock Text="{Binding}"/>
                                             </StackPanel>
                                         </Button>
@@ -880,37 +895,37 @@
                             </ItemsControl>
                             <Button Tag="{Binding Email}">
                                 <StackPanel Orientation="Horizontal">
-                                    <TextBlock Text="&#xF01EE;" FontFamily="{StaticResource IconFont}" Margin="0,1,8,0"/>
+                                    <Border Style="{StaticResource BrandBadge}" Background="#EA4335"><TextBlock Text="&#xF01EE;" Style="{StaticResource BrandGlyph}"/></Border>
                                     <TextBlock Text="{Binding Email}"/>
                                 </StackPanel>
                             </Button>
                             <Button Tag="{Binding Telegram}">
                                 <StackPanel Orientation="Horizontal">
-                                    <TextBlock Text="&#xF0501;" FontFamily="{StaticResource IconFont}" Margin="0,1,8,0"/>
+                                    <Border Style="{StaticResource BrandBadge}" Background="#229ED9"><Path Fill="White" Width="12" Height="12" Stretch="Uniform" Margin="0,0,1,0" Data="M9.78 18.65l.28-4.23 7.68-6.92c.34-.31-.07-.46-.52-.19L7.74 13.3 3.64 12c-.88-.25-.89-.86.2-1.3l15.97-6.16c.73-.33 1.43.18 1.15 1.3l-2.72 12.81c-.19.91-.74 1.13-1.5.71L12.6 16.3l-1.99 1.93c-.23.23-.42.42-.83.42z"/></Border>
                                     <TextBlock Text="Telegram"/>
                                 </StackPanel>
                             </Button>
                             <Button Tag="{Binding WhatsAppLink}">
                                 <StackPanel Orientation="Horizontal">
-                                    <TextBlock Text="&#xF05A3;" FontFamily="{StaticResource IconFont}" Margin="0,1,8,0"/>
+                                    <Border Style="{StaticResource BrandBadge}" Background="#25D366"><TextBlock Text="&#xF05A3;" Style="{StaticResource BrandGlyph}"/></Border>
                                     <TextBlock Text="WhatsApp"/>
                                 </StackPanel>
                             </Button>
                             <Button Tag="{Binding Instagram}">
                                 <StackPanel Orientation="Horizontal">
-                                    <TextBlock Text="&#xF02FE;" FontFamily="{StaticResource IconFont}" Margin="0,1,8,0"/>
+                                    <Border Style="{StaticResource BrandBadge}"><Border.Background><LinearGradientBrush StartPoint="0,1" EndPoint="1,0"><GradientStop Color="#FEDA75" Offset="0"/><GradientStop Color="#FA7E1E" Offset="0.25"/><GradientStop Color="#D62976" Offset="0.5"/><GradientStop Color="#962FBF" Offset="0.75"/><GradientStop Color="#4F5BD5" Offset="1"/></LinearGradientBrush></Border.Background><TextBlock Text="&#xF02FE;" Style="{StaticResource BrandGlyph}"/></Border>
                                     <TextBlock Text="Instagram"/>
                                 </StackPanel>
                             </Button>
                             <Button Tag="{Binding Facebook}">
                                 <StackPanel Orientation="Horizontal">
-                                    <TextBlock Text="&#xF020C;" FontFamily="{StaticResource IconFont}" Margin="0,1,8,0"/>
+                                    <Border Style="{StaticResource BrandBadge}" Background="#1877F2"><TextBlock Text="&#xF020C;" Style="{StaticResource BrandGlyph}"/></Border>
                                     <TextBlock Text="Facebook"/>
                                 </StackPanel>
                             </Button>
                             <Button Tag="{Binding TikTok}">
                                 <StackPanel Orientation="Horizontal">
-                                    <TextBlock Text="&#xF0387;" FontFamily="{StaticResource IconFont}" Margin="0,1,8,0"/>
+                                    <Border Style="{StaticResource BrandBadge}" Background="#000000"><TextBlock Text="&#xF0387;" Style="{StaticResource BrandGlyph}"/></Border>
                                     <TextBlock Text="TikTok"/>
                                 </StackPanel>
                             </Button>

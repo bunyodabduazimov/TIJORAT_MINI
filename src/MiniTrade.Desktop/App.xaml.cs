@@ -263,6 +263,11 @@ public partial class App : Application
             c.Timeout = TimeSpan.FromSeconds(15);
         });
         services.AddSingleton<LicenseManager>();
+        services.AddHttpClient<UpdateService>(c =>
+        {
+            c.BaseAddress = new Uri(config.LicenseServerUrl.TrimEnd('/') + "/");
+            c.Timeout = TimeSpan.FromMinutes(10); // скачивание установщика
+        });
 
         // UI
         services.AddSingleton<IDialogService, DialogService>();
