@@ -13,7 +13,7 @@
             <DockPanel>
                 <!-- Заголовок -->
                 <DockPanel DockPanel.Dock="Top" Background="Transparent" Margin="22,16,12,8" MouseLeftButtonDown="OnHeaderMouseDown">
-                    <Button DockPanel.Dock="Right" Style="{StaticResource IconButton}" Content="&#xF0156;"
+                    <Button DockPanel.Dock="Right" Style="{StaticResource DialogCloseButton}" Content="&#xF0156;"
                             Width="30" Height="30" IsTabStop="False" Focusable="False" Click="OnClose" VerticalAlignment="Top"/>
                     <TextBlock x:Name="ActionText" FontSize="17" FontWeight="SemiBold" VerticalAlignment="Center" Margin="0,0,10,0"/>
                     <TextBlock x:Name="TitleText" FontSize="17" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>

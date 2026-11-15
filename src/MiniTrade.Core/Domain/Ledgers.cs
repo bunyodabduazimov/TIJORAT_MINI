@@ -73,6 +73,11 @@ public class StockMovement : Entity
     public StockMovementType Type { get; set; }
     public int DocumentId { get; set; }
     public string DocumentNumber { get; set; } = "";
+
+    /// <summary>Остаток товара на складе до движения (вычисляется, не хранится).</summary>
+    [System.ComponentModel.DataAnnotations.Schema.NotMapped] public decimal BalanceBefore { get; set; }
+    /// <summary>Остаток товара на складе после движения (вычисляется, не хранится).</summary>
+    [System.ComponentModel.DataAnnotations.Schema.NotMapped] public decimal BalanceAfter { get; set; }
 }
 
 public enum CashDirection

@@ -123,6 +123,10 @@
                                 <ContentPresenter/>
                             </AdornerDecorator>
                             <StackPanel HorizontalAlignment="Right" VerticalAlignment="Top" Orientation="Horizontal">
+                                <!-- Переключатель темы: солнце / луна -->
+                                <Button x:Name="ThemeButton" Style="{StaticResource CaptionButton}" Margin="0,0,8,0"
+                                        Content="{Binding Path=(inf:ThemeToggle.Glyph)}" ToolTip="{Binding Path=(inf:ThemeToggle.Tip)}"
+                                        Command="{x:Static inf:ThemeToggle.Command}"/>
                                 <Button x:Name="MinButton" Style="{StaticResource CaptionButton}" Content="&#xF05B0;"
                                         Command="{x:Static SystemCommands.MinimizeWindowCommand}"/>
                                 <Button x:Name="MaxButton" Style="{StaticResource CaptionButton}" Content="&#xF05AF;"
@@ -148,6 +152,7 @@
                         <Trigger Property="ResizeMode" Value="NoResize">
                             <Setter TargetName="MaxButton" Property="Visibility" Value="Collapsed"/>
                             <Setter TargetName="MinButton" Property="Visibility" Value="Collapsed"/>
+                            <Setter TargetName="ThemeButton" Property="Visibility" Value="Collapsed"/>
                         </Trigger>
                         <Trigger Property="IsActive" Value="False">
                             <Setter TargetName="Root" Property="BorderBrush" Value="{DynamicResource BorderBrush}"/>
@@ -349,6 +354,21 @@
             <Trigger Property="IsMouseOver" Value="True">
                 <Setter Property="Foreground" Value="{DynamicResource DangerBrush}"/>
                 <Setter Property="Background" Value="{DynamicResource DangerLightBrush}"/>
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+    <!-- Крестик «Закрыть» в модальных окнах: при наведении — красный фон, белый крестик -->
+    <Style x:Key="DialogCloseButton" TargetType="Button" BasedOn="{StaticResource IconButton}">
+        <!-- Видимый фон и в покое — кнопку сразу видно -->
+        <Setter Property="Background" Value="{DynamicResource BorderBrush}"/>
+        <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
+        <Style.Triggers>
+            <Trigger Property="IsMouseOver" Value="True">
+                <Setter Property="Foreground" Value="White"/>
+                <Setter Property="Background" Value="{DynamicResource DangerBrush}"/>
+            </Trigger>
+            <Trigger Property="IsPressed" Value="True">
+                <Setter Property="Opacity" Value="0.85"/>
             </Trigger>
         </Style.Triggers>
     </Style>

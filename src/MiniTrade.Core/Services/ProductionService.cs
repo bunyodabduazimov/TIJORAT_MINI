@@ -92,10 +92,14 @@ public class ProductionService(IDbContextFactory<TradeDbContext> factory, UserSe
             .Where(i => i.ProductionOrderId == orderId).ToListAsync(ct);
     }
 
-    /// <summary>Проводит выпуск: материалы списываются со склада, продукция приходуется по фактической себестоимости.</summary>
-    public async Task<ProductionOrder> ProduceAsync(ProductionRequest request, CancellationToken ct = default)
+    /// <summary>
+    /// Проводит выпуск: материалы списываются со склада, продукция приходуется по фактической себестоимости.
+    /// replaceOrderId — изменение документа: старый отменяется и новый проводится под тем же номером в одной транзакции.
+    /// </summary>
+    public async Task<ProductionOrder> ProduceAsync(ProductionRequest request, CancellationToken ct = default, int? replaceOrderId = null)
     {
         Access.Demand(Perm.ProductionProduce);
+        if (replaceOrderId is not null) Access.Demand(Perm.ProductionCancel);
         if (request.Quantity <= 0) throw new BusinessException("Количество продукции должно быть больше нуля.");
         if (request.ExtraCost < 0) throw new BusinessException("Дополнительные расходы не могут быть отрицательными.");
         var materials = Merge(request.Materials);
@@ -113,9 +117,19 @@ public class ProductionService(IDbContextFactory<TradeDbContext> factory, UserSe
         var allowNegative = settings?.AllowNegativeStock ?? false;
 
         await using var tx = await db.Database.BeginTransactionAsync(ct);
+        string? number = null;
+        if (replaceOrderId is { } oldId)
+        {
+            var old = await db.ProductionOrders.Include(o => o.Items).Include(o => o.Product)
+                          .FirstOrDefaultAsync(o => o.Id == oldId, ct)
+                      ?? throw new BusinessException("Документ не найден.");
+            number = old.Number;
+            await CancelCoreAsync(db, old, allowNegative, ct);
+            await db.SaveChangesAsync(ct);
+        }
         var doc = new ProductionOrder
         {
-            Number = await DocumentNumbers.NextAsync(db, DocumentNumbers.Production, ct),
+            Number = number ?? await DocumentNumbers.NextAsync(db, DocumentNumbers.Production, ct),
             Date = docDate, WarehouseId = request.WarehouseId, RecipeId = request.RecipeId, ProductId = request.ProductId,
             Quantity = Money.RoundQty(request.Quantity), ExtraCost = Money.Round(request.ExtraCost),
             Comment = string.IsNullOrWhiteSpace(request.Comment) ? null : request.Comment.Trim(), UserId = session.UserId
@@ -152,8 +166,15 @@ public class ProductionService(IDbContextFactory<TradeDbContext> factory, UserSe
         var settings = await db.CompanySettings.AsNoTracking().FirstOrDefaultAsync(ct);
 
         await using var tx = await db.Database.BeginTransactionAsync(ct);
+        await CancelCoreAsync(db, doc, settings?.AllowNegativeStock ?? false, ct);
+        await db.SaveChangesAsync(ct);
+        await tx.CommitAsync(ct);
+    }
+
+    private static async Task CancelCoreAsync(TradeDbContext db, ProductionOrder doc, bool allowNegative, CancellationToken ct)
+    {
         var balance = await StockLedger.GetOrCreateAsync(db, doc.ProductId, doc.WarehouseId, ct);
-        if (!(settings?.AllowNegativeStock ?? false) && balance.Quantity < doc.Quantity)
+        if (!allowNegative && balance.Quantity < doc.Quantity)
             throw new BusinessException("Нельзя отменить: продукции «{0}» на складе {1:0.###}, выпущено {2:0.###}.",
                 doc.Product?.Name, balance.Quantity, doc.Quantity);
 
@@ -167,8 +188,6 @@ public class ProductionService(IDbContextFactory<TradeDbContext> factory, UserSe
             .Where(m => m.DocumentId == doc.Id && (m.Type == StockMovementType.ProductionOutput || m.Type == StockMovementType.ProductionConsume))
             .ToListAsync(ct));
         db.ProductionOrders.Remove(doc);
-        await db.SaveChangesAsync(ct);
-        await tx.CommitAsync(ct);
     }
 
     private static List<MaterialLine> Merge(IEnumerable<MaterialLine> lines) => lines

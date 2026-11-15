@@ -66,6 +66,23 @@ public partial class SalesViewModel
         App.Ui.Save();
     }
 
+    /// <summary>Показывать фото на карточках (без фото карточки компактнее).</summary>
+    [ObservableProperty] private bool _showTilePhotos = App.Ui.PosShowTilePhotos;
+
+    partial void OnShowTilePhotosChanged(bool value)
+    {
+        App.Ui.PosShowTilePhotos = value;
+        App.Ui.Save();
+    }
+
+    /// <summary>Печать чека после проведения продажи (флажок в окне оформления, запоминается).</summary>
+    [ObservableProperty] private bool _printReceiptAfterSale = App.Ui.PosPrintReceipt;
+    partial void OnPrintReceiptAfterSaleChanged(bool value) { App.Ui.PosPrintReceipt = value; App.Ui.Save(); }
+
+    /// <summary>Печать накладной после проведения продажи.</summary>
+    [ObservableProperty] private bool _printInvoiceAfterSale = App.Ui.PosPrintInvoice;
+    partial void OnPrintInvoiceAfterSaleChanged(bool value) { App.Ui.PosPrintInvoice = value; App.Ui.Save(); }
+
     /// <summary>Варианты размера карточек на витрине.</summary>
     public IReadOnlyList<PosTileSize> TileSizes { get; } =
     [
@@ -342,7 +359,31 @@ public partial class SalesViewModel
         : (100 - Math.Clamp(DiscountPercent, 0, 100)) / 100;
     /// <summary>Цена строки со скидкой (скидка применяется к каждой цене — так она попадает в документ).</summary>
     private decimal Discounted(decimal price) => Money.Round(price * DiscountFactor);
-    public decimal ToPay => Lines.Sum(l => Money.Round(l.Quantity * Discounted(l.Price)));
+    public decimal ToPay => PricedLines().Sum(x => Money.Round(x.Quantity * x.Price));
+
+    /// <summary>
+    /// Строки с ценой после скидки. Скидка суммой должна сойтись до копейки: округление цен каждой строки
+    /// даёт расхождение (6 → 5,99), поэтому остаток округления добавляем к одной строке
+    /// (строку с количеством > 1 при необходимости делим: N−1 шт. и 1 шт.).
+    /// </summary>
+    private List<(long ProductId, decimal Quantity, decimal Price)> PricedLines()
+    {
+        var list = Lines.Select(l => ((long)l.Product.Id, l.Quantity, Discounted(l.Price))).ToList();
+        if (!_discountBySum || list.Count == 0 || Total <= 0) return list;
+        var target = Total - Money.Round(Math.Clamp(DiscountSum, 0, Total));
+        var diff = target - list.Sum(x => Money.Round(x.Item2 * x.Item3));
+        if (diff == 0) return list;
+        var i = list.FindIndex(x => x.Item2 == 1 && x.Item3 + diff >= 0);
+        if (i >= 0) { list[i] = (list[i].Item1, 1, list[i].Item3 + diff); return list; }
+        i = list.FindIndex(x => x.Item2 > 1 && x.Item2 == decimal.Truncate(x.Item2) && x.Item3 + diff >= 0);
+        if (i >= 0)
+        {
+            var x = list[i];
+            list[i] = (x.Item1, x.Item2 - 1, x.Item3);
+            list.Insert(i + 1, (x.Item1, 1, x.Item3 + diff));
+        }
+        return list;
+    }
     public decimal DiscountAmount => Total - ToPay;
     public bool HasDiscount => DiscountAmount > 0;
 
@@ -402,7 +443,7 @@ public partial class SalesViewModel
     {
         SyncAutoPayment();
         foreach (var n in new[] { nameof(ItemsCount), nameof(IsCartEmpty), nameof(ItemsQuantity), nameof(ToPay), nameof(DiscountAmount), nameof(HasDiscount),
-                     nameof(PaidSum), nameof(Remainder), nameof(Change), nameof(HasChange), nameof(DebtAmount), nameof(HasDebt), nameof(CreditNeedsCustomer) })
+                     nameof(PaidSum), nameof(Remainder), nameof(Change), nameof(HasChange), nameof(Overpay), nameof(HasOverpay), nameof(DebtAmount), nameof(HasDebt), nameof(CreditNeedsCustomer) })
             OnPropertyChanged(n);
         SyncCartMarks();
     }
@@ -411,7 +452,7 @@ public partial class SalesViewModel
     [ObservableProperty] private string? _lastResult;
 
     private IReadOnlyList<Core.Services.DocumentLine> CartLines() =>
-        Lines.Select(l => new Core.Services.DocumentLine(l.Product.Id, l.Quantity, Discounted(l.Price))).ToList();
+        PricedLines().Select(x => new Core.Services.DocumentLine((int)x.ProductId, x.Quantity, x.Price)).ToList();
 }
 
 /// <summary>Строка оплаты: касса и сумма.</summary>
@@ -434,7 +475,11 @@ public partial class SalesViewModel
 
     public decimal PaidSum => Payments.Sum(p => Math.Max(0, p.Amount));
     public decimal Remainder => Math.Max(0, ToPay - PaidSum);
-    public decimal Change => Math.Max(0, PaidSum - ToPay);
+    /// <summary>Сдача — только розничному покупателю; при выбранном покупателе переплата идёт ему на счёт.</summary>
+    public decimal Change => Customer is null ? Math.Max(0, PaidSum - ToPay) : 0;
+    /// <summary>Переплата на счёт покупателя: гасит его прежний долг или остаётся предоплатой.</summary>
+    public decimal Overpay => Customer is null ? 0 : Math.Max(0, PaidSum - ToPay);
+    public bool HasOverpay => Overpay > 0;
     public bool HasChange => Change > 0;
     public decimal DebtAmount => Remainder;
     public bool HasDebt => Remainder > 0;

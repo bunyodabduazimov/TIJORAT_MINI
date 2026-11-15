@@ -31,12 +31,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
+// Сообщение (например «Сессия завершена…») показываем внутри карточки входа, а не сбоку от неё
+$notice = $_SESSION['flash'] ?? null;
+unset($_SESSION['flash']);
 page_start('Вход');
 ?>
 <form method="post" class="card login">
     <img class="login-logo" src="../img/logo-mark.png" alt="">
     <h1>TIJORAT <b>LITE</b></h1>
     <p class="muted center">Панель лицензий</p>
+    <?php if ($notice): ?><div class="flash login-notice"><?= h($notice) ?></div><?php endif ?>
     <?= csrf() ?>
     <?php if ($firstRun): ?>
         <p class="muted">Первый запуск — задайте пароль администратора.</p>

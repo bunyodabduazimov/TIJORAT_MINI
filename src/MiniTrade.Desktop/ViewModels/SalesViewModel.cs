@@ -116,6 +116,7 @@ public partial class SalesViewModel(SalesService sales, CatalogService catalog, 
         });
         if (!ok || sale is null) return;
         var change = Change;
+        var overpay = Overpay;
 
         // Фискальный чек на ККТ — только для новой полностью оплаченной продажи
         string? fiscalError = null;
@@ -147,6 +148,21 @@ public partial class SalesViewModel(SalesService sales, CatalogService catalog, 
             }
         }
 
+        // Печать по флажкам окна оформления; ошибка печати не отменяет проведённую продажу
+        if (PrintReceiptAfterSale || PrintInvoiceAfterSale)
+        {
+            try
+            {
+                if (await sales.GetSaleAsync(sale.Id) is { } printed)
+                {
+                    var company = await settings.GetCompanyAsync();
+                    if (PrintReceiptAfterSale) SaleReceiptPrinter.Print(printed, company);
+                    if (PrintInvoiceAfterSale) SaleReceiptPrinter.PrintInvoice(printed, company);
+                }
+            }
+            catch (Exception ex) { ErrorLog.Write(ex, GetType().Name); Dialogs.Error(L.F("Продажа проведена, но печать не удалась:\n{0}", ex.Message)); }
+        }
+
         // Без окна-сообщения: итог — плашкой над корзиной, фокус сразу в поиск для следующего покупателя
         RemoveCurrentDraft();
         NewSale();
@@ -155,6 +171,8 @@ public partial class SalesViewModel(SalesService sales, CatalogService catalog, 
             ? L.F("Продажа {0} изменена: {1}", sale.Number, Core.Common.Money.Format(sale.Total))
             : debt > 0
                 ? L.F("Продажа {0} проведена: {1}. В долг: {2}", sale.Number, Core.Common.Money.Format(sale.Total), Core.Common.Money.Format(debt))
+            : overpay > 0
+                ? L.F("Продажа {0} проведена: {1}. На счёт покупателя: {2}", sale.Number, Core.Common.Money.Format(sale.Total), Core.Common.Money.Format(overpay))
             : change > 0
                 ? L.F("Продажа {0} проведена: {1}. Сдача: {2}", sale.Number, Core.Common.Money.Format(sale.Total), Core.Common.Money.Format(change))
                 : L.F("Продажа {0} проведена: {1}", sale.Number, Core.Common.Money.Format(sale.Total));

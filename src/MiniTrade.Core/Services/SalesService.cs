@@ -184,6 +184,9 @@ public class SalesService(IDbContextFactory<TradeDbContext> factory, UserSession
                 throw new BusinessException("Сумма оплат ({0}) больше суммы продажи ({1}).", Money.Format(sum), Money.Format(total));
             return merged;
         }
+        // Переплата при выбранном покупателе — на его счёт (гасит прежний долг или становится предоплатой):
+        // во взаиморасчётах продажа даёт Total − PaidAmount < 0
+        if (sum > total && request.CustomerId is not null) return merged;
         if (sum != total)
             throw new BusinessException("Сумма оплат ({0}) не совпадает с суммой продажи ({1}).", Money.Format(sum), Money.Format(total));
         return merged;

@@ -212,7 +212,8 @@
                 <RowDefinition Height="38"/>
                 <RowDefinition Height="*"/>
             </Grid.RowDefinitions>
-            <DockPanel Margin="0,0,120,0">
+            <!-- Справа место под кнопки заголовка: тема + свернуть / развернуть / закрыть (4 × 46 + 8) -->
+            <DockPanel Margin="0,0,204,0">
                 <!-- Кнопки страницы справа от заголовка (шаблон «{Модель}.Header», см. PageHeaderSelector) -->
                 <ContentControl DockPanel.Dock="Right" Content="{Binding CurrentPage}" Focusable="False" Margin="12,0,0,0" VerticalAlignment="Center"
                                 WindowChrome.IsHitTestVisibleInChrome="True">

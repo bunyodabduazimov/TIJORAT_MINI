@@ -10,6 +10,7 @@ $st = db()->prepare("SELECT d.*, a.license_id, l.license_key, c.full_name
     ORDER BY d.last_seen_at DESC LIMIT 500");
 $st->execute([$q, "%$q%", "%$q%", "%$q%", "%$q%"]);
 $rows = $st->fetchAll();
+$geo = geo_countries(array_column($rows, 'last_ip'));
 
 page_start('Устройства', 'devices.php');
 ?>
@@ -17,15 +18,15 @@ page_start('Устройства', 'devices.php');
 <form class="toolbar"><input type="search" name="q" value="<?= h($q) ?>" placeholder="Поиск: компьютер, клиент, ключ, IP…"><button class="btn">Найти</button></form>
 <div class="card flat">
 <table>
-    <tr><th>Компьютер</th><th>Клиент / лицензия</th><th>Версия</th><th>Связь</th><th>Впервые</th><th>IP</th></tr>
+    <tr><th>Компьютер</th><th>Клиент / лицензия</th><th>Версия</th><th>Связь</th><th>Впервые</th><th>Страна</th><th>IP</th></tr>
     <?php foreach ($rows as $d): ?>
     <tr><td><?= h($d['machine_name']) ?></td>
         <td><?= $d['license_id'] ? '<a href="license.php?id=' . $d['license_id'] . '">' . h($d['full_name']) . '</a><span class="sub mono">' . h($d['license_key']) . '</span>' : '<span class="muted">не привязано</span>' ?></td>
         <td><?= h($d['app_version']) ?></td>
         <td class="nowrap" title="<?= dt($d['last_seen_at']) ?>"><?= ago($d['last_seen_at']) ?></td>
-        <td class="muted sm nowrap"><?= dt($d['first_seen_at'], false) ?></td><td class="muted sm"><?= h($d['last_ip']) ?></td></tr>
+        <td class="muted sm nowrap"><?= dt($d['first_seen_at'], false) ?></td><td class="nowrap"><?= country_cell($geo[$d['last_ip']] ?? null) ?></td><td class="muted sm"><?= h($d['last_ip']) ?></td></tr>
     <?php endforeach ?>
-    <?php if (!$rows): ?><tr><td colspan="6" class="empty">Ничего не найдено</td></tr><?php endif ?>
+    <?php if (!$rows): ?><tr><td colspan="7" class="empty">Ничего не найдено</td></tr><?php endif ?>
 </table>
 </div>
 <?php page_end();

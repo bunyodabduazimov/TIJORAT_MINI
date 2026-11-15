@@ -237,7 +237,7 @@
                     </DockPanel>
                 </Border>
 
-                <Button Grid.Column="1" Style="{StaticResource IconButton}" Content="&#xF0156;" ToolTip="{l:T 'Закрыть'}" Width="32" Height="32"
+                <Button Grid.Column="1" Style="{StaticResource DialogCloseButton}" Content="&#xF0156;" ToolTip="{l:T 'Закрыть'}" Width="32" Height="32"
                         HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,12,12,0" IsTabStop="False" Click="OnClose"/>
             </Grid>
         </Border>

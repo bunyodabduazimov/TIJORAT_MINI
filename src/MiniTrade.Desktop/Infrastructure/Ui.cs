@@ -121,6 +121,12 @@ public static class Ui
         // Щелчок мышью по ещё не активному полю: иначе клик сразу снимет выделение
         EventManager.RegisterClassHandler(typeof(TextBox), UIElement.PreviewMouseLeftButtonDownEvent,
             new MouseButtonEventHandler(OnNumericMouseDown), true);
+        // После стирания поле само становится «0» — курсор ставим справа от него, а не слева
+        EventManager.RegisterClassHandler(typeof(TextBox), TextBoxBase.TextChangedEvent,
+            new TextChangedEventHandler(OnNumericTextChanged));
+        // Ушли из пустого числового поля — ставим «0» (при входе «0» снова очищается для ввода)
+        EventManager.RegisterClassHandler(typeof(TextBox), UIElement.LostKeyboardFocusEvent,
+            new KeyboardFocusChangedEventHandler(OnNumericLostFocus));
     }
 
     private static bool IsNumberBox(TextBox box) =>
@@ -136,6 +142,20 @@ public static class Ui
             box.Clear();
         else
             box.SelectAll();
+    }
+
+    private static void OnNumericLostFocus(object sender, KeyboardFocusChangedEventArgs e)
+    {
+        if (sender is not TextBox box || !ReferenceEquals(e.OldFocus, box) || !IsNumberBox(box)) return;
+        if (!string.IsNullOrWhiteSpace(box.Text)) return;
+        box.Text = "0";
+        box.GetBindingExpression(TextBox.TextProperty)?.UpdateSource();
+    }
+
+    private static void OnNumericTextChanged(object sender, TextChangedEventArgs e)
+    {
+        if (sender is TextBox { Text: "0" } box && box.IsKeyboardFocusWithin && IsNumberBox(box))
+            box.Dispatcher.BeginInvoke(() => box.CaretIndex = box.Text.Length, System.Windows.Threading.DispatcherPriority.Input);
     }
 
     private static void OnNumericMouseDown(object sender, MouseButtonEventArgs e)
@@ -157,7 +177,16 @@ public static class Ui
 
     private static void OnNumericTextInput(object sender, TextCompositionEventArgs e)
     {
-        if (!NumberPattern.IsMatch(Proposed((TextBox)sender, e.Text))) e.Handled = true;
+        var box = (TextBox)sender;
+        // В поле стоит «0» (напр. после очистки) — цифра заменяет его, а не дописывается: «0» + 4 = «4», не «40»
+        if (box.Text == "0" && e.Text.Length > 0 && char.IsDigit(e.Text[0]))
+        {
+            box.Text = e.Text;
+            box.CaretIndex = box.Text.Length;
+            e.Handled = true;
+            return;
+        }
+        if (!NumberPattern.IsMatch(Proposed(box, e.Text))) e.Handled = true;
     }
 
     // Пробел не проходит через TextInput — блокируем отдельно

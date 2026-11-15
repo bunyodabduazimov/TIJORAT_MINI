@@ -12,7 +12,7 @@
             <DockPanel>
                 <!-- Заголовок -->
                 <DockPanel DockPanel.Dock="Top" Background="Transparent" Margin="22,16,12,4" MouseLeftButtonDown="OnHeaderMouseDown">
-                    <Button DockPanel.Dock="Right" Style="{StaticResource IconButton}" Content="&#xF0156;"
+                    <Button DockPanel.Dock="Right" Style="{StaticResource DialogCloseButton}" Content="&#xF0156;"
                             Width="30" Height="30" IsTabStop="False" Focusable="False" Click="OnClose" VerticalAlignment="Top"/>
                     <Border x:Name="IconCircle" Width="32" Height="32" CornerRadius="16" Margin="0,0,12,0">
                         <TextBlock x:Name="IconGlyph" FontFamily="{StaticResource IconFont}" FontSize="14"

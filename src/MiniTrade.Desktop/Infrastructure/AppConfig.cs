@@ -7,7 +7,7 @@ namespace MiniTrade.Desktop.Infrastructure;
 /// <summary>
 /// Настройки приложения из appsettings.json рядом с исполняемым файлом.
 /// Установщик не перезаписывает этот файл при обновлении (там может быть свой путь к базе),
-/// поэтому недостающие разделы (например, «About») берутся из копии, встроенной в программу.
+/// поэтому раздел «About» всегда берётся из копии, встроенной в программу.
 /// </summary>
 public sealed class AppConfig
 {
@@ -31,7 +31,8 @@ public sealed class AppConfig
         if (local is null) return defaults;
 
         if (string.IsNullOrWhiteSpace(local.LicenseServerUrl)) local.LicenseServerUrl = defaults.LicenseServerUrl;
-        local.About ??= defaults.About;
+        // Контакты разработчика — всегда из текущей версии программы (старый файл у клиента не обновляется)
+        local.About = defaults.About ?? local.About;
         return local;
     }
 

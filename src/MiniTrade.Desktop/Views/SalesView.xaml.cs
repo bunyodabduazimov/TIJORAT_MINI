@@ -2,6 +2,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Threading;
+using MiniTrade.Desktop.Infrastructure;
 using MiniTrade.Desktop.ViewModels;
 
 namespace MiniTrade.Desktop.Views;
@@ -15,15 +16,38 @@ public partial class SalesView : UserControl
     public SalesView()
     {
         InitializeComponent();
+        // Фото в чеке — как столбец «Фото» витрины (флажок в «Параметрах кассы»)
+        Resources["CartPhotoVisibility"] = ColPhoto.Visibility;
+        System.ComponentModel.DependencyPropertyDescriptor.FromProperty(DataGridColumn.VisibilityProperty, typeof(DataGridColumn))
+            .AddValueChanged(ColPhoto, (_, _) => Resources["CartPhotoVisibility"] = ColPhoto.Visibility);
+        ApplyHiddenColumns();
         if (App.Ui.SalesCartWidth is double w && w >= CartColumn.MinWidth)
             CartColumn.Width = new GridLength(Math.Min(w, CartColumn.MaxWidth));
-        Loaded += (_, _) => FocusSearch();
+        Loaded += (_, _) =>
+        {
+            FocusSearch();
+            // F8/F9 — с уровня окна: KeyBinding вида срабатывает, только когда фокус внутри него
+            _host = Window.GetWindow(this);
+            if (_host is not null) { _host.PreviewKeyDown -= OnHostKeyDown; _host.PreviewKeyDown += OnHostKeyDown; }
+        };
+        Unloaded += (_, _) => { if (_host is not null) _host.PreviewKeyDown -= OnHostKeyDown; };
         PreviewKeyDown += (_, e) =>
         {
             if (e.Key != Key.F2) return;
             FocusSearch();
             e.Handled = true;
         };
+    }
+
+    private Window? _host;
+
+    /// <summary>F9 — к оплате, F8 — отложить чек; только пока касса на экране.</summary>
+    private void OnHostKeyDown(object sender, KeyEventArgs e)
+    {
+        if (!IsVisible || Vm is not { } vm || (e.Key != Key.F8 && e.Key != Key.F9)) return;
+        System.Windows.Input.ICommand cmd = e.Key == Key.F9 ? vm.CheckoutCommand : vm.SaveDraftCommand;
+        if (cmd.CanExecute(null)) cmd.Execute(null);
+        e.Handled = true;
     }
 
     private SalesViewModel? Vm => DataContext as SalesViewModel;
@@ -122,7 +146,37 @@ public partial class SalesView : UserControl
         }
     }
 
-    private void OnSettingsClick(object sender, RoutedEventArgs e) => SettingsPopup.IsOpen = true;
+    /// <summary>Столбцы таблицы витрины, которые можно скрыть (ключ — для ui.json).</summary>
+    private IEnumerable<PosColumnOption> ColumnOptions() =>
+    [
+        new("Photo", L.T("Фото"), ColPhoto),
+        new("Sku", L.T("Артикул"), ColSku),
+        new("Barcode", L.T("Штрихкод"), ColBarcode),
+        new("Stock", L.T("Остаток"), ColStock),
+        new("Price", L.T("Цена"), ColPrice),
+        new("Qty", L.T("Кол-во"), ColQty),
+    ];
+
+    /// <summary>Скрыть столбцы, отключённые в «Параметрах кассы».</summary>
+    private void ApplyHiddenColumns()
+    {
+        foreach (var c in new (string Key, DataGridColumn Col)[] { ("Photo", ColPhoto), ("Sku", ColSku), ("Barcode", ColBarcode), ("Stock", ColStock), ("Price", ColPrice), ("Qty", ColQty) })
+            c.Col.Visibility = App.Ui.PosHiddenColumns.Contains(c.Key) ? Visibility.Collapsed : Visibility.Visible;
+    }
+
+    /// <summary>Кнопка «Параметры» — модальное окно настроек кассы и столбцов таблицы.</summary>
+    private void OnSettingsClick(object sender, RoutedEventArgs e)
+    {
+        ModalHost.ShowDialog(new PosSettingsWindow(ColumnOptions()) { DataContext = DataContext });
+        FocusSearch();
+    }
+
+    /// <summary>Добавленная или выбранная строка чека всегда видна — прокручиваем к ней.</summary>
+    private void OnCartSelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
+    {
+        if (sender is System.Windows.Controls.DataGrid grid && grid.SelectedItem is { } item)
+            Dispatcher.BeginInvoke(() => grid.ScrollIntoView(item), System.Windows.Threading.DispatcherPriority.Background);
+    }
 
     private void OnCartKeyDown(object sender, KeyEventArgs e)
     {

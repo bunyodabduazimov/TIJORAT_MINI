@@ -17,7 +17,7 @@
             <DockPanel>
                 <!-- Заголовок -->
                 <DockPanel DockPanel.Dock="Top" Background="Transparent" Margin="22,16,12,8" MouseLeftButtonDown="OnHeaderMouseDown">
-                    <Button DockPanel.Dock="Right" Style="{StaticResource IconButton}" Content="&#xF0156;" ToolTip="{l:T 'Закрыть (Esc)'}"
+                    <Button DockPanel.Dock="Right" Style="{StaticResource DialogCloseButton}" Content="&#xF0156;" ToolTip="{l:T 'Закрыть (Esc)'}"
                             Width="30" Height="30" IsTabStop="False" Focusable="False" Click="OnClose" VerticalAlignment="Top"/>
                     <StackPanel>
                         <TextBlock FontSize="17" FontWeight="SemiBold"><Run Text="{l:T 'Закупка '}"/><Run Text="{Binding SelectedPurchase.Number, Mode=OneWay}"/></TextBlock>

@@ -33,7 +33,7 @@
                         <Border DockPanel.Dock="Top" Background="{DynamicResource SuccessLightBrush}" CornerRadius="8" Padding="12,9" Margin="0,0,0,10"
                                 Visibility="{Binding LastResult, Converter={StaticResource BoolToVis}}">
                             <DockPanel>
-                                <Button DockPanel.Dock="Right" Style="{StaticResource IconButton}" Content="&#xF0156;" Width="24" Height="24" MinHeight="0" Padding="0"
+                                <Button DockPanel.Dock="Right" Style="{StaticResource DialogCloseButton}" Content="&#xF0156;" Width="24" Height="24" MinHeight="0" Padding="0"
                                         ToolTip="{l:T 'Скрыть'}" Command="{Binding DismissResultCommand}"/>
                                 <TextBlock Text="&#xF012C;" FontFamily="{StaticResource IconFont}" Foreground="{DynamicResource SuccessBrush}" Margin="0,2,10,0"/>
                                 <TextBlock Text="{Binding LastResult}" Foreground="{DynamicResource SuccessBrush}" FontWeight="SemiBold" TextWrapping="Wrap" VerticalAlignment="Center"/>

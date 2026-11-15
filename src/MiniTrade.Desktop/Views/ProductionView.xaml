@@ -47,12 +47,34 @@
                         <TextBlock Text="{l:T '   (двойной клик — открыть документ)'}" Style="{StaticResource Muted}"/>
                     </StackPanel>
                     <Grid>
-                    <DataGrid ItemsSource="{Binding OrdersView}" SelectedItem="{Binding SelectedOrder}" IsReadOnly="True">
+                    <DataGrid ItemsSource="{Binding OrdersView}" SelectedItem="{Binding SelectedOrder}" IsReadOnly="True" inf:Ui.RowNumbers="False" HeadersVisibility="Column">
                         <DataGrid.InputBindings>
                             <MouseBinding Gesture="LeftDoubleClick" Command="{Binding OpenOrderDetailCommand}"/>
                             <KeyBinding Key="Enter" Command="{Binding OpenOrderDetailCommand}"/>
                         </DataGrid.InputBindings>
                         <DataGrid.Columns>
+                            <DataGridTemplateColumn Width="44" CanUserResize="False">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <Button Style="{StaticResource IconButton}" Content="&#xF0493;" FontSize="20" ToolTip="{l:T 'Действия'}" Width="28" Height="26" MinHeight="0" Padding="0"
+                                                inf:Ui.DropDownMenu="True" Tag="{Binding DataContext, RelativeSource={RelativeSource AncestorType=DataGrid}}">
+                                            <Button.ContextMenu>
+                                                <ContextMenu Style="{StaticResource DropDownMenu}">
+                                                    <MenuItem Style="{StaticResource IconMenuItem}" Header="{l:T 'Изменить'}" inf:Ui.Icon="&#xF0CB6;"
+                                                              Visibility="{l:Can production.cancel}" Command="{Binding PlacementTarget.Tag.EditOrderCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" CommandParameter="{Binding}"/>
+                                                    <MenuItem Style="{StaticResource IconMenuItem}" Header="{l:T 'Копировать'}" inf:Ui.Icon="&#xF018F;"
+                                                              Visibility="{l:Can production.produce}" Command="{Binding PlacementTarget.Tag.CopyOrderCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" CommandParameter="{Binding}"/>
+                                                    <MenuItem Style="{StaticResource IconMenuItem}" Header="{l:T 'Печать'}" inf:Ui.Icon="&#xF042A;"
+                                                              Command="{Binding PlacementTarget.Tag.PrintOrderCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" CommandParameter="{Binding}"/>
+                                                    <Separator Style="{StaticResource MenuSeparator}"/>
+                                                    <MenuItem Style="{StaticResource IconMenuItem}" Header="{l:T 'Удалить'}" inf:Ui.Icon="&#xF09E7;" Tag="{DynamicResource DangerBrush}"
+                                                              Visibility="{l:Can production.cancel}" Command="{Binding PlacementTarget.Tag.DeleteOrderCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" CommandParameter="{Binding}"/>
+                                                </ContextMenu>
+                                            </Button.ContextMenu>
+                                        </Button>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
                             <DataGridTextColumn Header="{l:T '№ документа'}" Binding="{Binding Number}" Width="100"/>
                             <DataGridTextColumn Header="{l:T 'Дата выпуска'}" Binding="{Binding Date, StringFormat={}{0:dd.MM.yyyy HH:mm}}" Width="130"/>
                             <DataGridTextColumn Header="{l:T 'Готовая продукция'}" Binding="{Binding Product.Name}" Width="*" MinWidth="160"/>
@@ -60,7 +82,6 @@
                             <DataGridTextColumn Header="{l:T 'Себестоимость ед.'}" Binding="{Binding UnitCost, StringFormat={}{0:N2}}" Width="130" ElementStyle="{StaticResource RightCell}"/>
                             <DataGridTextColumn Header="{l:T 'Общая себестоимость'}" Binding="{Binding TotalCost, Converter={StaticResource Money}}" Width="150" ElementStyle="{StaticResource RightCell}"/>
                             <DataGridTextColumn Header="{l:T 'Склад поступления'}" Binding="{Binding Warehouse.Name}" Width="150"/>
-                            <DataGridTextColumn Header="{l:T 'Техкарта'}" Binding="{Binding Recipe.Name}" Width="140"/>
                             <DataGridTextColumn Header="{l:T 'Примечание'}" Binding="{Binding Comment}" Width="160"/>
                         </DataGrid.Columns>
                     </DataGrid>
@@ -130,7 +151,7 @@
                 </Grid.RowDefinitions>
                 <DockPanel Grid.ColumnSpan="3" Margin="0,0,0,12">
                     <Button DockPanel.Dock="Left" Content="{l:T '← Назад к реестру'}" Style="{StaticResource SecondaryButton}" Command="{Binding CloseOrderEditorCommand}"/>
-                    <TextBlock Text="{l:T 'Новый выпуск продукции'}" Style="{StaticResource SectionTitle}" VerticalAlignment="Center" Margin="16,0,0,0"/>
+                    <TextBlock Text="{Binding OrderEditorTitle}" Style="{StaticResource SectionTitle}" VerticalAlignment="Center" Margin="16,0,0,0"/>
                 </DockPanel>
                 <Border Grid.Row="1" Style="{StaticResource Card}">
                     <DockPanel>

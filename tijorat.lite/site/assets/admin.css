@@ -113,3 +113,4 @@ details.new-form>summary{list-style:none;cursor:pointer}details.new-form>summary
 .login h1{justify-content:center;margin:0;font-size:24px}
 .login-logo{width:56px;height:56px;border-radius:14px;align-self:center}
 .login input{height:42px}.login .btn{height:44px;justify-content:center;font-size:15px}
+.login-notice{margin:0;font-weight:500;font-size:13px;text-align:center}

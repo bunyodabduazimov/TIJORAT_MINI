@@ -156,3 +156,40 @@ function page_end(): void
         echo '<script>setTimeout(()=>location.reload(),' . (ADMIN_IDLE_TIMEOUT + 5) * 1000 . ');</script>';
     echo '</body></html>';
 }
+
+/**
+ * Страна по IP: [код, название]. Один пакетный запрос к ip-api.com на страницу,
+ * результат кэшируется в файле на 30 дней. Частные/локальные адреса пропускаются.
+ * @param string[] $ips
+ * @return array<string, array{0:string,1:string}>
+ */
+function geo_countries(array $ips): array
+{
+    $file = sys_get_temp_dir() . '/tijorat_geo_cache.json';
+    $cache = is_file($file) ? (json_decode((string)@file_get_contents($file), true) ?: []) : [];
+    $now = time();
+    $need = [];
+    foreach (array_unique(array_filter($ips)) as $ip) {
+        if (!filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE)) continue;
+        if (!isset($cache[$ip]) || $cache[$ip]['t'] < $now - 30 * 86400) $need[] = $ip;
+    }
+    if ($need) {
+        $ctx = stream_context_create(['http' => ['method' => 'POST', 'timeout' => 3, 'header' => "Content-Type: application/json\r\n",
+            'content' => json_encode(array_slice($need, 0, 100))]]);
+        $res = @file_get_contents('http://ip-api.com/batch?fields=status,query,country,countryCode&lang=ru', false, $ctx);
+        foreach (json_decode((string)$res, true) ?: [] as $r)
+            if (($r['status'] ?? '') === 'success') $cache[$r['query']] = ['c' => $r['countryCode'], 'n' => $r['country'], 't' => $now];
+        @file_put_contents($file, json_encode($cache), LOCK_EX);
+    }
+    $out = [];
+    foreach ($ips as $ip) if (isset($cache[$ip])) $out[$ip] = [$cache[$ip]['c'], $cache[$ip]['n']];
+    return $out;
+}
+
+/** Флаг-эмодзи и название страны для ячейки таблицы. */
+function country_cell(?array $c): string
+{
+    if (!$c) return '<span class="muted">—</span>';
+    $flag = preg_match('/^[A-Z]{2}$/', $c[0]) ? mb_chr(0x1F1E6 + ord($c[0][0]) - 65) . mb_chr(0x1F1E6 + ord($c[0][1]) - 65) . ' ' : '';
+    return $flag . h($c[1]);
+}

@@ -252,7 +252,36 @@ public class WarehouseService(IDbContextFactory<TradeDbContext> factory)
         if (productId is not null) q = q.Where(m => m.ProductId == productId);
         if (warehouseId is not null) q = q.Where(m => m.WarehouseId == warehouseId);
         if (type is not null) q = q.Where(m => m.Type == type);
-        return await q.OrderByDescending(m => m.Date).ThenByDescending(m => m.Id).Take(5000).ToListAsync(ct);
+        var list = await q.OrderByDescending(m => m.Date).ThenByDescending(m => m.Id).Take(5000).ToListAsync(ct);
+        if (list.Count == 0) return list;
+
+        // Остаток до/после: остаток на начало периода + все движения периода (без фильтра по типу).
+        var start = from.Date;
+        var end = to.Date.AddDays(1);
+        var productIds = list.Select(m => m.ProductId).Distinct().ToList();
+        var running = (await db.StockMovements.AsNoTracking()
+                .Where(m => m.Date < start && productIds.Contains(m.ProductId))
+                .GroupBy(m => new { m.ProductId, m.WarehouseId })
+                .Select(g => new { g.Key.ProductId, g.Key.WarehouseId, Qty = g.Sum(x => x.Quantity) })
+                .ToListAsync(ct))
+            .ToDictionary(x => (x.ProductId, x.WarehouseId), x => x.Qty);
+        var all = await db.StockMovements.AsNoTracking()
+            .Where(m => m.Date >= start && m.Date < end && productIds.Contains(m.ProductId))
+            .Select(m => new { m.Id, m.ProductId, m.WarehouseId, m.Quantity, m.Date })
+            .ToListAsync(ct);
+        var after = new Dictionary<int, decimal>();
+        foreach (var m in all.OrderBy(m => m.Date).ThenBy(m => m.Id))
+        {
+            var key = (m.ProductId, m.WarehouseId);
+            running[key] = running.GetValueOrDefault(key) + m.Quantity;
+            after[m.Id] = running[key];
+        }
+        foreach (var m in list)
+        {
+            m.BalanceAfter = after.GetValueOrDefault(m.Id);
+            m.BalanceBefore = m.BalanceAfter - m.Quantity;
+        }
+        return list;
     }
 
     private static async Task EnsureGoodsAsync(TradeDbContext db, int productId, CancellationToken ct)

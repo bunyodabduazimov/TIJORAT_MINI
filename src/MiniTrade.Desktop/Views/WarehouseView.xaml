@@ -109,9 +109,9 @@
                             <DataGridTextColumn Header="{l:T 'Мин. остаток'}" Binding="{Binding MinStock, StringFormat={}{0:0.###}}" Width="100" ElementStyle="{StaticResource RightCell}"/>
                             <DataGridTextColumn Header="{l:T 'Ед. изм.'}" Binding="{Binding Unit}" Width="70"/>
                             <DataGridTextColumn Header="{l:T 'Средняя себестоимость'}" Binding="{Binding AvgCost, StringFormat={}{0:N2}}" Width="150" ElementStyle="{StaticResource RightCell}"/>
-                            <DataGridTextColumn Header="{l:T 'Стоимость запаса'}" Binding="{Binding CostValue, Converter={StaticResource Money}}" Width="130" ElementStyle="{StaticResource RightCell}"/>
+                            <DataGridTextColumn Header="{l:T 'Стоимость запаса'}" Binding="{Binding CostValue, StringFormat={}{0:N2}}" Width="130" ElementStyle="{StaticResource RightCell}"/>
                             <DataGridTextColumn Header="{l:T 'Цена продажи'}" Binding="{Binding SalePrice, StringFormat={}{0:N2}}" Width="110" ElementStyle="{StaticResource RightCell}"/>
-                            <DataGridTextColumn Header="{l:T 'Розничная стоимость'}" Binding="{Binding SaleValue, Converter={StaticResource Money}}" Width="130" ElementStyle="{StaticResource RightCell}"/>
+                            <DataGridTextColumn Header="{l:T 'Розничная стоимость'}" Binding="{Binding SaleValue, StringFormat={}{0:N2}}" Width="130" ElementStyle="{StaticResource RightCell}"/>
                         </DataGrid.Columns>
                     </DataGrid>
                 </DockPanel>
@@ -865,7 +865,9 @@
                             <DataGridTextColumn Header="{l:T 'Операция'}" Binding="{Binding Type, Converter={StaticResource EnumName}}" Width="140"/>
                             <DataGridTextColumn Header="{l:T 'Товар'}" Binding="{Binding Product.Name}" Width="*" MinWidth="160"/>
                             <DataGridTextColumn Header="{l:T 'Склад'}" Binding="{Binding Warehouse.Name}" Width="150"/>
+                            <DataGridTextColumn Header="{l:T 'Было'}" Binding="{Binding BalanceBefore, StringFormat={}{0:0.###}}" Width="80" ElementStyle="{StaticResource RightCell}"/>
                             <DataGridTextColumn Header="{l:T 'Количество'}" Binding="{Binding Quantity, StringFormat={}{0:+0.###;-0.###;0}}" Width="100" ElementStyle="{StaticResource RightCell}"/>
+                            <DataGridTextColumn Header="{l:T 'Стало'}" Binding="{Binding BalanceAfter, StringFormat={}{0:0.###}}" Width="80" ElementStyle="{StaticResource RightCell}"/>
                             <DataGridTextColumn Header="{l:T 'Себест.'}" Binding="{Binding UnitCost, StringFormat={}{0:N2}}" Width="100" ElementStyle="{StaticResource RightCell}"/>
                         </DataGrid.Columns>
                     </DataGrid>

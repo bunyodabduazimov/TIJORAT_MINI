@@ -25,9 +25,12 @@ public partial class ProductionViewModel : DocumentEditorBase
     private readonly CatalogService _catalog;
     private Dictionary<int, (decimal Quantity, decimal AvgCost)> _stock = new();
 
-    public ProductionViewModel(ProductionService production, WarehouseService warehouse, CatalogService catalog,
+    private readonly SettingsService _settings;
+
+    public ProductionViewModel(ProductionService production, WarehouseService warehouse, CatalogService catalog, SettingsService settings,
         IDialogService dialogs, ICatalogDialogs catalogDialogs) : base(dialogs, catalogDialogs)
     {
+        _settings = settings;
         _production = production;
         _stockService = warehouse;
         _catalog = catalog;
@@ -167,8 +170,74 @@ public partial class ProductionViewModel : DocumentEditorBase
         ExtraCost = 0;
         OrderComment = null;
         OrderDate = DateTime.Today;
+        EditingOrderId = 0;
         IsOrderEditorOpen = false;
     }
+
+    /// <summary>Id изменяемого документа (0 — новый выпуск).</summary>
+    [ObservableProperty, NotifyPropertyChangedFor(nameof(OrderEditorTitle))] private int _editingOrderId;
+    private string? _editingOrderNumber;
+    public string OrderEditorTitle => EditingOrderId == 0 ? L.T("Новый выпуск продукции") : L.F("Изменение выпуска {0}", _editingOrderNumber);
+
+    [RelayCommand]
+    private Task EditOrderAsync(ProductionOrder? order) => order is null ? Task.CompletedTask : OpenOrderInEditorAsync(order, edit: true);
+
+    [RelayCommand]
+    private Task CopyOrderAsync(ProductionOrder? order) => order is null ? Task.CompletedTask : OpenOrderInEditorAsync(order, edit: false);
+
+    /// <summary>Открывает редактор, заполненный данными документа (для изменения или как копию).</summary>
+    private Task OpenOrderInEditorAsync(ProductionOrder order, bool edit) => RunAsync(async () =>
+    {
+        var items = await _production.GetOrderItemsAsync(order.Id);
+        Warehouse = Warehouses.FirstOrDefault(w => w.Id == order.WarehouseId) ?? Warehouses.FirstOrDefault();
+        OutputProduct = Products.FirstOrDefault(p => p.Id == order.ProductId) ?? order.Product;
+        OutputQuantity = order.Quantity;
+        ClearLines();
+        foreach (var i in items)
+        {
+            var product = Products.FirstOrDefault(p => p.Id == i.ProductId) ?? i.Product;
+            if (product is not null) AddOrMerge(product, i.Quantity, DefaultPrice(product));
+        }
+        ExtraCost = order.ExtraCost;
+        OrderComment = order.Comment;
+        OrderDate = edit ? order.Date.Date : DateTime.Today;
+        _editingOrderNumber = order.Number;
+        EditingOrderId = edit ? order.Id : 0;
+        OnPropertyChanged(nameof(OrderEditorTitle));
+        IsOrderDetailOpen = false;
+        IsOrderEditorOpen = true;
+    });
+
+    [RelayCommand]
+    private async Task DeleteOrderAsync(ProductionOrder? order)
+    {
+        if (order is null) return;
+        if (!Dialogs.Confirm(L.F("Удалить выпуск {0}? Продукция будет списана, материалы вернутся на склад.", order.Number))) return;
+        if (!await RunAsync(() => _production.CancelAsync(order.Id))) return;
+        IsOrderDetailOpen = false;
+        await LoadAsync();
+    }
+
+    [RelayCommand]
+    private Task PrintOrderAsync(ProductionOrder? order) => order is null ? Task.CompletedTask : RunAsync(async () =>
+    {
+        var items = await _production.GetOrderItemsAsync(order.Id);
+        var title = L.F("Выпуск продукции {0}", order.Number);
+        var subtitle = L.F("{0:dd.MM.yyyy HH:mm} · {1} · {2}: {3:0.###} {4}", order.Date, order.Warehouse?.Name,
+            order.Product?.Name, order.Quantity, order.Product?.Unit);
+        var rows = items.Select(i => new List<string> { i.Product?.Name ?? "", $"{i.Quantity:0.###} {i.Product?.Unit}", $"{i.UnitCost:N2}", $"{i.Amount:N2}" });
+        var totals = new List<string> { L.F("Материалы: {0}", Money.Format(order.MaterialsCost)) };
+        if (order.ExtraCost != 0) totals.Add(L.F("Доп. расходы: {0}", Money.Format(order.ExtraCost)));
+        totals.Add(L.F("Себестоимость выпуска: {0}  (за ед.: {1:N2})", Money.Format(order.TotalCost), order.UnitCost));
+        if (!string.IsNullOrWhiteSpace(order.Comment)) totals.Add(order.Comment!);
+        var doc = Infrastructure.Printing.PrintDocuments.TableReport(title, subtitle, await _settings.GetCompanyAsync(),
+            [(L.T("Материал"), new System.Windows.GridLength(1, System.Windows.GridUnitType.Star), false),
+             (L.T("Количество"), new System.Windows.GridLength(90), true),
+             (L.T("Себест. ед."), new System.Windows.GridLength(90), true),
+             (L.T("Сумма"), new System.Windows.GridLength(100), true)],
+            rows, totals);
+        Infrastructure.Printing.DocumentPrinter.Print(title, doc);
+    });
 
     [RelayCommand]
     private async Task PostOrderAsync()
@@ -193,7 +262,8 @@ public partial class ProductionViewModel : DocumentEditorBase
         var request = new ProductionRequest(Warehouse.Id, OutputProduct.Id, OutputQuantity,
             Lines.Select(l => new MaterialLine(l.Product.Id, l.Quantity)).ToList(), ExtraCost, OrderComment, date, Recipe?.Id);
         ProductionOrder? doc = null;
-        var ok = await RunAsync(async () => doc = await _production.ProduceAsync(request));
+        var replaceId = EditingOrderId == 0 ? (int?)null : EditingOrderId;
+        var ok = await RunAsync(async () => doc = await _production.ProduceAsync(request, default, replaceId));
         if (!ok || doc is null) return;
         Dialogs.Info(L.F("Производство {0} проведено. Себестоимость единицы: {1:N2}", doc.Number, doc.UnitCost));
         ResetOrderEditor();

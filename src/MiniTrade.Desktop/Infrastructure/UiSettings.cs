@@ -60,8 +60,16 @@ public sealed class UiSettings
     public bool PosShowTable { get; set; }
     public bool PosOnlyInStock { get; set; }
     public bool PosShowCategories { get; set; } = true;
+    /// <summary>Фото на карточках товаров витрины.</summary>
+    public bool PosShowTilePhotos { get; set; } = true;
     /// <summary>Масштаб карточек товаров на витрине (1 — обычный).</summary>
     public double PosTileScale { get; set; } = 1;
+    /// <summary>Окно оформления: печатать чек сразу после проведения продажи.</summary>
+    public bool PosPrintReceipt { get; set; }
+    /// <summary>Окно оформления: печатать накладную сразу после проведения продажи.</summary>
+    public bool PosPrintInvoice { get; set; }
+    /// <summary>Скрытые столбцы таблицы витрины (ключи: Photo, Sku, Barcode, Stock, Price, Qty).</summary>
+    public List<string> PosHiddenColumns { get; set; } = new();
     public DateTime? LastBackupAt { get; set; }
     /// <summary>Был ли хотя бы один успешный вход — скрывает подсказку «admin / admin».</summary>
     public bool HasLoggedIn { get; set; }
