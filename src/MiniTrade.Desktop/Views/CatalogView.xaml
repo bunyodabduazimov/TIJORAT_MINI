@@ -134,7 +134,7 @@
                                     <DataTemplate>
                                         <Grid Width="28" Height="28">
                                             <Border CornerRadius="6" Background="{DynamicResource SurfaceAltBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1">
-                                                <TextBlock Text="&#xF0976;" FontFamily="{StaticResource IconFont}" FontSize="11" Foreground="{DynamicResource SubtleTextBrush}"
+                                                <TextBlock Text="&#xF03D7;" FontFamily="{StaticResource IconFont}" FontSize="16" Foreground="{DynamicResource SubtleTextBrush}"
                                                            HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                             </Border>
                                             <Image Source="{Binding Thumbnail, Converter={StaticResource Image}, ConverterParameter=64}" Stretch="UniformToFill">
@@ -170,7 +170,8 @@
                             <DataGridTextColumn Header="{l:T 'Категория'}" Binding="{Binding Category.Name}" Width="*" MinWidth="120"/>
                             <DataGridTextColumn Header="{l:T 'Ед. изм.'}" Binding="{Binding Unit}" Width="70"/>
                             <DataGridTextColumn Header="{l:T 'Цена закупки'}" Binding="{Binding PurchasePrice, StringFormat={}{0:N2}}" Width="110" ElementStyle="{StaticResource RightCell}"/>
-                            <DataGridTextColumn Header="{l:T 'Цена продажи'}" Binding="{Binding SalePrice, StringFormat={}{0:N2}}" Width="110" ElementStyle="{StaticResource RightCell}"/>
+                            <DataGridTextColumn Header="{l:T 'Розница'}" Binding="{Binding SalePrice, StringFormat={}{0:N2}}" Width="110" ElementStyle="{StaticResource RightCell}"/>
+                            <DataGridTextColumn Header="{l:T 'Опт'}" Binding="{Binding WholesalePrice, StringFormat={}{0:N2}}" Width="110" ElementStyle="{StaticResource RightCell}"/>
                             <DataGridTextColumn Header="{l:T 'Статус'}" Binding="{Binding IsActive, Converter={StaticResource ActiveStatus}}" Width="90"/>
                         </DataGrid.Columns>
                     </DataGrid>
@@ -210,7 +211,7 @@
             </Border>
         </TabItem>
 
-        <TabItem Header="{l:T 'Единицы измерения'}" Visibility="{l:Can catalog.units.view}">
+        <TabItem Header="{l:T 'Единицы'}" Visibility="{l:Can catalog.units.view}">
             <Border Style="{StaticResource Card}" DataContext="{Binding Units}">
                 <DockPanel>
                     <ContentControl DockPanel.Dock="Top" Content="{Binding}" ContentTemplate="{StaticResource Toolbar}" Focusable="False"/>
@@ -227,7 +228,7 @@
             </Border>
         </TabItem>
 
-        <TabItem Header="{l:T 'Торговые весы'}" Visibility="{l:Can catalog.scales.view}">
+        <TabItem Header="{l:T 'Весы'}" Visibility="{l:Can catalog.scales.view}">
             <Border Style="{StaticResource Card}" DataContext="{Binding Scales}">
                 <DockPanel>
                     <ContentControl DockPanel.Dock="Top" Content="{Binding}" ContentTemplate="{StaticResource Toolbar}" Focusable="False"/>
@@ -246,7 +247,7 @@
             </Border>
         </TabItem>
 
-        <TabItem Header="{l:T 'Клиенты и поставщики'}" Visibility="{l:Can catalog.counterparties.view}">
+        <TabItem Header="{l:T 'Контрагенты'}" Visibility="{l:Can catalog.counterparties.view}">
             <Border Style="{StaticResource Card}" DataContext="{Binding Counterparties}">
                 <DockPanel>
                     <DockPanel DockPanel.Dock="Top">
@@ -309,7 +310,7 @@
             </Border>
         </TabItem>
 
-        <TabItem Header="{l:T 'Группы контрагентов'}" Visibility="{l:Can catalog.groups.view}">
+        <TabItem Header="{l:T 'Группы'}" Visibility="{l:Can catalog.groups.view}">
             <Border Style="{StaticResource Card}" DataContext="{Binding CounterpartyGroups}">
                 <DockPanel>
                     <ContentControl DockPanel.Dock="Top" Content="{Binding}" ContentTemplate="{StaticResource Toolbar}" Focusable="False"/>
@@ -347,7 +348,7 @@
             </Border>
         </TabItem>
 
-        <TabItem Header="{l:T 'Кассы и счета'}" Visibility="{l:Can catalog.cashregisters.view}">
+        <TabItem Header="{l:T 'Кассы'}" Visibility="{l:Can catalog.cashregisters.view}">
             <Border Style="{StaticResource Card}" DataContext="{Binding CashRegisters}">
                 <DockPanel>
                     <ContentControl DockPanel.Dock="Top" Content="{Binding}" ContentTemplate="{StaticResource Toolbar}" Focusable="False"/>
@@ -365,7 +366,7 @@
             </Border>
         </TabItem>
 
-        <TabItem Header="{l:T 'Статьи финансов'}" Visibility="{l:Can catalog.articles.view}">
+        <TabItem Header="{l:T 'Статьи'}" Visibility="{l:Can catalog.articles.view}">
             <Border Style="{StaticResource Card}" DataContext="{Binding Articles}">
                 <DockPanel>
                     <ContentControl DockPanel.Dock="Top" Content="{Binding}" ContentTemplate="{StaticResource Toolbar}" Focusable="False"/>

@@ -90,7 +90,7 @@
                                    Height="30" LineHeight="15" ToolTip="{Binding Product.Name}"/>
                         <DockPanel Margin="0,2,0,0">
                             <TextBlock x:Name="Stock" DockPanel.Dock="Right" Text="{Binding StockText}" Style="{StaticResource Muted}" FontSize="11" VerticalAlignment="Bottom"/>
-                            <TextBlock Text="{Binding Product.SalePrice, Converter={StaticResource Money}}" FontWeight="Bold" FontSize="12" Foreground="{DynamicResource PrimaryBrush}"/>
+                            <TextBlock Text="{Binding Price, Converter={StaticResource Money}}" FontWeight="Bold" FontSize="12" Foreground="{DynamicResource PrimaryBrush}"/>
                         </DockPanel>
                     </StackPanel>
                 </StackPanel>
@@ -219,7 +219,7 @@
                                     <DataGridTextColumn Header="{l:T 'Артикул'}" Binding="{Binding Product.Sku}" Width="90"/>
                                     <DataGridTextColumn Header="{l:T 'Штрихкод'}" Binding="{Binding Product.Barcode}" Width="120"/>
                                     <DataGridTextColumn Header="{l:T 'Остаток'}" Binding="{Binding StockText}" Width="90" SortMemberPath="Stock" ElementStyle="{StaticResource RightCell}"/>
-                                    <DataGridTextColumn Header="{l:T 'Цена'}" Binding="{Binding Product.SalePrice, Converter={StaticResource Money}}" Width="100" SortMemberPath="Product.SalePrice">
+                                    <DataGridTextColumn Header="{l:T 'Цена'}" Binding="{Binding Price, Converter={StaticResource Money}}" Width="100" SortMemberPath="Price">
                                         <DataGridTextColumn.ElementStyle>
                                             <Style TargetType="TextBlock" BasedOn="{StaticResource RightCell}">
                                                 <Setter Property="FontWeight" Value="SemiBold"/>
@@ -251,6 +251,40 @@
                         <DockPanel DockPanel.Dock="Top" Margin="0,0,0,10">
                             <Button DockPanel.Dock="Right" Style="{StaticResource SmallButton}" Content="{l:T 'Очистить чек'}" Command="{Binding NewSaleCommand}"
                                     ToolTip="{l:T 'Начать новую продажу'}"/>
+                            <!-- Тип цены: розница / опт -->
+                            <Border DockPanel.Dock="Right" Margin="0,0,6,0" CornerRadius="6" BorderThickness="1" Padding="2"
+                                    BorderBrush="{DynamicResource InputBorderBrush}" Background="{DynamicResource SurfaceBrush}"
+                                    ToolTip="{l:T 'Тип цены в чеке: розничная или оптовая'}">
+                                <Border.Resources>
+                                    <Style x:Key="PriceSeg" TargetType="RadioButton">
+                                        <Setter Property="Cursor" Value="Hand"/>
+                                        <Setter Property="GroupName" Value="PriceType"/>
+                                        <Setter Property="Template">
+                                            <Setter.Value>
+                                                <ControlTemplate TargetType="RadioButton">
+                                                    <Border x:Name="Bd" CornerRadius="4" Padding="10,0" MinHeight="26" Background="Transparent" TextElement.Foreground="{DynamicResource TextBrush}">
+                                                        <ContentPresenter VerticalAlignment="Center"/>
+                                                    </Border>
+                                                    <ControlTemplate.Triggers>
+                                                        <Trigger Property="IsMouseOver" Value="True">
+                                                            <Setter TargetName="Bd" Property="Background" Value="{DynamicResource SurfaceAltBrush}"/>
+                                                        </Trigger>
+                                                        <Trigger Property="IsChecked" Value="True">
+                                                            <Setter TargetName="Bd" Property="Background" Value="{DynamicResource PrimaryBrush}"/>
+                                                            <Setter TargetName="Bd" Property="TextElement.Foreground" Value="White"/>
+                                                            <Setter TargetName="Bd" Property="TextElement.FontWeight" Value="SemiBold"/>
+                                                        </Trigger>
+                                                    </ControlTemplate.Triggers>
+                                                </ControlTemplate>
+                                            </Setter.Value>
+                                        </Setter>
+                                    </Style>
+                                </Border.Resources>
+                                <StackPanel Orientation="Horizontal">
+                                    <RadioButton Style="{StaticResource PriceSeg}" Content="{l:T 'Розница'}" IsChecked="{Binding IsRetail}"/>
+                                    <RadioButton Style="{StaticResource PriceSeg}" Content="{l:T 'Опт'}" IsChecked="{Binding IsWholesale}"/>
+                                </StackPanel>
+                            </Border>
                             <!-- Черновики: отложенные чеки -->
                             <Grid DockPanel.Dock="Right" Margin="0,0,6,0">
                                 <ToggleButton x:Name="DraftsToggle" IsChecked="{Binding IsDraftsOpen}" Cursor="Hand" Foreground="{DynamicResource TextBrush}" ToolTip="{l:T 'Отложенные чеки'}">

@@ -4,8 +4,8 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <LangVersion>latest</LangVersion>
     <EnableWindowsTargeting>true</EnableWindowsTargeting>
-    <Company>Mini Trade</Company>
-    <Product>Mini Trade ERP</Product>
+    <Company>Tijorat</Company>
+    <Product>TIJORAT LITE</Product>
     <Version>1.8.1</Version>
   </PropertyGroup>
 </Project>

@@ -44,7 +44,11 @@ public static class ComboSearch
         cb.DropDownOpened -= OnOpened;
         cb.DropDownClosed -= OnClosed;
         cb.PreviewTextInput -= OnComboTextInput;
+        cb.PreviewMouseLeftButtonDown -= OnItemClickGuard;
+        cb.PreviewMouseLeftButtonUp -= OnItemClickGuard;
         if (e.NewValue is not true) return;
+        cb.PreviewMouseLeftButtonDown += OnItemClickGuard;
+        cb.PreviewMouseLeftButtonUp += OnItemClickGuard;
         cb.DropDownOpened += OnOpened;
         cb.DropDownClosed += OnClosed;
         cb.PreviewTextInput += OnComboTextInput;
@@ -59,6 +63,10 @@ public static class ComboSearch
             box.Tag = cb;
             box.TextChanged += OnSearchChanged;
             box.PreviewKeyDown += OnSearchKeyDown;
+            // Фокус в поле поиска шлёт RequestBringIntoView, который из Popup всплывает
+            // до ScrollViewer страницы: страница прокручивается и список тут же закрывается.
+            if (cb.Template.FindName("DropDown", cb) is FrameworkElement drop)
+                drop.RequestBringIntoView += (_, e) => e.Handled = true;
         }
         return box;
     }
@@ -67,6 +75,7 @@ public static class ComboSearch
     {
         if (sender is not ComboBox cb || SearchBox(cb) is not { } box) return;
         box.Text = "";
+        cb.SetValue(OpenedAtProperty, Environment.TickCount64);
         // После того как ComboBox сам переведёт фокус на выбранную строку
         cb.Dispatcher.BeginInvoke(DispatcherPriority.Input, () =>
         {
@@ -80,6 +89,22 @@ public static class ComboSearch
         if (sender is not ComboBox cb) return;
         if (SearchBox(cb) is { } box) box.Text = "";
         if (cb.IsKeyboardFocusWithin) cb.Focus();
+    }
+
+    // Пока список раскрывается, щелчок по строке не выбирает её —
+    // иначе нажатие у края поля сразу выбирает строку, которая «выехала» под курсор.
+    private const long OpenGuardMs = 350;
+
+    private static readonly DependencyProperty OpenedAtProperty = DependencyProperty.RegisterAttached(
+        "OpenedAt", typeof(long), typeof(ComboSearch), new PropertyMetadata(0L));
+
+    private static void OnItemClickGuard(object sender, MouseButtonEventArgs e)
+    {
+        var cb = (ComboBox)sender;
+        if (!cb.IsDropDownOpen) return;
+        if (Environment.TickCount64 - (long)cb.GetValue(OpenedAtProperty) > OpenGuardMs) return;
+        if (e.OriginalSource is DependencyObject src && ItemsControl.ContainerFromElement(cb, src) is ComboBoxItem)
+            e.Handled = true;
     }
 
     // Набор текста на закрытом списке (или на строке списка) — открываем и пишем в поиск

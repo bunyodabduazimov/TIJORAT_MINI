@@ -29,6 +29,54 @@ public class User : Entity
     public string? LastLoginMachine { get; set; }
     public int LoginCount { get; set; }
 
+    // ── Личные настройки доступа (сверх прав роли) ──
+
+    /// <summary>Склад, который подставляется в документы этого пользователя.</summary>
+    public int? DefaultWarehouseId { get; set; }
+    /// <summary>Касса, которая подставляется в документы этого пользователя.</summary>
+    public int? DefaultCashRegisterId { get; set; }
+    /// <summary>Доступные склады через запятую (id); пусто — все склады.</summary>
+    public string? AllowedWarehouseIds { get; set; }
+    /// <summary>Доступные кассы через запятую (id); пусто — все кассы.</summary>
+    public string? AllowedCashRegisterIds { get; set; }
+    /// <summary>Максимальная скидка в продаже, %; пусто — без ограничения.</summary>
+    public decimal? MaxDiscountPercent { get; set; }
+    /// <summary>Последний день, когда разрешён вход; пусто — бессрочно.</summary>
+    public DateTime? AccessUntil { get; set; }
+
+    /// <summary>Начало разрешённого времени работы; пусто — круглосуточно.</summary>
+    public TimeSpan? WorkFrom { get; set; }
+    /// <summary>Конец разрешённого времени работы; может быть меньше начала (ночная смена).</summary>
+    public TimeSpan? WorkTo { get; set; }
+
+    public bool IsAccessExpired => AccessUntil is { } d && DateTime.Today > d.Date;
+
+    public string WorkHoursText => HasWorkHours ? $"{WorkFrom:hh\\:mm}–{WorkTo:hh\\:mm}" : "—";
+
+    public bool HasWorkHours =>WorkFrom is not null && WorkTo is not null && WorkFrom != WorkTo;
+
+    /// <summary>Разрешена ли работа в указанное время суток.</summary>
+    public bool IsWithinWorkHours(TimeSpan time)
+    {
+        if (!HasWorkHours) return true;
+        var from = WorkFrom!.Value; var to = WorkTo!.Value;
+        return from < to ? time >= from && time < to : time >= from || time < to;
+    }
+
+    public static HashSet<int>? ParseIds(string? ids)
+    {
+        if (string.IsNullOrWhiteSpace(ids)) return null;
+        var set = ids.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Select(s => int.TryParse(s, out var id) ? id : 0).Where(id => id > 0).ToHashSet();
+        return set.Count == 0 ? null : set;
+    }
+
+    public static string? JoinIds(IEnumerable<int> ids)
+    {
+        var list = ids.Distinct().OrderBy(i => i).ToList();
+        return list.Count == 0 ? null : string.Join(",", list);
+    }
+
     public bool IsAdmin => Role == UserRole.Admin || AccessRole?.IsAdmin == true;
 
     /// <summary>Разрешено ли действие (ключ из <see cref="Perm"/>).</summary>

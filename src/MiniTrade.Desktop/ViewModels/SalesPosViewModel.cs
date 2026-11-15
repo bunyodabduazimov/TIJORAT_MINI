@@ -14,6 +14,10 @@ public partial class PosItem(Product product) : ObservableObject
     public Product Product { get; } = product;
     [ObservableProperty] [NotifyPropertyChangedFor(nameof(IsOut), nameof(StockText))] private decimal _stock;
     [ObservableProperty] [NotifyPropertyChangedFor(nameof(InCart))] private decimal _inCartQuantity;
+    [ObservableProperty] [NotifyPropertyChangedFor(nameof(Price))] private bool _isWholesale;
+
+    /// <summary>Цена на витрине — розничная или оптовая, по переключателю в чеке.</summary>
+    public decimal Price => SalesViewModel.PriceOf(Product, IsWholesale);
 
     public bool IsOut => !Product.IsService && Stock <= 0;
     public bool InCart => InCartQuantity > 0;
@@ -97,7 +101,7 @@ public partial class SalesViewModel
         var categories = await catalog.GetAllAsync<Category>(activeOnly: true);
 
         _allItems.Clear();
-        _allItems.AddRange(Products.Select(p => new PosItem(p)));
+        _allItems.AddRange(Products.Select(p => new PosItem(p) { IsWholesale = IsWholesale }));
         await LoadStockAsync();
 
         var selectedId = SelectedPosCategory is { } sel ? sel.Category?.Id : App.Ui.PosCategoryId;
@@ -208,7 +212,7 @@ public partial class SalesViewModel
             var looksLikeCode = term.All(char.IsLetterOrDigit) && term.Any(char.IsDigit);
             var created = await CatalogDialogs.EditAsync(Products, looksLikeCode ? new Product { Barcode = term } : new Product { Name = term });
             if (created?.Saved is not { } p) return;
-            _allItems.Add(new PosItem(p) { Stock = _stock.GetValueOrDefault(p.Id) });
+            _allItems.Add(new PosItem(p) { IsWholesale = IsWholesale, Stock = _stock.GetValueOrDefault(p.Id) });
             product = p;
         }
         AddToCart(product);

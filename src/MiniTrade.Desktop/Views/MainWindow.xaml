@@ -6,7 +6,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:vm="clr-namespace:MiniTrade.Desktop.ViewModels"
         mc:Ignorable="d" d:DataContext="{d:DesignInstance vm:MainViewModel}"
-        Title="TIJORAT.PRO" Width="1360" Height="840" MinWidth="960" MinHeight="640"
+        Title="TIJORAT LITE" Width="1360" Height="840" MinWidth="960" MinHeight="640"
         WindowStartupLocation="CenterScreen" WindowState="Maximized" Style="{StaticResource ChromeWindow}">
     <Window.Resources>
         <!-- Скрывать подписи, когда меню свёрнуто до иконок -->

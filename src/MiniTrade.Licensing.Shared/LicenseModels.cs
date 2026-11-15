@@ -55,7 +55,8 @@ public sealed record LicensePayload
 
 public sealed record DeviceInfo(string InstallationId, string DeviceFingerprint, string MachineName, string AppVersion);
 
-public sealed record RegisterRequest(DeviceInfo Device, string FullName, string Company, string Phone);
+/// <param name="Country">Страна клиента — код ISO 3166-1 alpha-2 (TJ, UZ…); старые версии программы не передают.</param>
+public sealed record RegisterRequest(DeviceInfo Device, string FullName, string Company, string Phone, string? Country = null);
 
 public sealed record ActivateRequest(DeviceInfo Device, string LicenseKey, string? FullName = null, string? Company = null, string? Phone = null);
 

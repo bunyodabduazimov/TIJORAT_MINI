@@ -83,6 +83,9 @@ public class SalesService(IDbContextFactory<TradeDbContext> factory, UserSession
 
     private static List<DocumentLine> ValidLines(SaleRequest request)
     {
+        Access.DemandWarehouse(request.WarehouseId);
+        Access.DemandCashRegister(request.CashRegisterId);
+        foreach (var p in request.Payments ?? []) if (p.Amount > 0) Access.DemandCashRegister(p.CashRegisterId);
         var lines = request.Lines.Where(l => l.Quantity != 0).ToList();
         if (lines.Count == 0) throw new BusinessException("Добавьте хотя бы один товар.");
         if (lines.Any(l => l.Quantity < 0)) throw new BusinessException("Количество не может быть отрицательным.");

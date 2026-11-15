@@ -33,7 +33,11 @@ public class LicenseService(LicenseDbContext db, SigningKeyProvider keys, TimePr
             return Ok("Пробный период продолжен.", lic, device);
         }
 
-        var customer = new Customer { FullName = req.FullName.Trim(), Company = req.Company?.Trim() ?? "", Phone = req.Phone.Trim() };
+        var customer = new Customer
+        {
+            FullName = req.FullName.Trim(), Company = req.Company?.Trim() ?? "", Phone = req.Phone.Trim(),
+            Country = NormalizeCountry(req.Country)
+        };
         var license = new License
         {
             Key = await NewUniqueKeyAsync(ct),
@@ -46,7 +50,7 @@ public class LicenseService(LicenseDbContext db, SigningKeyProvider keys, TimePr
         db.Licenses.Add(license);
         license.Activations.Add(new Activation { Device = device, ActivatedAt = Now, LastCheckAt = Now });
         await db.SaveChangesAsync(ct);
-        await LogAsync("trial_registered", license.Id, device.Id, $"{customer.FullName}, {customer.Company}, {customer.Phone}", ip, ct);
+        await LogAsync("trial_registered", license.Id, device.Id, $"{customer.FullName}, {customer.Company}, {customer.Phone}, {customer.Country}", ip, ct);
         await db.SaveChangesAsync(ct);
         return Ok($"Пробный период активирован на {LicenseDefaults.TrialDays} дней.", license, device);
     }
@@ -181,6 +185,13 @@ public class LicenseService(LicenseDbContext db, SigningKeyProvider keys, TimePr
 
     public Task AdminLogAsync(string action, int? licenseId, int? deviceId, string? details, CancellationToken ct = default) =>
         LogAsync(action, licenseId, deviceId, details, "admin", ct);
+
+    /// <summary>Код страны ISO 3166-1 alpha-2 в верхнем регистре; что-то иное — не сохраняем.</summary>
+    private static string? NormalizeCountry(string? country)
+    {
+        var c = country?.Trim().ToUpperInvariant();
+        return c is { Length: 2 } && c.All(char.IsAsciiLetterUpper) ? c : null;
+    }
 
     private static bool IsValidDevice(DeviceInfo? d) =>
         d is not null

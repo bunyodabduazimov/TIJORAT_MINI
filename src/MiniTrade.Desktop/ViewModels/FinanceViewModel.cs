@@ -219,6 +219,8 @@ public partial class FinanceViewModel(
     public FinanceFilter Filter { get; private set; } = new();
     public bool HasActiveFilter => Filter.ActiveCount > 0;
     public int ActiveFilterCount => Filter.ActiveCount;
+    /// <summary>Период учитывается, только если не включено «Последние добавленные».</summary>
+    public bool PeriodEnabled => !Filter.LatestAdded;
 
     // ── Постраничный вывод ──
     public IReadOnlyList<int> PageSizes { get; } = [25, 50, 100, 200];
@@ -270,7 +272,8 @@ public partial class FinanceViewModel(
     private async Task LoadOperationsCore()
     {
         var version = ++_loadVersion;
-        var f = new CashOperationFilter(From, To, Filter.CashRegisterId, Filter.Direction, Filter.CounterpartyId, Search, Filter.Kinds);
+        var f = new CashOperationFilter(From, To, Filter.CashRegisterId, Filter.Direction, Filter.CounterpartyId, Search, Filter.Kinds,
+            Filter.FinanceOnly, Filter.LatestAdded);
         var result = await finance.GetOperationsPageAsync(f, (Page - 1) * PageSize, PageSize);
         if (version != _loadVersion) return; // ответ на устаревший запрос
 
@@ -315,6 +318,7 @@ public partial class FinanceViewModel(
         Filter = applied;
         OnPropertyChanged(nameof(HasActiveFilter));
         OnPropertyChanged(nameof(ActiveFilterCount));
+        OnPropertyChanged(nameof(PeriodEnabled));
         Page = 1;
         await RunAsync(LoadOperationsCore);
     }
@@ -394,9 +398,11 @@ public partial class FinanceViewModel(
 }
 
 /// <summary>Условия фильтра журнала (кроме периода и поиска).</summary>
-public sealed record FinanceFilter(int? CashRegisterId = null, int? OperationType = null, int? CounterpartyId = null)
+public sealed record FinanceFilter(int? CashRegisterId = null, int? OperationType = null, int? CounterpartyId = null,
+    bool FinanceOnly = false, bool LatestAdded = false)
 {
-    public int ActiveCount => (CashRegisterId is null ? 0 : 1) + (OperationType is null ? 0 : 1) + (CounterpartyId is null ? 0 : 1);
+    public int ActiveCount => (CashRegisterId is null ? 0 : 1) + (OperationType is null ? 0 : 1) + (CounterpartyId is null ? 0 : 1)
+        + (FinanceOnly ? 1 : 0) + (LatestAdded ? 1 : 0);
 
     /// <summary>Типы операций фильтра: название, направление (null — любое), виды (null — любые).</summary>
     public static readonly (string Name, CashDirection? Direction, CashOperationKind[]? Kinds)[] OperationTypes =
@@ -448,6 +454,10 @@ public partial class FinanceFilterViewModel : ObservableObject, ICloseRequest
     [ObservableProperty] private FilterChoice<int>? _cash;
     [ObservableProperty] private FilterChoice<int>? _direction;
     [ObservableProperty] private FilterChoice<int>? _counterparty;
+    /// <summary>Только операции раздела «Финансы» (меню «Новая операция»), без продаж, закупок и возвратов.</summary>
+    [ObservableProperty] private bool _financeOnly;
+    /// <summary>Последние добавленные сверху, период не учитывается.</summary>
+    [ObservableProperty] private bool _latestAdded;
     /// <summary>Применённый фильтр; null — окно закрыто без изменений.</summary>
     public FinanceFilter? Result { get; private set; }
 
@@ -456,6 +466,8 @@ public partial class FinanceFilterViewModel : ObservableObject, ICloseRequest
         Cash = CashChoices.FirstOrDefault(c => c.Value == f.CashRegisterId) ?? CashChoices[0];
         Direction = DirectionChoices.FirstOrDefault(c => c.Value == f.OperationType) ?? DirectionChoices[0];
         Counterparty = CounterpartyChoices.FirstOrDefault(c => c.Value == f.CounterpartyId) ?? CounterpartyChoices[0];
+        FinanceOnly = f.FinanceOnly;
+        LatestAdded = f.LatestAdded;
     }
 
     [RelayCommand]
@@ -464,7 +476,7 @@ public partial class FinanceFilterViewModel : ObservableObject, ICloseRequest
     [RelayCommand]
     private void Apply()
     {
-        Result = new FinanceFilter(Cash?.Value, Direction?.Value, Counterparty?.Value);
+        Result = new FinanceFilter(Cash?.Value, Direction?.Value, Counterparty?.Value, FinanceOnly, LatestAdded);
         CloseRequested?.Invoke(this, true);
     }
 }

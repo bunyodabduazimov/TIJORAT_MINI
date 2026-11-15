@@ -132,7 +132,6 @@ public partial class SettingsViewModel
             var set = r.PermissionSet();
             return new RoleRow(r, counts.GetValueOrDefault(r.Id), set.Count, Summarize(r, set));
         }));
-        OnPropertyChanged(nameof(EditingRoleAccess));
         var keep = RoleRows.FirstOrDefault(r => r.Role.Id == selectedId);
         if (keep is not null) SelectedRole = keep;
         else if (EditingRoleEntityId == 0 && RoleName is null) NewRole();
@@ -248,7 +247,7 @@ public partial class SettingsViewModel
         EditingRoleEntityId = saved!.Id;
         await RunAsync(LoadRolesCore);
         SelectedRole = RoleRows.FirstOrDefault(r => r.Role.Id == saved.Id);
-        Fill(Users, await settings.GetUsersAsync());
+        UsersPager.SetSource(await settings.GetUsersAsync(), resetPage: false);
         Dialogs.Info(L.T("Роль сохранена. Пользователи с этой ролью увидят изменения при следующем входе."));
     }
 }

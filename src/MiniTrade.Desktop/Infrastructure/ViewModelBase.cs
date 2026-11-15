@@ -45,6 +45,9 @@ public abstract class PageViewModel(IDialogService dialogs) : ViewModelBase(dial
     public abstract string Title { get; }
     public abstract Task LoadAsync();
 
+    /// <summary>На странице есть несохранённый документ — при уходе в другой раздел нужно предупредить.</summary>
+    public virtual bool HasUnsavedChanges => false;
+
     protected static void Fill<T>(System.Collections.ObjectModel.ObservableCollection<T> target, IEnumerable<T> items)
     {
         target.Clear();

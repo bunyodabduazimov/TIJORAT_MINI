@@ -15,6 +15,8 @@ public abstract partial class DocumentEditorBase(IDialogService dialogs, ICatalo
     public ObservableCollection<Product> Products { get; } = new();
     public ObservableCollection<DocumentLineViewModel> Lines { get; } = new();
 
+    public override bool HasUnsavedChanges => Lines.Count > 0;
+
     [ObservableProperty] private Product? _selectedProduct;
     [ObservableProperty] private decimal _newQuantity = 1;
     [ObservableProperty] private decimal _newPrice;

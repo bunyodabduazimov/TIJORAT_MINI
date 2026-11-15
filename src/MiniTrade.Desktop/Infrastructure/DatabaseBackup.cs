@@ -57,7 +57,7 @@ public static class DatabaseBackup
         }
     }
 
-    /// <summary>Проверка, что файл — база TIJORAT.PRO.</summary>
+    /// <summary>Проверка, что файл — база TIJORAT LITE.</summary>
     public static void Validate(string path)
     {
         try
@@ -70,7 +70,7 @@ public static class DatabaseBackup
         }
         catch (Exception ex) when (ex is SqliteException or InvalidDataException)
         {
-            throw new InvalidDataException(L.T("Файл не является резервной копией базы TIJORAT.PRO."));
+            throw new InvalidDataException(L.T("Файл не является резервной копией базы TIJORAT LITE."));
         }
     }
 

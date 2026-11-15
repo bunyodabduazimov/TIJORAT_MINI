@@ -9,9 +9,14 @@ namespace MiniTrade.Core.Services;
 public sealed record CounterpartyPaymentRequest(CashDirection Direction, int CashRegisterId, int CounterpartyId,
     decimal Amount, string? Article = null, string? Comment = null, DateTime? Date = null);
 
-/// <summary>Фильтр журнала кассовых операций. Search ищет по статье, комментарию и номеру документа.</summary>
+/// <summary>
+/// Фильтр журнала кассовых операций. Search ищет по статье, комментарию и номеру документа.
+/// FinanceOnly — только операции раздела «Финансы» (приход/расход, перемещение, платежи и начисления контрагентам),
+/// без продаж, закупок и возвратов. LatestAdded — последние добавленные сверху (по порядку ввода), период не учитывается.
+/// </summary>
 public sealed record CashOperationFilter(DateTime From, DateTime To, int? CashRegisterId = null, CashDirection? Direction = null,
-    int? CounterpartyId = null, string? Search = null, CashOperationKind[]? Kinds = null);
+    int? CounterpartyId = null, string? Search = null, CashOperationKind[]? Kinds = null,
+    bool FinanceOnly = false, bool LatestAdded = false);
 
 /// <summary>Страница журнала и итоги по всему отфильтрованному периоду (без перемещений между кассами).</summary>
 public sealed record CashOperationsPage(IReadOnlyList<CashTransaction> Items, int TotalCount, decimal Income, decimal Expense);
@@ -34,7 +39,7 @@ public class FinanceService(IDbContextFactory<TradeDbContext> factory, UserSessi
     public async Task<List<CashRegister>> GetCashRegistersAsync(CancellationToken ct = default)
     {
         await using var db = await factory.CreateDbContextAsync(ct);
-        return await db.CashRegisters.AsNoTracking().Where(c => c.IsActive).OrderBy(c => c.Name).ToListAsync(ct);
+        return Access.Scope(await db.CashRegisters.AsNoTracking().Where(c => c.IsActive).OrderBy(c => c.Name).ToListAsync(ct));
     }
 
     public async Task<CashTransaction> AddOperationAsync(int cashRegisterId, CashDirection direction, string category, decimal amount,
@@ -259,7 +264,14 @@ public class FinanceService(IDbContextFactory<TradeDbContext> factory, UserSessi
     public async Task<CashOperationsPage> GetOperationsPageAsync(CashOperationFilter f, int skip, int take, CancellationToken ct = default)
     {
         await using var db = await factory.CreateDbContextAsync(ct);
-        var q = db.CashTransactions.AsNoTracking().Where(t => t.Date >= f.From.Date && t.Date < f.To.Date.AddDays(1));
+        var q = db.CashTransactions.AsNoTracking();
+        if (!f.LatestAdded) q = q.Where(t => t.Date >= f.From.Date && t.Date < f.To.Date.AddDays(1));
+        if (f.FinanceOnly)
+            q = q.Where(t => t.Kind == CashOperationKind.Manual
+                || t.Kind == CashOperationKind.TransferIn || t.Kind == CashOperationKind.TransferOut
+                || t.Kind == CashOperationKind.CounterpartyPayment || t.Kind == CashOperationKind.CounterpartyAccrual
+                // «Платёж контрагенту» с долгом по закупкам проводится как оплата поставщику, но без документа закупки
+                || (t.Kind == CashOperationKind.SupplierPayment && t.DocumentId == null));
         if (f.CashRegisterId is { } cash) q = q.Where(t => t.CashRegisterId == cash);
         if (f.Direction is { } dir) q = q.Where(t => t.Direction == dir);
         if (f.Kinds is { Length: > 0 } kinds) q = q.Where(t => kinds.Contains(t.Kind));
@@ -292,8 +304,11 @@ public class FinanceService(IDbContextFactory<TradeDbContext> factory, UserSessi
         var income = sums.Where(o => o.Direction == CashDirection.Income && o.Kind is not (CashOperationKind.TransferIn or CashOperationKind.CounterpartyAccrual)).Sum(o => o.Amount);
         var expense = sums.Where(o => o.Direction == CashDirection.Expense && o.Kind is not (CashOperationKind.TransferOut or CashOperationKind.CounterpartyAccrual)).Sum(o => o.Amount);
 
-        var items = await q.Include(t => t.CashRegister).Include(t => t.Counterparty)
-            .OrderByDescending(t => t.Date).ThenByDescending(t => t.Id)
+        var withRefs = q.Include(t => t.CashRegister).Include(t => t.Counterparty);
+        var ordered = f.LatestAdded
+            ? withRefs.OrderByDescending(t => t.Id)
+            : withRefs.OrderByDescending(t => t.Date).ThenByDescending(t => t.Id);
+        var items = await ordered
             .Skip(Math.Max(0, skip)).Take(Math.Max(1, take)).ToListAsync(ct);
         return new CashOperationsPage(items, sums.Count, Money.Round(income), Money.Round(expense));
     }

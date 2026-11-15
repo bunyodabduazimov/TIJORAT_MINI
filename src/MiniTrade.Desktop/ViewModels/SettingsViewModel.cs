@@ -44,10 +44,20 @@ public partial class SettingsViewModel(
     [ObservableProperty] private CompanySettings _company = new();
 
     // Пользователи
-    public ObservableCollection<User> Users { get; } = new();
+    private ReportPager<User>? _usersPager;
+    public ReportPager<User> UsersPager => _usersPager ??= new(MatchesUserSearch) { PageSize = 25 };
+    /// <summary>Поиск по логину, ФИО, телефону и роли.</summary>
+    [ObservableProperty] private string _userSearch = "";
+    partial void OnUserSearchChanged(string value) => UsersPager.Refresh();
+
+    private bool MatchesUserSearch(User u)
+    {
+        var q = UserSearch?.Trim();
+        if (string.IsNullOrEmpty(q)) return true;
+        return Contains(u.Login) || Contains(u.FullName) || Contains(u.Phone) || Contains(u.AccessRole?.Name) || Contains(u.Note);
+        bool Contains(string? s) => s?.Contains(q, StringComparison.CurrentCultureIgnoreCase) == true;
+    }
     [ObservableProperty] private User? _selectedUser;
-    [ObservableProperty] private User _editingUser = new();
-    [ObservableProperty] private string? _newPassword;
 
     // Лицензия
     [ObservableProperty] private string _licenseType = "";
@@ -389,28 +399,6 @@ public partial class SettingsViewModel(
         App.Ui.Save();
     }
 
-    partial void OnSelectedUserChanged(User? value)
-    {
-        EditingUser = value is null ? new User { AccessRoleId = RoleRows.FirstOrDefault(r => !r.Role.IsAdmin)?.Role.Id }
-            : new User
-            {
-                Id = value.Id, Login = value.Login, FullName = value.FullName, Role = value.Role, IsActive = value.IsActive,
-                Phone = value.Phone, Note = value.Note, AccessRoleId = value.AccessRoleId
-            };
-        NewPassword = null;
-    }
-
-    partial void OnEditingUserChanged(User value) => EditingRoleId = value.AccessRoleId;
-
-    /// <summary>Роль в форме пользователя; права определяет роль (вкладка «Роли»).</summary>
-    [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(EditingRoleAccess))]
-    private int? _editingRoleId;
-
-    partial void OnEditingRoleIdChanged(int? value) => EditingUser.AccessRoleId = value;
-
-    /// <summary>Краткое описание прав выбранной роли (только для просмотра).</summary>
-    public string EditingRoleAccess => RoleRows.FirstOrDefault(r => r.Role.Id == EditingRoleId)?.Summary ?? "";
 
     public IReadOnlyList<FilterChoice<CostingMethod>> CostingMethods { get; } =
         [new(L.T("FIFO — первым пришёл, первым ушёл"), CostingMethod.Fifo), new(L.T("Средняя себестоимость (AVG)"), CostingMethod.Average)];
@@ -444,14 +432,18 @@ public partial class SettingsViewModel(
         new("EUR", L.T("EUR — евро")),
     ];
 
+    /// <summary>Вкладка «Кассовое оборудование»: есть право и страна компании — Таджикистан (по сохранённой стране).</summary>
+    public bool ShowFiscalTab => Access.Can(Perm.SettingsFiscal) && Countries.FiscalSupported;
+
     public override Task LoadAsync() => RunAsync(async () =>
     {
         Company = await settings.GetCompanyAsync();
+        OnPropertyChanged(nameof(ShowFiscalTab));
         Country = Countries.Find(Company.Country);
         Currency = Company.Currency;
         await LoadRolesCore();
-        Fill(Users, await settings.GetUsersAsync());
-        if (SelectedUser is null) OnSelectedUserChanged(null);
+        UsersPager.SetSource(await settings.GetUsersAsync(), resetPage: false);
+
         RefreshLicenseInfo();
         RefreshPrinters();
         HookPrintOptions();
@@ -475,32 +467,37 @@ public partial class SettingsViewModel(
     {
         Company.Country = Country?.Code;
         Company.Currency = Currency ?? Company.Currency;
-        if (await RunAsync(() => settings.SaveCompanyAsync(Company))) Dialogs.Info(L.T("Данные компании сохранены."));
+        if (await RunAsync(() => settings.SaveCompanyAsync(Company)))
+        {
+            OnPropertyChanged(nameof(ShowFiscalTab));
+            Dialogs.Info(L.T("Данные компании сохранены."));
+        }
     }
 
     [RelayCommand]
-    private void NewUser() => SelectedUser = null;
+    private Task NewUserAsync() => OpenUserEditorAsync(null);
 
+    /// <summary>Открыть пользователя в модальном окне (из меню строки или двойным щелчком).</summary>
     [RelayCommand]
-    private async Task SaveUserAsync()
-    {
-        if (!await RunAsync(() => settings.SaveUserAsync(EditingUser, NewPassword))) return;
-        // Сменили пароль пользователю, чей пароль запомнен на этом компьютере, — обновляем сохранённый
-        if (!string.IsNullOrEmpty(NewPassword) && SavedLogin.Load() is { } saved
-            && string.Equals(saved.Login, EditingUser.Login, StringComparison.OrdinalIgnoreCase))
-            SavedLogin.Save(saved.Login, NewPassword);
-        NewPassword = null;
-        Fill(Users, await settings.GetUsersAsync());
-        Dialogs.Info(L.T("Пользователь сохранён."));
-    }
+    private Task EditUserAsync(User? user) => user is null ? Task.CompletedTask : OpenUserEditorAsync(user);
 
-    /// <summary>Открыть пользователя в форме справа (из меню строки или двойным щелчком).</summary>
-    [RelayCommand]
-    private void EditUser(User? user)
+    private async Task OpenUserEditorAsync(User? user)
     {
-        if (user is null) return;
-        if (SelectedUser == user) OnSelectedUserChanged(user);
-        else SelectedUser = user;
+        if (!CanManageUsers) return;
+        // Все активные склады и кассы — без ограничений текущего пользователя
+        var catalog = App.Services.GetRequiredService<CatalogService>();
+        List<Warehouse> warehouses = [];
+        List<CashRegister> cash = [];
+        if (!await RunAsync(async () =>
+            {
+                warehouses = (await catalog.GetAllAsync<Warehouse>()).Where(w => w.IsActive).ToList();
+                cash = (await catalog.GetAllAsync<CashRegister>()).Where(c => c.IsActive).ToList();
+            })) return;
+        var vm = new UserEditViewModel(settings, Dialogs, user, RoleRows.ToList(), warehouses, cash);
+        if (ModalHost.ShowDialog(new UserEditWindow { DataContext = vm }) != true) return;
+        UsersPager.SetSource(await settings.GetUsersAsync(), resetPage: false);
+        SelectedUser = UsersPager.Items.FirstOrDefault(u => u.Login == vm.User.Login);
+        await LoadRolesCore(); // число пользователей у ролей
     }
 
     [RelayCommand]
@@ -511,7 +508,7 @@ public partial class SettingsViewModel(
         if (!Dialogs.Confirm(L.F("Удалить пользователя «{0}» ({1})?", user.FullName, user.Login))) return;
         if (!await RunAsync(() => settings.DeleteUserAsync(user.Id))) return;
         SelectedUser = null;
-        Fill(Users, await settings.GetUsersAsync());
+        UsersPager.SetSource(await settings.GetUsersAsync(), resetPage: false);
     }
 
     /// <summary>Быстро включить/отключить вход пользователю.</summary>
@@ -522,11 +519,15 @@ public partial class SettingsViewModel(
         var copy = new User
         {
             Id = user.Id, Login = user.Login, FullName = user.FullName, Role = user.Role, IsActive = !user.IsActive,
-            Phone = user.Phone, Note = user.Note, AccessRoleId = user.AccessRoleId
+            Phone = user.Phone, Note = user.Note, AccessRoleId = user.AccessRoleId,
+            DefaultWarehouseId = user.DefaultWarehouseId, DefaultCashRegisterId = user.DefaultCashRegisterId,
+            AllowedWarehouseIds = user.AllowedWarehouseIds, AllowedCashRegisterIds = user.AllowedCashRegisterIds,
+            MaxDiscountPercent = user.MaxDiscountPercent, AccessUntil = user.AccessUntil,
+            WorkFrom = user.WorkFrom, WorkTo = user.WorkTo
         };
         if (!await RunAsync(() => settings.SaveUserAsync(copy, null))) return;
-        Fill(Users, await settings.GetUsersAsync());
-        SelectedUser = Users.FirstOrDefault(u => u.Id == copy.Id);
+        UsersPager.SetSource(await settings.GetUsersAsync(), resetPage: false);
+        SelectedUser = UsersPager.Items.FirstOrDefault(u => u.Id == copy.Id);
     }
 
     [RelayCommand]
@@ -690,7 +691,7 @@ public partial class SettingsViewModel(
         try { MySqlDump.Validate(path); }
         catch (Exception ex) when (ex is IOException or InvalidDataException or UnauthorizedAccessException)
         {
-            Dialogs.Error(L.T("Файл не является резервной копией базы TIJORAT.PRO."));
+            Dialogs.Error(L.T("Файл не является резервной копией базы TIJORAT LITE."));
             return;
         }
         if (!Dialogs.Confirm(L.F("Данные базы на сервере будут заменены данными из файла:\n{0}\n\nЭто затронет все компьютеры, подключённые к этой базе. Текущая база предварительно сохранится в папку резервных копий. Программа перезапустится. Продолжить?", path)))
@@ -779,8 +780,13 @@ public partial class SettingsViewModel(
     {
         var vm = activationFactory.Create();
         vm.IsKeyMode = true;
+        var language = L.Current.Code;
         new ActivationWindow { DataContext = vm, Owner = System.Windows.Application.Current.MainWindow }.ShowDialog();
         RefreshLicenseInfo();
+        // Язык сменили в окне активации — главное окно пересоздаётся с новыми текстами
+        if (L.Current.Code != language)
+            System.Windows.Application.Current.Dispatcher.BeginInvoke(MainViewModel.ReloadOnInterfaceSettings,
+                System.Windows.Threading.DispatcherPriority.Background);
     }
 
     /// <summary>Резервная копия базы средствами SQLite Online Backup API (безопасно при открытой базе).</summary>

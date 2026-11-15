@@ -19,7 +19,18 @@ public class CatalogService(IDbContextFactory<TradeDbContext> factory)
         if (typeof(T) == typeof(Counterparty)) q = (IQueryable<T>)db.Counterparties.AsNoTracking().Include(c => c.Group);
         q = q.Where(x => !x.IsDeleted);
         if (activeOnly) q = q.Where(x => x.IsActive);
-        return (await q.ToListAsync(ct)).OrderBy(x => x.Name).ToList();
+        var items = (await q.ToListAsync(ct)).OrderBy(x => x.Name).ToList();
+        // Списки для выбора: только склады/кассы пользователя, его склад/касса по умолчанию — первыми
+        if (activeOnly && items is List<Warehouse> w) items = (List<T>)(object)Access.Scope(w);
+        else if (activeOnly && items is List<CashRegister> c) items = (List<T>)(object)Access.Scope(c);
+
+        // Баланс контрагентов для выпадающих списков (+ должен нам, − мы должны) — тот же регистр, что в справочнике и выписках
+        if (items is List<Counterparty> parties && parties.Count > 0)
+        {
+            var balances = await CounterpartyLedger.BalancesAsync(db, null, null, ct);
+            foreach (var c in parties) c.Balance = balances.GetValueOrDefault(c.Id);
+        }
+        return items;
     }
 
     /// <summary>
@@ -209,16 +220,19 @@ public class CatalogService(IDbContextFactory<TradeDbContext> factory)
     /// Мягкое удаление: запись помечается удалённой и неактивной, но остаётся в базе,
     /// поэтому документы, в которых она использована, не ломаются.
     /// </summary>
-    /// <summary>Обновляет только цены продажи товаров (из строк закупки).</summary>
-    public async Task SetSalePricesAsync(IReadOnlyDictionary<int, decimal> prices, CancellationToken ct = default)
+    /// <summary>Обновляет только цены продажи товаров — розничную и оптовую (из строк закупки).</summary>
+    public async Task SetSalePricesAsync(IReadOnlyDictionary<int, (decimal Retail, decimal Wholesale)> prices, CancellationToken ct = default)
     {
         Access.Demand(Perm.CatalogProductsPrices);
         if (prices.Count == 0) return;
-        if (prices.Values.Any(p => p < 0)) throw new BusinessException("Цены не могут быть отрицательными.");
+        if (prices.Values.Any(p => p.Retail < 0 || p.Wholesale < 0)) throw new BusinessException("Цены не могут быть отрицательными.");
         await using var db = await factory.CreateDbContextAsync(ct);
         var ids = prices.Keys.ToList();
         foreach (var p in await db.Set<Product>().Where(x => ids.Contains(x.Id)).ToListAsync(ct))
-            p.SalePrice = Money.Round(prices[p.Id]);
+        {
+            p.SalePrice = Money.Round(prices[p.Id].Retail);
+            p.WholesalePrice = Money.Round(prices[p.Id].Wholesale);
+        }
         await db.SaveChangesAsync(ct);
     }
 
@@ -239,11 +253,12 @@ public class CatalogService(IDbContextFactory<TradeDbContext> factory)
     {
         if (entity is Product p)
         {
-            if (p.SalePrice < 0 || p.PurchasePrice < 0) throw new BusinessException("Цены не могут быть отрицательными.");
+            if (p.SalePrice < 0 || p.WholesalePrice < 0 || p.PurchasePrice < 0) throw new BusinessException("Цены не могут быть отрицательными.");
             if (p.IsService) p.MinStock = 0;
             if (p.MinStock < 0) throw new BusinessException("Минимальный остаток не может быть отрицательным.");
             if (string.IsNullOrWhiteSpace(p.Unit)) p.Unit = "шт";
             p.SalePrice = Money.Round(p.SalePrice);
+            p.WholesalePrice = Money.Round(p.WholesalePrice);
             p.PurchasePrice = Money.Round(p.PurchasePrice);
         }
         if (entity is ScaleDevice s)

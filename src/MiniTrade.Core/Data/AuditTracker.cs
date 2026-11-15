@@ -33,7 +33,7 @@ internal static class AuditTracker
     private static readonly Dictionary<string, string> FieldNames = new()
     {
         ["Name"] = "Название", ["Sku"] = "Артикул", ["Barcode"] = "Штрихкод", ["Unit"] = "Ед. изм.",
-        ["CategoryId"] = "Категория", ["PurchasePrice"] = "Закупочная цена", ["SalePrice"] = "Цена продажи",
+        ["CategoryId"] = "Категория", ["PurchasePrice"] = "Закупочная цена", ["SalePrice"] = "Цена продажи", ["WholesalePrice"] = "Оптовая цена",
         ["MinStock"] = "Мин. остаток", ["IsActive"] = "Активен", ["IsDeleted"] = "В архиве", ["Phone"] = "Телефон",
         ["Address"] = "Адрес", ["Note"] = "Примечание", ["Description"] = "Описание", ["GroupId"] = "Группа",
         ["Login"] = "Логин", ["FullName"] = "ФИО", ["Role"] = "Роль", ["Permissions"] = "Права",["PasswordHash"] = "Пароль",
@@ -161,7 +161,7 @@ internal static class AuditTracker
 
     private static string? Summary(object entity) => entity switch
     {
-        Product p => $"Цена продажи: {Format(p.SalePrice)}; закупочная: {Format(p.PurchasePrice)}",
+        Product p => $"Цена продажи: {Format(p.SalePrice)}; оптовая: {Format(p.WholesalePrice)}; закупочная: {Format(p.PurchasePrice)}",
         Sale s => $"Сумма: {Format(s.Total)}",
         SaleReturn r => $"Сумма возврата: {Format(r.Total)}",
         Purchase p => $"Сумма: {Format(p.Total)}; оплачено: {Format(p.PaidAmount)}",

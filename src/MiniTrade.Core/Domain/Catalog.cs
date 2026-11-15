@@ -44,6 +44,8 @@ public class Product : Entity, ICatalogEntity
     public decimal PurchasePrice { get; set; }
     /// <summary>Розничная цена продажи.</summary>
     public decimal SalePrice { get; set; }
+    /// <summary>Оптовая цена продажи (0 — не задана, при продаже оптом берётся розничная).</summary>
+    public decimal WholesalePrice { get; set; }
     /// <summary>Минимальный остаток для уведомлений.</summary>
     public decimal MinStock { get; set; }
     public bool IsActive { get; set; } = true;

@@ -1,0 +1,6 @@
+# Только если сайт работает в режиме nginx + PHP-FPM (без Apache).
+# FastPanel → сайт → «Конфигурация nginx» — добавить внутрь server { ... }:
+location ^~ /lib/ { deny all; return 404; }
+location ^~ /api/v1/ {
+    rewrite ^/api/v1/(.*)$ /api.php?route=$1 last;
+}

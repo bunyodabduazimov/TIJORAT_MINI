@@ -17,16 +17,17 @@
         </DataTemplate>
     </UserControl.Resources>
     <TabControl SelectedIndex="{Binding SelectedTab}">
-        <TabItem Header="{l:T 'Компания'}" Visibility="{l:Can settings.company}">
-            <Border Style="{StaticResource Card}" HorizontalAlignment="Stretch" VerticalAlignment="Top">
-                <StackPanel>
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*" MinWidth="300"/>
-                            <ColumnDefinition Width="32"/>
-                            <ColumnDefinition Width="*" MinWidth="300"/>
-                        </Grid.ColumnDefinitions>
-                        <!-- Левая колонка: реквизиты -->
+        <!-- Компания: карточки реквизитов и учёта (право «Компания») + интерфейс этого компьютера (доступен всем) -->
+        <TabItem Header="{Binding CompanyTabHeader}">
+            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" MinWidth="300"/>
+                        <ColumnDefinition Width="16"/>
+                        <ColumnDefinition Width="*" MinWidth="300"/>
+                    </Grid.ColumnDefinitions>
+                    <!-- Слева: одна карточка — реквизиты, параметры учёта и кнопка «Сохранить» -->
+                    <Border Style="{StaticResource Card}" VerticalAlignment="Top" Visibility="{l:Can settings.company}">
                         <StackPanel>
                             <TextBlock Text="{l:T 'Информация о компании'}" Style="{StaticResource SectionTitle}"/>
                             <TextBlock Text="{l:T 'Название организации *'}" Style="{StaticResource FieldLabel}"/>
@@ -39,12 +40,12 @@
                             <TextBox Text="{Binding Company.Phone, UpdateSourceTrigger=PropertyChanged}"/>
                             <TextBlock Text="{l:T 'Электронная почта'}" Style="{StaticResource FieldLabel}"/>
                             <TextBox Text="{Binding Company.Email, UpdateSourceTrigger=PropertyChanged}"/>
-                        </StackPanel>
-                        <!-- Правая колонка: учёт -->
-                        <StackPanel Grid.Column="2">
+
+                            <Border Height="1" Background="{DynamicResource BorderBrush}" Margin="0,22,0,18"/>
                             <TextBlock Text="{l:T 'Параметры учёта'}" Style="{StaticResource SectionTitle}"/>
                             <TextBlock Text="{l:T 'Страна'}" Style="{StaticResource FieldLabel}"/>
-                            <ComboBox ItemsSource="{Binding CountryList}" SelectedItem="{Binding Country}">
+                            <ComboBox ItemsSource="{Binding CountryList}" SelectedItem="{Binding Country}"
+                                      ToolTip="{l:T 'Задаёт валюту и код телефона. Код подставляется в телефон нового контрагента:'}">
                                 <ComboBox.ItemTemplate>
                                     <DataTemplate>
                                         <DockPanel>
@@ -54,44 +55,94 @@
                                     </DataTemplate>
                                 </ComboBox.ItemTemplate>
                             </ComboBox>
-                            <TextBlock Style="{StaticResource Muted}" FontSize="11" TextWrapping="Wrap" Margin="0,4,0,0">
-                                <Run Text="{l:T 'Задаёт валюту и код телефона. Код подставляется в телефон нового контрагента:'}"/>
-                                <Run Text="{Binding Country.PhoneCode, Mode=OneWay}" FontWeight="SemiBold"/>
-                            </TextBlock>
                             <TextBlock Text="{l:T 'Основная валюта'}" Style="{StaticResource FieldLabel}"/>
-                            <ComboBox ItemsSource="{Binding Currencies}" DisplayMemberPath="Name" SelectedValuePath="Code" SelectedValue="{Binding Currency}"/>
-                            <TextBlock Text="{l:T 'Меняется только обозначение в суммах — пересчёта по курсу нет.'}"
-                                       Style="{StaticResource Muted}" FontSize="11" TextWrapping="Wrap" Margin="0,4,0,0"/>
+                            <ComboBox ItemsSource="{Binding Currencies}" DisplayMemberPath="Name" SelectedValuePath="Code" SelectedValue="{Binding Currency}"
+                                      ToolTip="{l:T 'Меняется только обозначение в суммах — пересчёта по курсу нет.'}"/>
                             <TextBlock Text="{l:T 'Метод расчёта себестоимости'}" Style="{StaticResource FieldLabel}"/>
                             <ComboBox ItemsSource="{Binding CostingMethods}" DisplayMemberPath="Name" SelectedValuePath="Value"
-                                      SelectedValue="{Binding Company.CostingMethod}"/>
-                            <TextBlock Text="{l:T 'FIFO — сначала списывается товар из самых ранних приходов. Средняя — по средневзвешенной цене остатка. Смена метода действует на новые документы.'}"
-                                       Style="{StaticResource Muted}" FontSize="11" TextWrapping="Wrap" Margin="0,4,0,0"/>
+                                      SelectedValue="{Binding Company.CostingMethod}"
+                                      ToolTip="{l:T 'FIFO — сначала списывается товар из самых ранних приходов. Средняя — по средневзвешенной цене остатка. Смена метода действует на новые документы.'}"/>
                             <CheckBox Content="{l:T 'Разрешить отрицательные остатки'}" IsChecked="{Binding Company.AllowNegativeStock}" Margin="0,14,0,0"/>
                             <TextBlock Text="{l:T 'Префикс весового штрихкода'}" Style="{StaticResource FieldLabel}"/>
                             <TextBox Text="{Binding Company.ScalePrefix, UpdateSourceTrigger=PropertyChanged}" MaxLength="2" Width="80" HorizontalAlignment="Left"
-                                     l:Ui.Numeric="True"/>
-                            <TextBlock Text="{l:T 'Штрихкод весов из 13 цифр: 2 — код весов, 5 — код товара (штрихкод весового товара), 5 — вес в граммах, 1 — контрольная. Пусто — весы не используются.'}"
-                                       Style="{StaticResource Muted}" FontSize="11" TextWrapping="Wrap" Margin="0,4,0,0"/>
+                                     l:Ui.Numeric="True"
+                                     ToolTip="{l:T 'Штрихкод весов из 13 цифр: 2 — код весов, 5 — код товара (штрихкод весового товара), 5 — вес в граммах, 1 — контрольная. Пусто — весы не используются.'}"/>
+
+                            <Button Content="{l:T 'Сохранить изменения'}" HorizontalAlignment="Left" MinWidth="140" Margin="0,22,0,0" Command="{Binding SaveCompanyCommand}"/>
                         </StackPanel>
-                    </Grid>
-                    <Button Content="{l:T 'Сохранить изменения'}" HorizontalAlignment="Left" MinWidth="140" Margin="0,20,0,0" Command="{Binding SaveCompanyCommand}" IsEnabled="{Binding CanEditCompany}"/>
-                </StackPanel>
-            </Border>
+                    </Border>
+
+                    <!-- Справа: интерфейс этого компьютера (ui.json, применяется сразу) -->
+                    <StackPanel Grid.Column="2">
+                        <!-- Карточка: тема и язык -->
+                        <Border Style="{StaticResource Card}">
+                            <StackPanel>
+                                <TextBlock Text="{l:T 'Интерфейс'}" Style="{StaticResource SectionTitle}"/>
+                                <TextBlock Text="{l:T 'Настройки этого компьютера. Применяются сразу.'}" Style="{StaticResource Muted}" TextWrapping="Wrap"/>
+                                <TextBlock Text="{l:T 'Тема оформления'}" Style="{StaticResource FieldLabel}"/>
+                                <UniformGrid Columns="3" Margin="0,4,0,0">
+                                    <RadioButton Style="{StaticResource ChoiceTile}" GroupName="stheme" Margin="0,0,6,0"
+                                                 IsChecked="{Binding Theme, Converter={StaticResource Equals}, ConverterParameter=System}">
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Text="&#xF0379;" FontFamily="{StaticResource IconFont}" Margin="0,1,8,0"/>
+                                            <TextBlock Text="{l:T 'Системная'}" FontWeight="SemiBold"/>
+                                        </StackPanel>
+                                    </RadioButton>
+                                    <RadioButton Style="{StaticResource ChoiceTile}" GroupName="stheme" Margin="3,0"
+                                                 IsChecked="{Binding Theme, Converter={StaticResource Equals}, ConverterParameter=Light}">
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Text="&#xF05A8;" FontFamily="{StaticResource IconFont}" Margin="0,1,8,0"/>
+                                            <TextBlock Text="{l:T 'Светлая'}" FontWeight="SemiBold"/>
+                                        </StackPanel>
+                                    </RadioButton>
+                                    <RadioButton Style="{StaticResource ChoiceTile}" GroupName="stheme" Margin="6,0,0,0"
+                                                 IsChecked="{Binding Theme, Converter={StaticResource Equals}, ConverterParameter=Dark}">
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Text="&#xF0594;" FontFamily="{StaticResource IconFont}" Margin="0,1,8,0"/>
+                                            <TextBlock Text="{l:T 'Тёмная'}" FontWeight="SemiBold"/>
+                                        </StackPanel>
+                                    </RadioButton>
+                                </UniformGrid>
+                                <TextBlock Text="{l:T 'Язык'}" Style="{StaticResource FieldLabel}"/>
+                                <ComboBox ItemsSource="{Binding Languages}" SelectedItem="{Binding Language}"/>
+                                <TextBlock Text="{l:T 'Язык интерфейса программы. Окно обновится сразу, повторный вход не нужен.'}"
+                                           Style="{StaticResource Muted}" FontSize="11" TextWrapping="Wrap" Margin="0,4,0,0"/>
+                            </StackPanel>
+                        </Border>
+                        <!-- Карточка: масштаб, стартовая страница, меню -->
+                        <Border Style="{StaticResource Card}" Margin="0,16,0,0">
+                            <StackPanel>
+                                <TextBlock Text="{l:T 'Удобство'}" Style="{StaticResource SectionTitle}"/>
+                                <TextBlock Text="{l:T 'Масштаб интерфейса'}" Style="{StaticResource FieldLabel}" Margin="0,0,0,4"/>
+                                <ComboBox ItemsSource="{Binding Scales}" SelectedItem="{Binding Scale}" DisplayMemberPath="Name"/>
+                                <TextBlock Text="{l:T 'Крупный масштаб удобен на больших мониторах и сенсорных экранах, мелкий — на ноутбуках.'}"
+                                           Style="{StaticResource Muted}" FontSize="11" TextWrapping="Wrap" Margin="0,4,0,0"/>
+                                <TextBlock Text="{l:T 'Страница после входа'}" Style="{StaticResource FieldLabel}"/>
+                                <ComboBox ItemsSource="{Binding StartPages}" SelectedItem="{Binding StartPage}" DisplayMemberPath="Name"/>
+                                <CheckBox Content="{l:T 'Боковое меню свёрнуто до иконок'}" IsChecked="{Binding MenuCollapsed}" Margin="0,14,0,0"/>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </Grid>
+            </ScrollViewer>
         </TabItem>
 
         <TabItem Header="{l:T 'Пользователи'}" Visibility="{l:Can settings.users}">
-            <Grid>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="16"/>
-                    <ColumnDefinition Width="340"/>
-                </Grid.ColumnDefinitions>
-                <Border Style="{StaticResource Card}">
-                    <DockPanel>
-                        <Button DockPanel.Dock="Top" HorizontalAlignment="Right" Content="{l:T '+ Новый пользователь'}" Margin="0,0,0,10"
+            <!-- Таблица на всю ширину; добавление и изменение — в модальном окне (UserEditWindow) -->
+            <Border Style="{StaticResource Card}">
+                <DockPanel>
+                    <DockPanel DockPanel.Dock="Top" Margin="0,0,0,10">
+                        <Button DockPanel.Dock="Left" Content="{l:T '+ Новый пользователь'}"
                                 Command="{Binding NewUserCommand}" IsEnabled="{Binding CanManageUsers}"/>
-                        <DataGrid ItemsSource="{Binding Users}" SelectedItem="{Binding SelectedUser}" x:Name="UsersGrid" HeadersVisibility="Column" inf:Ui.RowNumbers="False">
+                        <TextBox Text="{Binding UserSearch, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource TableSearch}"
+                                 inf:Ui.Placeholder="{l:T 'Поиск…'}" HorizontalAlignment="Right" VerticalAlignment="Center"/>
+                    </DockPanel>
+                    <DockPanel DockPanel.Dock="Bottom" Margin="0,10,0,0" DataContext="{Binding UsersPager}">
+                        <ContentControl DockPanel.Dock="Right" Content="{Binding}" ContentTemplate="{StaticResource PagerBar}" Focusable="False"/>
+                        <TextBlock Text="{Binding PageInfo}" Style="{StaticResource Muted}" VerticalAlignment="Center"/>
+                    </DockPanel>
+                        <DataGrid ItemsSource="{Binding UsersPager.Items}" SelectedItem="{Binding SelectedUser}" x:Name="UsersGrid" HeadersVisibility="Column" inf:Ui.RowNumbers="False"
+                                  HorizontalScrollBarVisibility="Auto">
                             <DataGrid.InputBindings>
                                 <MouseBinding Gesture="LeftDoubleClick" Command="{Binding EditUserCommand}" CommandParameter="{Binding SelectedItem, ElementName=UsersGrid}"/>
                                 <KeyBinding Key="Delete" Command="{Binding DeleteUserCommand}" CommandParameter="{Binding SelectedItem, ElementName=UsersGrid}"/>
@@ -127,45 +178,13 @@
                                 <DataGridTextColumn Header="{l:T 'Входов'}" Binding="{Binding LoginCount}" Width="70"/>
                                 <DataGridTextColumn Header="{l:T 'Создан'}" Binding="{Binding CreatedAt, StringFormat='dd.MM.yyyy'}" Width="90"/>
                                 <DataGridTextColumn Header="{l:T 'Активен'}" Binding="{Binding IsActive, Converter={StaticResource EnumName}}" Width="70"/>
+                                <DataGridTextColumn Header="{l:T 'Скидка до, %'}" Binding="{Binding MaxDiscountPercent, StringFormat='0.##', TargetNullValue='—'}" Width="100"/>
+                                <DataGridTextColumn Header="{l:T 'Доступ до'}" Binding="{Binding AccessUntil, StringFormat='dd.MM.yyyy', TargetNullValue='—'}" Width="100"/>
+                                <DataGridTextColumn Header="{l:T 'Время работы'}" Binding="{Binding WorkHoursText}" Width="110"/>
                             </DataGrid.Columns>
                         </DataGrid>
-                    </DockPanel>
-                </Border>
-                <ScrollViewer Grid.Column="2" VerticalScrollBarVisibility="Auto">
-                <StackPanel>
-                <Border Style="{StaticResource Card}" VerticalAlignment="Top" IsEnabled="{Binding CanManageUsers}">
-                    <StackPanel>
-                        <TextBlock Text="{l:T 'Пользователь'}" Style="{StaticResource SectionTitle}"/>
-                        <TextBlock Text="{l:T 'Логин *'}" Style="{StaticResource FieldLabel}"/>
-                        <TextBox Text="{Binding EditingUser.Login, UpdateSourceTrigger=PropertyChanged}"/>
-                        <TextBlock Text="{l:T 'ФИО *'}" Style="{StaticResource FieldLabel}"/>
-                        <TextBox Text="{Binding EditingUser.FullName, UpdateSourceTrigger=PropertyChanged}"/>
-                        <TextBlock Text="{l:T 'Телефон'}" Style="{StaticResource FieldLabel}"/>
-                        <TextBox Text="{Binding EditingUser.Phone, UpdateSourceTrigger=PropertyChanged}"/>
-                        <TextBlock Text="{l:T 'Роль'}" Style="{StaticResource FieldLabel}"/>
-                        <ComboBox ItemsSource="{Binding RoleRows}" DisplayMemberPath="Name" SelectedValuePath="Role.Id" SelectedValue="{Binding EditingRoleId}"/>
-                        <TextBlock Text="{l:T 'Новый пароль (оставьте пустым, чтобы не менять)'}" Style="{StaticResource FieldLabel}" TextWrapping="Wrap"/>
-                        <TextBox Text="{Binding NewPassword, UpdateSourceTrigger=PropertyChanged}"/>
-                        <TextBlock Text="{l:T 'Примечание'}" Style="{StaticResource FieldLabel}"/>
-                        <TextBox Text="{Binding EditingUser.Note, UpdateSourceTrigger=PropertyChanged}" TextWrapping="Wrap" AcceptsReturn="True" MinHeight="50"/>
-                        <CheckBox Content="{l:T 'Активен'}" IsChecked="{Binding EditingUser.IsActive}" Margin="0,10,0,0"/>
-                        <Grid Margin="0,16,0,0">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="8"/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
-                            <Button Content="{l:T 'Сохранить'}" Command="{Binding SaveUserCommand}"/>
-                            <Button Grid.Column="2" Style="{StaticResource DangerButton}" Content="{l:T 'Удалить'}"
-                                    Command="{Binding DeleteUserCommand}" CommandParameter="{Binding SelectedUser}"
-                                    />
-                        </Grid>
-                        <TextBlock Text="{l:T 'Права пользователя определяет роль — настройте её на вкладке «Роли».'}" Style="{StaticResource Muted}" FontSize="11" Margin="0,10,0,0" TextWrapping="Wrap"/>
-                    </StackPanel>
-                </Border>
-                </StackPanel>
-                </ScrollViewer>
-            </Grid>
+                </DockPanel>
+            </Border>
         </TabItem>
 
         <TabItem Header="{l:T 'Роли и права'}" Visibility="{l:Can settings.roles}">
@@ -504,7 +523,7 @@
         </TabItem>
 
         <!-- Кассовый аппарат: фискальный принтер Fiscat этого компьютера -->
-        <TabItem Header="{l:T 'Кассовое оборудование'}" Visibility="{l:Can settings.fiscal}">
+        <TabItem Header="{l:T 'Кассовое оборудование'}" Visibility="{Binding ShowFiscalTab, Converter={StaticResource BoolToVis}}">
             <ScrollViewer VerticalScrollBarVisibility="Auto">
             <Border Style="{StaticResource Card}" HorizontalAlignment="Stretch" VerticalAlignment="Top">
                 <Grid>
@@ -622,6 +641,20 @@
                                Text="{l:T 'Если база на сервере пустая, таблицы создаются автоматически при первом подключении. Пароль сохраняется в зашифрованном виде.'}"/>
                 </StackPanel>
             </Border>
+
+            <!-- Журнал ошибок: текстовые файлы по дням -->
+            <Border Style="{StaticResource Card}" Margin="0,16,0,16">
+                <StackPanel>
+                    <TextBlock Text="{l:T 'Журнал ошибок'}" Style="{StaticResource SectionTitle}"/>
+                    <TextBlock Text="{l:T 'Папка журналов'}" Style="{StaticResource FieldLabel}"/>
+                    <DockPanel>
+                        <Button DockPanel.Dock="Right" Content="{l:T 'Сегодняшний файл'}" Style="{StaticResource SecondaryButton}" Margin="10,0,0,0" Command="{Binding OpenTodayErrorLogCommand}"/>
+                        <Button DockPanel.Dock="Right" Content="{l:T 'Открыть'}" Style="{StaticResource SecondaryButton}" Margin="10,0,0,0" Command="{Binding OpenErrorLogFolderCommand}"/>
+                        <TextBox Text="{Binding ErrorLogFolder, Mode=OneWay}" IsReadOnly="True"/>
+                    </DockPanel>
+                    <TextBlock Style="{StaticResource Muted}" FontSize="11" TextWrapping="Wrap" Margin="0,12,0,0" Text="{Binding ErrorLogHint}"/>
+                </StackPanel>
+            </Border>
             </StackPanel>
             <StackPanel Grid.Column="2" VerticalAlignment="Top">
             <Border Style="{StaticResource Card}" Margin="0,0,0,16">
@@ -650,20 +683,6 @@
                     </StackPanel>
                     <TextBlock Style="{StaticResource Muted}" FontSize="11" TextWrapping="Wrap" Margin="0,12,0,0"
                                Text="{l:T 'Совет: укажите папку на другом диске, флешке или в облачной папке (OneDrive, Google Диск), чтобы не потерять данные при поломке компьютера.'}"/>
-                </StackPanel>
-            </Border>
-
-            <!-- Журнал ошибок: текстовые файлы по дням -->
-            <Border Style="{StaticResource Card}" Margin="0,0,0,16">
-                <StackPanel>
-                    <TextBlock Text="{l:T 'Журнал ошибок'}" Style="{StaticResource SectionTitle}"/>
-                    <TextBlock Text="{l:T 'Папка журналов'}" Style="{StaticResource FieldLabel}"/>
-                    <DockPanel>
-                        <Button DockPanel.Dock="Right" Content="{l:T 'Сегодняшний файл'}" Style="{StaticResource SecondaryButton}" Margin="10,0,0,0" Command="{Binding OpenTodayErrorLogCommand}"/>
-                        <Button DockPanel.Dock="Right" Content="{l:T 'Открыть'}" Style="{StaticResource SecondaryButton}" Margin="10,0,0,0" Command="{Binding OpenErrorLogFolderCommand}"/>
-                        <TextBox Text="{Binding ErrorLogFolder, Mode=OneWay}" IsReadOnly="True"/>
-                    </DockPanel>
-                    <TextBlock Style="{StaticResource Muted}" FontSize="11" TextWrapping="Wrap" Margin="0,12,0,0" Text="{Binding ErrorLogHint}"/>
                 </StackPanel>
             </Border>
 

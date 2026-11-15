@@ -98,10 +98,16 @@
                                         <DataTemplate><TextBox Style="{StaticResource CellTextBox}" l:Ui.Numeric="True" Text="{Binding Price, Converter={StaticResource Dec}, UpdateSourceTrigger=PropertyChanged}"/></DataTemplate>
                                     </DataGridTemplateColumn.CellTemplate>
                                 </DataGridTemplateColumn>
-                                <DataGridTemplateColumn Header="{l:T 'Цена продажи'}" Width="120">
+                                <DataGridTemplateColumn Header="{l:T 'Розница'}" Width="110">
                                     <DataGridTemplateColumn.CellTemplate>
-                                        <DataTemplate><TextBox Style="{StaticResource CellTextBox}" l:Ui.Numeric="True" ToolTip="{l:T 'Цена продажи — сохранится в карточке товара'}"
+                                        <DataTemplate><TextBox Style="{StaticResource CellTextBox}" l:Ui.Numeric="True" ToolTip="{l:T 'Розничная цена — сохранится в карточке товара'}"
                                                                Text="{Binding SalePrice, Converter={StaticResource Dec}, UpdateSourceTrigger=PropertyChanged}"/></DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                                <DataGridTemplateColumn Header="{l:T 'Опт'}" Width="110">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate><TextBox Style="{StaticResource CellTextBox}" l:Ui.Numeric="True" ToolTip="{l:T 'Оптовая цена — сохранится в карточке товара'}"
+                                                               Text="{Binding WholesalePrice, Converter={StaticResource Dec}, UpdateSourceTrigger=PropertyChanged}"/></DataTemplate>
                                     </DataGridTemplateColumn.CellTemplate>
                                 </DataGridTemplateColumn>
                                 <DataGridTemplateColumn Header="{l:T 'Сумма'}" Width="140">

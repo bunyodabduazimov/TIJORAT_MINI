@@ -86,6 +86,7 @@ using (var scope = app.Services.CreateScope())
         if (!string.IsNullOrEmpty(dir)) Directory.CreateDirectory(dir);
     }
     db.Database.EnsureCreated();
+    db.UpgradeSchema();
     _ = app.Services.GetRequiredService<SigningKeyProvider>(); // генерирует ключ при первом запуске
 }
 

@@ -21,7 +21,7 @@ public class CatalogTransferService(IDbContextFactory<TradeDbContext> factory)
     private static readonly CultureInfo Ru = CultureInfo.GetCultureInfo("ru-RU");
 
     public static readonly string[] ProductColumns =
-        ["Наименование", "Артикул", "Штрихкод", "Категория", "Ед.", "Закупка", "Продажа", "Мин. остаток", "Активен"];
+        ["Наименование", "Артикул", "Штрихкод", "Категория", "Ед.", "Закупка", "Продажа", "Опт", "Мин. остаток", "Активен"];
 
     public static readonly string[] CounterpartyColumns =
         ["Наименование", "Группа", "Телефон", "Адрес", "Примечание", "Активен"];
@@ -47,7 +47,7 @@ public class CatalogTransferService(IDbContextFactory<TradeDbContext> factory)
             .Where(p => !p.IsDeleted && (includeArchived || p.IsActive)).OrderBy(p => p.Name).ToListAsync(ct);
         var lines = new List<string> { Row(ProductColumns) };
         lines.AddRange(items.Select(p => Row(p.Name, Code(p.Sku), Code(p.Barcode), p.Category?.Name, p.Unit,
-            p.PurchasePrice, p.SalePrice, p.MinStock, p.IsActive ? "Да" : "Нет")));
+            p.PurchasePrice, p.SalePrice, p.WholesalePrice, p.MinStock, p.IsActive ? "Да" : "Нет")));
         return lines;
     }
 
@@ -103,6 +103,7 @@ public class CatalogTransferService(IDbContextFactory<TradeDbContext> factory)
                 if (col["Ед."] >= 0) p.Unit = Get("Ед.") ?? "шт";
                 if (col["Закупка"] >= 0) p.PurchasePrice = Money.Round(Dec(Get("Закупка"), "Закупка"));
                 if (col["Продажа"] >= 0) p.SalePrice = Money.Round(Dec(Get("Продажа"), "Продажа"));
+                if (col["Опт"] >= 0) p.WholesalePrice = Money.Round(Dec(Get("Опт"), "Опт"));
                 if (col["Мин. остаток"] >= 0) p.MinStock = Dec(Get("Мин. остаток"), "Мин. остаток");
                 if (col["Активен"] >= 0) p.IsActive = Bool(Get("Активен"));
                 if (col["Категория"] >= 0)

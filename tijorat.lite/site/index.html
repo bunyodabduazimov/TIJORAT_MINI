@@ -1,0 +1,391 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TIJORAT LITE — простая программа учёта для магазина</title>
+<meta name="description" content="TIJORAT LITE — офлайн-программа для Windows: продажи, закуп, склад, финансы и отчёты. Скачайте бесплатно, смотрите видеоуроки и инструкции.">
+<link rel="icon" type="image/png" href="data:image/png;base64,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">
+<link rel="apple-touch-icon" href="img/logo-mark.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#f5f6fc; --soft:#eceefa; --card:#fff; --fg:#0a0d1f; --muted:#565e80; --line:#dde1f1;
+  --brand:#4f46e5; --brand-ink:#fff; --brand-soft:#e8e7ff; --mint:#0891b2; --violet:#a855f7;
+  --sun:#f59e0b; --glow:rgba(79,70,229,.30); --r-lg:28px; --r:16px;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg:#080b1c; --soft:#121733; --card:#0f1430; --fg:#eef1ff; --muted:#9aa3c7; --line:#232a4d;
+    --brand:#7c74ff; --brand-soft:#1d1f4a; --mint:#22d3ee; --glow:rgba(124,116,255,.35);
+    color-scheme: dark;
+  }
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; scroll-padding-top: 80px; }
+body { margin:0; background:var(--bg); color:var(--fg); font:16px/1.6 "Onest","Segoe UI",system-ui,sans-serif; }
+a { color: var(--brand); }
+.wrap { max-width:1160px; margin:0 auto; padding:0 20px; }
+.btn { display:inline-flex; align-items:center; gap:10px; padding:13px 22px; border-radius:14px; font-weight:700; text-decoration:none; border:1px solid var(--line); color:var(--fg); background:var(--card); transition:transform .15s, box-shadow .15s; cursor:pointer; font:inherit; font-weight:700; }
+.btn:hover { transform:translateY(-1px); }
+.btn-brand { background:var(--brand); color:var(--brand-ink); border-color:transparent; box-shadow:0 10px 30px var(--glow); }
+.btn svg { width:20px; height:20px; }
+
+/* header */
+header { position:sticky; top:0; z-index:50; backdrop-filter:blur(14px); background:color-mix(in srgb, var(--bg) 82%, transparent); border-bottom:1px solid var(--line); }
+.bar { display:flex; align-items:center; gap:24px; height:68px; }
+.logo { display:flex; align-items:center; gap:10px; font-weight:800; font-size:20px; color:var(--fg); text-decoration:none; letter-spacing:.02em; }
+.logo img { width:34px; height:34px; }
+.logo b { color:var(--brand); }
+.links { display:flex; gap:4px; margin-left:auto; }
+.links a { padding:8px 12px; border-radius:10px; color:var(--muted); text-decoration:none; font-weight:600; font-size:15px; }
+.links a:hover { color:var(--fg); background:var(--soft); }
+.links a.pro { color:var(--brand); }
+.burger { display:none; margin-left:auto; background:none; border:1px solid var(--line); border-radius:10px; width:42px; height:42px; color:var(--fg); font-size:20px; cursor:pointer; }
+@media (max-width:900px) {
+  .links { display:none; position:absolute; top:68px; left:0; right:0; flex-direction:column; background:var(--card); padding:12px 16px; border-bottom:1px solid var(--line); }
+  .links.open { display:flex; }
+  .links a { padding:14px; font-size:17px; }
+  .burger { display:block; }
+  .bar .btn-brand { display:none; }
+}
+
+/* hero */
+.hero { padding:72px 0 56px; position:relative; overflow:hidden; }
+.hero::before { content:""; position:absolute; inset:-200px -100px auto auto; width:640px; height:640px; background:radial-gradient(circle, var(--glow), transparent 65%); pointer-events:none; }
+.hero-grid { display:grid; grid-template-columns:1.05fr .95fr; gap:48px; align-items:center; }
+.tag { display:inline-block; padding:6px 12px; border-radius:999px; background:var(--brand-soft); color:var(--brand); font-weight:700; font-size:13px; letter-spacing:.04em; text-transform:uppercase; }
+h1 { font-size:clamp(34px,5vw,56px); line-height:1.08; margin:18px 0; letter-spacing:-.02em; }
+h1 span { background:linear-gradient(90deg,var(--mint),var(--brand),var(--violet)); -webkit-background-clip:text; background-clip:text; color:transparent; }
+.lead { color:var(--muted); font-size:19px; max-width:560px; }
+.cta { display:flex; flex-wrap:wrap; gap:12px; margin:28px 0 14px; }
+.meta { color:var(--muted); font-size:14px; }
+.mock { background:var(--card); border:1px solid var(--line); border-radius:var(--r-lg); box-shadow:0 30px 80px -30px var(--glow); overflow:hidden; }
+.mock-top { display:flex; gap:6px; padding:12px 14px; border-bottom:1px solid var(--line); }
+.mock-top i { width:11px; height:11px; border-radius:50%; background:var(--line); }
+.mock-body { display:grid; grid-template-columns:120px 1fr; min-height:300px; }
+.mock-side { background:var(--soft); padding:14px 10px; display:grid; gap:6px; align-content:start; font-size:13px; font-weight:600; color:var(--muted); }
+.mock-side div { padding:7px 10px; border-radius:8px; }
+.mock-side .on { background:var(--brand); color:#fff; }
+.mock-main { padding:18px; display:grid; gap:14px; align-content:start; }
+.kpis { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
+.kpi { border:1px solid var(--line); border-radius:12px; padding:10px; }
+.kpi small { color:var(--muted); font-size:11px; display:block; }
+.kpi b { font-size:17px; }
+.bars { display:flex; align-items:flex-end; gap:8px; height:110px; padding:10px; border:1px solid var(--line); border-radius:12px; }
+.bars span { flex:1; border-radius:6px 6px 0 0; background:linear-gradient(var(--brand),var(--mint)); }
+@media (max-width:900px) { .hero-grid { grid-template-columns:1fr; } .hero { padding-top:44px; } }
+
+/* sections */
+section { padding:72px 0; }
+.alt { background:var(--soft); }
+.head { max-width:720px; margin-bottom:36px; }
+h2 { font-size:clamp(28px,3.6vw,40px); line-height:1.15; margin:14px 0 10px; letter-spacing:-.01em; }
+.head p { color:var(--muted); margin:0; font-size:17px; }
+.grid { display:grid; gap:16px; grid-template-columns:repeat(auto-fill,minmax(250px,1fr)); }
+.card { background:var(--card); border:1px solid var(--line); border-radius:var(--r); padding:22px; }
+.card h3 { margin:12px 0 6px; font-size:18px; }
+.card p { margin:0; color:var(--muted); font-size:15px; }
+.ico { width:44px; height:44px; border-radius:12px; display:grid; place-items:center; background:var(--brand-soft); color:var(--brand); }
+.ico svg { width:22px; height:22px; }
+
+/* download */
+.dl { display:grid; grid-template-columns:1.2fr .8fr; gap:20px; }
+.dl-main { background:linear-gradient(135deg,#1e1b6b,var(--brand) 60%,#7c3aed); color:#fff; border-radius:var(--r-lg); padding:36px; position:relative; overflow:hidden; }
+.dl-main h3 { font-size:28px; margin:0 0 6px; }
+.dl-main p { opacity:.85; margin:0 0 24px; }
+.dl-main .btn { background:#fff; color:#1e1b6b; border:0; }
+.dl-main .ver { margin-top:16px; font-size:14px; opacity:.8; }
+.req { list-style:none; padding:0; margin:0; display:grid; gap:12px; }
+.req li { display:flex; justify-content:space-between; gap:12px; border-bottom:1px dashed var(--line); padding-bottom:10px; font-size:15px; }
+.req li span { color:var(--muted); }
+@media (max-width:800px) { .dl { grid-template-columns:1fr; } .dl-main { padding:26px; } }
+
+/* videos */
+.video { background:var(--card); border:1px solid var(--line); border-radius:var(--r); overflow:hidden; }
+.thumb { aspect-ratio:16/9; position:relative; background:linear-gradient(135deg,var(--brand-soft),var(--soft)); display:grid; place-items:center; cursor:pointer; border:0; width:100%; padding:0; }
+.thumb img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
+.thumb .play { position:relative; width:62px; height:62px; border-radius:50%; background:var(--brand); display:grid; place-items:center; box-shadow:0 10px 30px var(--glow); }
+.thumb .play svg { width:24px; height:24px; fill:#fff; margin-left:4px; }
+.thumb .soon { position:absolute; bottom:10px; left:10px; background:var(--card); color:var(--muted); font-size:12px; font-weight:700; padding:4px 10px; border-radius:999px; }
+.video iframe { width:100%; aspect-ratio:16/9; border:0; display:block; }
+.video .vt { padding:14px 16px; }
+.video .vt b { display:block; }
+.video .vt small { color:var(--muted); }
+
+/* guides */
+.guides { display:grid; gap:12px; }
+details { background:var(--card); border:1px solid var(--line); border-radius:var(--r); padding:0 22px; }
+summary { cursor:pointer; list-style:none; padding:18px 0; font-weight:700; font-size:17px; display:flex; gap:14px; align-items:center; }
+summary::-webkit-details-marker { display:none; }
+summary .n { flex:none; width:32px; height:32px; border-radius:10px; background:var(--brand-soft); color:var(--brand); display:grid; place-items:center; font-size:14px; }
+summary::after { content:"+"; margin-left:auto; color:var(--muted); font-size:22px; font-weight:400; }
+details[open] summary::after { content:"−"; }
+details ol, details ul { margin:0 0 20px; padding-left:22px; color:var(--muted); }
+details li { margin:6px 0; }
+details li b { color:var(--fg); }
+
+/* pro banner */
+.pro { display:flex; flex-wrap:wrap; gap:20px; align-items:center; justify-content:space-between; border:1px solid var(--line); background:var(--card); border-radius:var(--r-lg); padding:30px; }
+.pro h3 { margin:0 0 4px; font-size:22px; }
+.pro p { margin:0; color:var(--muted); }
+
+footer { border-top:1px solid var(--line); padding:36px 0; color:var(--muted); font-size:14px; }
+.f { display:flex; flex-wrap:wrap; gap:20px; justify-content:space-between; align-items:center; }
+.f a { color:var(--muted); text-decoration:none; margin-right:16px; }
+.f a:hover { color:var(--fg); }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap bar">
+    <a class="logo" href="#top"><img src="img/logo-mark.png" alt="">TIJORAT <b>LITE</b></a>
+    <nav class="links" id="nav">
+      <a href="#features">Возможности</a>
+      <a href="#download">Скачать</a>
+      <a href="#videos">Видеоуроки</a>
+      <a href="#guides">Инструкции</a>
+      <a href="#faq">Вопросы</a>
+      <a class="pro" href="https://tijorat.pro" target="_blank" rel="noopener">TIJORAT PRO</a>
+    </nav>
+    <a class="btn btn-brand" href="#download">Скачать</a>
+    <button class="burger" id="burger" aria-label="Меню">☰</button>
+  </div>
+</header>
+
+<main id="top">
+<!-- HERO -->
+<div class="hero">
+  <div class="wrap hero-grid">
+    <div>
+      <span class="tag">Программа для Windows</span>
+      <h1>Простой учёт для <span>вашего магазина</span></h1>
+      <p class="lead">TIJORAT LITE — продажи, закуп, склад, финансы и отчёты в одной программе. Работает без интернета, данные хранятся на вашем компьютере.</p>
+      <div class="cta">
+        <a class="btn btn-brand" href="#download"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0-5-5m5 5 5-5M4 21h16"/></svg>Скачать программу</a>
+        <a class="btn" href="#videos">Смотреть видеоуроки</a>
+      </div>
+      <div class="meta">Windows 10 / 11 · Валюта TJS · Русский, English, Тоҷикӣ</div>
+    </div>
+    <div class="mock" aria-hidden="true">
+      <div class="mock-top"><i></i><i></i><i></i></div>
+      <div class="mock-body">
+        <div class="mock-side"><div class="on">Главная</div><div>Продажи</div><div>Закуп</div><div>Склад</div><div>Финансы</div><div>Отчёты</div></div>
+        <div class="mock-main">
+          <div class="kpis">
+            <div class="kpi"><small>Выручка сегодня</small><b>4 820</b></div>
+            <div class="kpi"><small>Прибыль</small><b>1 136</b></div>
+            <div class="kpi"><small>В кассе</small><b>12 400</b></div>
+          </div>
+          <div class="bars"><span style="height:45%"></span><span style="height:62%"></span><span style="height:54%"></span><span style="height:78%"></span><span style="height:66%"></span><span style="height:90%"></span><span style="height:72%"></span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- FEATURES -->
+<section id="features" class="alt">
+  <div class="wrap">
+    <div class="head"><span class="tag">Возможности</span><h2>Всё нужное для ежедневной работы</h2><p>8 модулей, которые закрывают учёт небольшого магазина или склада.</p></div>
+    <div class="grid" id="feat"></div>
+  </div>
+</section>
+
+<!-- DOWNLOAD -->
+<section id="download">
+  <div class="wrap">
+    <div class="head"><span class="tag">Скачать</span><h2>Установите за 2 минуты</h2><p>Скачайте установщик, запустите его и активируйте программу ключом лицензии.</p></div>
+    <div class="dl">
+      <div class="dl-main">
+        <h3>TIJORAT LITE для Windows</h3>
+        <p>Установщик .exe — всё необходимое уже внутри.</p>
+        <a class="btn" id="dl-link" href="downloads/TijoratLite-Setup.exe" download><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0-5-5m5 5 5-5M4 21h16"/></svg>Скачать установщик</a>
+        <div class="ver" id="dl-ver"></div>
+      </div>
+      <div class="card">
+        <h3 style="margin-top:0">Системные требования</h3>
+        <ul class="req">
+          <li>Система <span>Windows 10 / 11 (64-бит)</span></li>
+          <li>Процессор <span>2 ядра и выше</span></li>
+          <li>Память <span>4 ГБ ОЗУ</span></li>
+          <li>Диск <span>500 МБ свободно</span></li>
+          <li>Интернет <span>только для активации</span></li>
+          <li>Оборудование <span>сканер, принтер чеков</span></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- VIDEOS -->
+<section id="videos" class="alt">
+  <div class="wrap">
+    <div class="head"><span class="tag">Видеоуроки</span><h2>Научитесь работать в программе</h2><p>Короткие уроки по каждому разделу — от установки до отчётов.</p></div>
+    <div class="grid" id="vids"></div>
+  </div>
+</section>
+
+<!-- GUIDES -->
+<section id="guides">
+  <div class="wrap">
+    <div class="head"><span class="tag">Инструкции</span><h2>Пошаговые инструкции</h2><p>Если удобнее читать, чем смотреть.</p></div>
+    <div class="guides" id="guide-list"></div>
+  </div>
+</section>
+
+<!-- FAQ -->
+<section id="faq" class="alt">
+  <div class="wrap">
+    <div class="head"><span class="tag">Вопросы</span><h2>Частые вопросы</h2></div>
+    <div class="guides" id="faq-list"></div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="pro">
+      <div><h3>Нужно больше? Попробуйте TIJORAT PRO</h3><p>Облако, несколько точек, CRM, кадры, производство и AI-помощник.</p></div>
+      <a class="btn btn-brand" href="https://tijorat.pro" target="_blank" rel="noopener">Перейти на tijorat.pro</a>
+    </div>
+  </div>
+</section>
+</main>
+
+<footer>
+  <div class="wrap f">
+    <div>© <span id="year"></span> TIJORAT LITE · <a href="https://tijorat.pro" target="_blank" rel="noopener">tijorat.pro</a></div>
+    <div>
+      <a href="tel:+992114006000">+992 11 400 60 00</a>
+      <a href="mailto:info@tijorat.pro">info@tijorat.pro</a>
+      <a href="https://t.me/tijorat_pro" target="_blank" rel="noopener">Telegram</a>
+      <a href="https://wa.me/992114006000" target="_blank" rel="noopener">WhatsApp</a>
+    </div>
+  </div>
+</footer>
+
+<script>
+/* ===================== НАСТРОЙКИ — меняйте здесь ===================== */
+const CONFIG = {
+  version: "1.8.1",
+  // Файл установщика положите в папку downloads/ (или укажите полную ссылку)
+  downloadUrl: "downloads/TijoratLite-Setup-1.8.1.exe",
+  downloadSize: "≈ 70 МБ",
+  // Видеоуроки: youtube — ID ролика (часть после v=). Пустой ID = «Скоро».
+  videos: [
+    { title: "Установка и активация", time: "4 мин", youtube: "" },
+    { title: "Первая настройка: компания, кассы, склады", time: "6 мин", youtube: "" },
+    { title: "Добавление товаров и категорий", time: "7 мин", youtube: "" },
+    { title: "Закуп и оплата поставщику", time: "6 мин", youtube: "" },
+    { title: "Продажа и возврат", time: "8 мин", youtube: "" },
+    { title: "Склад: перемещение и инвентаризация", time: "6 мин", youtube: "" },
+    { title: "Финансы: приход и расход", time: "5 мин", youtube: "" },
+    { title: "Отчёты и резервная копия", time: "7 мин", youtube: "" }
+  ]
+};
+/* ===================================================================== */
+
+const I = {
+  home:'<path d="M3 11 12 4l9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/>',
+  cart:'<circle cx="9" cy="20" r="1.5"/><circle cx="18" cy="20" r="1.5"/><path d="M3 4h2l2.5 11h11L21 8H6.5"/>',
+  truck:'<path d="M3 6h11v10H3zM14 10h4l3 3v3h-7"/><circle cx="7" cy="18" r="2"/><circle cx="17" cy="18" r="2"/>',
+  box:'<path d="M21 8 12 3 3 8v8l9 5 9-5zM3 8l9 5 9-5M12 13v8"/>',
+  wallet:'<rect x="3" y="6" width="18" height="14" rx="2"/><path d="M3 10h18M16 15h2"/>',
+  book:'<path d="M4 4h12a4 4 0 0 1 4 4v12H8a4 4 0 0 1-4-4z"/><path d="M8 8h8M8 12h6"/>',
+  chart:'<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>',
+  gear:'<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/>'
+};
+const svg = p => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${p}</svg>`;
+
+const FEATURES = [
+  ["home","Главная","Выручка, прибыль, деньги в кассах, стоимость склада и график за 7 дней."],
+  ["cart","Продажи","Чек со сканером штрихкода, частичные возвраты, печать чека."],
+  ["truck","Закуп","Приход от поставщика с полной или частичной оплатой, учёт долгов."],
+  ["box","Склад","Остатки с подсветкой минимума, перемещения, инвентаризация."],
+  ["wallet","Финансы","Несколько касс, приход и расход по статьям, перемещения денег."],
+  ["book","Справочники","Товары, категории, клиенты, поставщики, склады и кассы."],
+  ["chart","Отчёты","Продажи, прибыль, ABC-анализ, движение денег, экспорт в CSV."],
+  ["gear","Настройки","Пользователи и роли, реквизиты, резервная копия базы."]
+];
+
+const GUIDES = [
+  ["Установка программы", `<ol>
+    <li>Скачайте установщик в разделе <a href="#download">«Скачать»</a>.</li>
+    <li>Запустите файл <b>TijoratLite-Setup.exe</b>. Если Windows покажет предупреждение — нажмите <b>«Подробнее» → «Выполнить в любом случае»</b>.</li>
+    <li>Следуйте шагам мастера установки и нажмите <b>«Готово»</b>.</li>
+    <li>Ярлык <b>TIJORAT LITE</b> появится на рабочем столе.</li></ol>`],
+  ["Активация лицензии", `<ol>
+    <li>При первом запуске откроется окно активации.</li>
+    <li>Введите <b>ключ лицензии</b>, полученный от менеджера, и нажмите <b>«Активировать»</b>.</li>
+    <li>Для активации нужен интернет. После неё программа работает офлайн.</li>
+    <li>Ключа нет? Напишите нам в <a href="https://t.me/tijorat_pro" target="_blank" rel="noopener">Telegram</a>.</li></ol>`],
+  ["Первая настройка", `<ol>
+    <li>Откройте <b>Настройки</b> и заполните реквизиты компании.</li>
+    <li>В <b>Справочниках</b> создайте склады и кассы (наличные, карта).</li>
+    <li>Добавьте пользователей и назначьте роли: администратор, кассир.</li>
+    <li>Выберите метод себестоимости: <b>FIFO</b> или <b>средневзвешенная</b>.</li></ol>`],
+  ["Добавление товаров", `<ol>
+    <li><b>Справочники → Товары → Добавить</b>.</li>
+    <li>Укажите название, категорию, единицу, штрихкод и цену продажи.</li>
+    <li>Задайте <b>минимальный остаток</b> — программа подсветит товар, когда он заканчивается.</li>
+    <li>Остатки появятся после первого закупа.</li></ol>`],
+  ["Закуп у поставщика", `<ol>
+    <li><b>Закуп → Новый приход</b>, выберите поставщика и склад.</li>
+    <li>Добавьте товары, количество и цену закупки.</li>
+    <li>Укажите сумму оплаты: полную, частичную или 0 — остаток станет долгом.</li>
+    <li>Нажмите <b>«Провести»</b>. Долг погашается в разделе «Долги по поставщикам».</li></ol>`],
+  ["Продажа и возврат", `<ol>
+    <li><b>Продажи</b>: сканируйте штрихкод или ищите товар по названию/артикулу.</li>
+    <li>Нажмите <b>«Оплатить»</b>, выберите кассу (наличные / карта) или продажу в долг.</li>
+    <li>Для возврата откройте историю продаж, выберите чек и отметьте возвращаемые позиции.</li></ol>`],
+  ["Резервная копия", `<ul>
+    <li><b>Настройки → Резервная копия → Создать копию</b>.</li>
+    <li>Храните копию на флешке или в облаке — так данные не потеряются.</li>
+    <li>Восстановление выполняется там же кнопкой <b>«Восстановить»</b>.</li></ul>`]
+];
+
+const FAQ = [
+  ["Нужен ли интернет?", "Только для активации лицензии. Вся работа идёт офлайн, данные хранятся на вашем компьютере."],
+  ["Можно ли работать на нескольких компьютерах?", "Каждая установка активируется своим ключом и хранит свою базу. Для нескольких точек с общей базой подойдёт TIJORAT PRO."],
+  ["Какое оборудование поддерживается?", "Сканеры штрихкода (USB, как клавиатура) и принтеры чеков, установленные в Windows."],
+  ["Как обновить программу?", "Скачайте новую версию с этого сайта и установите поверх старой — данные сохранятся."],
+  ["Как перейти на TIJORAT PRO?", `Оставьте заявку на <a href="https://tijorat.pro" target="_blank" rel="noopener">tijorat.pro</a> — поможем перенести данные.`]
+];
+
+const $ = id => document.getElementById(id);
+$("feat").innerHTML = FEATURES.map(([i,t,d]) => `<div class="card"><div class="ico">${svg(I[i])}</div><h3>${t}</h3><p>${d}</p></div>`).join("");
+
+$("dl-link").href = CONFIG.downloadUrl;
+$("dl-ver").textContent = `Версия ${CONFIG.version} · ${CONFIG.downloadSize}`;
+
+$("vids").innerHTML = CONFIG.videos.map((v, n) => `
+  <div class="video">
+    <button class="thumb" data-yt="${v.youtube}" aria-label="${v.title}">
+      ${v.youtube ? `<img loading="lazy" src="https://i.ytimg.com/vi/${v.youtube}/hqdefault.jpg" alt="">` : `<span class="soon">Скоро</span>`}
+      <span class="play"><svg viewBox="0 0 24 24"><path d="M6 4l14 8-14 8z"/></svg></span>
+    </button>
+    <div class="vt"><b>${n + 1}. ${v.title}</b><small>${v.time}</small></div>
+  </div>`).join("");
+$("vids").addEventListener("click", e => {
+  const b = e.target.closest(".thumb"); if (!b || !b.dataset.yt) return;
+  const f = document.createElement("iframe");
+  f.src = `https://www.youtube-nocookie.com/embed/${b.dataset.yt}?autoplay=1&rel=0`;
+  f.allow = "autoplay; encrypted-media; picture-in-picture"; f.allowFullscreen = true;
+  b.replaceWith(f);
+});
+
+const acc = (list, num) => list.map(([t, b], i) =>
+  `<details><summary>${num ? `<span class="n">${i + 1}</span>` : ""}${t}</summary>${num ? b : `<p style="margin:0 0 20px;color:var(--muted)">${b}</p>`}</details>`).join("");
+$("guide-list").innerHTML = acc(GUIDES, true);
+$("faq-list").innerHTML = acc(FAQ, false);
+
+$("year").textContent = new Date().getFullYear();
+$("burger").onclick = () => $("nav").classList.toggle("open");
+$("nav").addEventListener("click", e => { if (e.target.tagName === "A") $("nav").classList.remove("open"); });
+</script>
+</body>
+</html>

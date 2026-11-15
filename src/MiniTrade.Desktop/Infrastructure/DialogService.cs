@@ -7,7 +7,7 @@ namespace MiniTrade.Desktop.Infrastructure;
 /// <summary>Абстракция диалогов, чтобы ViewModel не зависели от окон.</summary>
 public interface IDialogService
 {
-    void Info(string message, string title = "TIJORAT.PRO");
+    void Info(string message, string title = "TIJORAT LITE");
     void Error(string message, string title = "Ошибка");
     bool Confirm(string message, string title = "Подтверждение");
     string? SaveFile(string defaultName, string filter);
@@ -21,7 +21,7 @@ public sealed class DialogService : IDialogService
 {
     private static Window? Owner => Application.Current?.Windows.OfType<Window>().FirstOrDefault(w => w.IsActive);
 
-    public void Info(string message, string title = "TIJORAT.PRO") => Show(message, title, MessageKind.Info);
+    public void Info(string message, string title = "TIJORAT LITE") => Show(message, title, MessageKind.Info);
 
     public void Error(string message, string title = "Ошибка") => Show(message, title, MessageKind.Warning);
 

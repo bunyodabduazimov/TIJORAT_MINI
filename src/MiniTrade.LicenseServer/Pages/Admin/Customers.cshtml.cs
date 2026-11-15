@@ -10,8 +10,19 @@ public class CustomerInput
     public string FullName { get; set; } = "";
     public string? Company { get; set; }
     public string? Phone { get; set; }
+    /// <summary>Код страны ISO 3166-1 alpha-2 (TJ, UZ…).</summary>
+    public string? Country { get; set; }
     public string? Email { get; set; }
     public string? Notes { get; set; }
+
+    public string? NormalizedCountry
+    {
+        get
+        {
+            var c = Country?.Trim().ToUpperInvariant();
+            return string.IsNullOrEmpty(c) ? null : c.Length > 8 ? c[..8] : c;
+        }
+    }
 }
 
 public class CustomersModel(LicenseDbContext db) : PageModel
@@ -40,7 +51,7 @@ public class CustomersModel(LicenseDbContext db) : PageModel
         }
         var c = new Customer
         {
-            FullName = Input.FullName.Trim(), Company = Input.Company?.Trim() ?? "", Phone = Input.Phone?.Trim() ?? "", Email = Input.Email?.Trim()
+            FullName = Input.FullName.Trim(), Company = Input.Company?.Trim() ?? "", Phone = Input.Phone?.Trim() ?? "", Country = Input.NormalizedCountry, Email = Input.Email?.Trim()
         };
         db.Customers.Add(c);
         await db.SaveChangesAsync();

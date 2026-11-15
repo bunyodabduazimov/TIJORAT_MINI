@@ -85,7 +85,7 @@ public sealed class AboutInfo
         RemoteApps = c.RemoteApps.Where(a => !string.IsNullOrWhiteSpace(a.Name)).ToList();
     }
 
-    public string ProductName => "TIJORAT.PRO";
+    public string ProductName => "TIJORAT LITE";
     public string Version
     {
         get

@@ -6,7 +6,7 @@
         Style="{StaticResource AppWindow}" Background="Transparent"
         WindowStyle="None" AllowsTransparency="True" ResizeMode="NoResize"
         ShowInTaskbar="False" WindowStartupLocation="CenterOwner">
-    <!-- «Мой аккаунт»: профиль и пароль; интерфейс этого компьютера -->
+    <!-- «Мой аккаунт»: профиль и пароль (интерфейс этого компьютера — в «Настройки → Компания») -->
     <Grid x:Name="ShadowRoom" Margin="20">
         <Border Background="{DynamicResource SurfaceBrush}" CornerRadius="12" Effect="{DynamicResource DialogShadow}"/>
         <Border Background="{DynamicResource SurfaceBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" CornerRadius="12">
@@ -33,10 +33,8 @@
                             HorizontalAlignment="Right" MinWidth="110"/>
                 </Border>
 
-                <TabControl SelectedIndex="{Binding SelectedTab}" Margin="22,4,22,18" Background="Transparent">
-                    <!-- Профиль и пароль -->
-                    <TabItem Header="{l:T 'Аккаунт'}">
-                        <Grid Margin="0,12,0,0">
+                <!-- Профиль и пароль (тема, язык и масштаб — в «Настройки → Компания») -->
+                        <Grid Margin="22,12,22,18">
                             <Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="24"/><ColumnDefinition/></Grid.ColumnDefinitions>
                             <StackPanel>
                                 <TextBlock Text="{l:T 'Данные пользователя'}" Style="{StaticResource SectionTitle}"/>
@@ -52,6 +50,8 @@
                                 <TextBlock Text="{Binding Machine}" FontWeight="SemiBold"/>
                                 <TextBlock Text="{l:T 'ФИО, телефон и роль меняет администратор в «Настройки → Пользователи».'}"
                                            Style="{StaticResource Muted}" FontSize="11" TextWrapping="Wrap" Margin="0,14,0,0"/>
+                                <TextBlock Text="{l:T 'Тема, язык и масштаб интерфейса — в разделе «Настройки».'}"
+                                           Style="{StaticResource Muted}" FontSize="11" TextWrapping="Wrap" Margin="0,6,0,0"/>
                             </StackPanel>
                             <StackPanel Grid.Column="2">
                                 <TextBlock Text="{l:T 'Смена пароля'}" Style="{StaticResource SectionTitle}"/>
@@ -64,55 +64,6 @@
                                 <Button Content="{l:T 'Сменить пароль'}" Margin="0,16,0,0" Command="{Binding ChangePasswordCommand}"/>
                             </StackPanel>
                         </Grid>
-                    </TabItem>
-
-                    <!-- Интерфейс: хранится на этом компьютере -->
-                    <TabItem Header="{l:T 'Интерфейс'}">
-                        <StackPanel Margin="0,12,0,0">
-                            <TextBlock Text="{l:T 'Настройки этого компьютера. Применяются сразу.'}" Style="{StaticResource Muted}" TextWrapping="Wrap"/>
-
-                            <TextBlock Text="{l:T 'Тема оформления'}" Style="{StaticResource FieldLabel}"/>
-                            <UniformGrid Columns="3" Margin="0,4,0,0">
-                                <RadioButton Style="{StaticResource ChoiceTile}" GroupName="ptheme" Margin="0,0,8,0"
-                                             IsChecked="{Binding Theme, Converter={StaticResource Equals}, ConverterParameter=System}">
-                                    <StackPanel Orientation="Horizontal">
-                                        <TextBlock Text="&#xF0379;" FontFamily="{StaticResource IconFont}" Margin="0,1,8,0"/>
-                                        <TextBlock Text="{l:T 'Системная'}" FontWeight="SemiBold"/>
-                                    </StackPanel>
-                                </RadioButton>
-                                <RadioButton Style="{StaticResource ChoiceTile}" GroupName="ptheme" Margin="4,0"
-                                             IsChecked="{Binding Theme, Converter={StaticResource Equals}, ConverterParameter=Light}">
-                                    <StackPanel Orientation="Horizontal">
-                                        <TextBlock Text="&#xF05A8;" FontFamily="{StaticResource IconFont}" Margin="0,1,8,0"/>
-                                        <TextBlock Text="{l:T 'Светлая'}" FontWeight="SemiBold"/>
-                                    </StackPanel>
-                                </RadioButton>
-                                <RadioButton Style="{StaticResource ChoiceTile}" GroupName="ptheme" Margin="8,0,0,0"
-                                             IsChecked="{Binding Theme, Converter={StaticResource Equals}, ConverterParameter=Dark}">
-                                    <StackPanel Orientation="Horizontal">
-                                        <TextBlock Text="&#xF0594;" FontFamily="{StaticResource IconFont}" Margin="0,1,8,0"/>
-                                        <TextBlock Text="{l:T 'Тёмная'}" FontWeight="SemiBold"/>
-                                    </StackPanel>
-                                </RadioButton>
-                            </UniformGrid>
-
-                            <Grid Margin="0,4,0,0">
-                                <Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="16"/><ColumnDefinition/></Grid.ColumnDefinitions>
-                                <StackPanel>
-                                    <TextBlock Text="{l:T 'Язык'}" Style="{StaticResource FieldLabel}"/>
-                                    <ComboBox ItemsSource="{Binding Languages}" SelectedItem="{Binding Language}"/>
-                                    <TextBlock Text="{l:T 'Масштаб интерфейса'}" Style="{StaticResource FieldLabel}"/>
-                                    <ComboBox ItemsSource="{Binding Scales}" SelectedItem="{Binding Scale}" DisplayMemberPath="Name"/>
-                                </StackPanel>
-                                <StackPanel Grid.Column="2">
-                                    <TextBlock Text="{l:T 'Страница после входа'}" Style="{StaticResource FieldLabel}"/>
-                                    <ComboBox ItemsSource="{Binding StartPages}" SelectedItem="{Binding StartPage}" DisplayMemberPath="Name"/>
-                                </StackPanel>
-                            </Grid>
-                            <CheckBox Content="{l:T 'Боковое меню свёрнуто до иконок'}" IsChecked="{Binding MenuCollapsed}" Margin="0,14,0,0"/>
-                        </StackPanel>
-                    </TabItem>
-                </TabControl>
             </DockPanel>
         </Border>
     </Grid>

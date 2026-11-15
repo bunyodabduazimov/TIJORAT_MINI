@@ -37,5 +37,15 @@ public static class Countries
     /// <summary>Телефонный код страны компании (задаётся после входа и при сохранении настроек).</summary>
     public static string PhoneCode { get; private set; } = "+992";
 
-    public static void SetCurrent(string? code) => PhoneCode = Find(code)?.PhoneCode ?? "";
+    /// <summary>Код страны компании; пусто (старые базы без страны) — считается Таджикистаном.</summary>
+    public static string CurrentCode { get; private set; } = DefaultCode;
+
+    /// <summary>ККТ Fiscat поддерживается только в Таджикистане.</summary>
+    public static bool FiscalSupported => CurrentCode == "TJ";
+
+    public static void SetCurrent(string? code)
+    {
+        PhoneCode = Find(code)?.PhoneCode ?? "";
+        CurrentCode = string.IsNullOrWhiteSpace(code) ? DefaultCode : code.Trim().ToUpperInvariant();
+    }
 }

@@ -506,6 +506,9 @@ namespace MiniTrade.Core.Data.Migrations
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("TEXT");
 
+                    b.Property<decimal>("WholesalePrice")
+                        .HasColumnType("TEXT");
+
                     b.HasKey("Id");
 
                     b.HasIndex("Barcode");
@@ -1328,8 +1331,23 @@ namespace MiniTrade.Core.Data.Migrations
                     b.Property<int?>("AccessRoleId")
                         .HasColumnType("INTEGER");
 
+                    b.Property<DateTime?>("AccessUntil")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("AllowedCashRegisterIds")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("AllowedWarehouseIds")
+                        .HasColumnType("TEXT");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("TEXT");
+
+                    b.Property<int?>("DefaultCashRegisterId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int?>("DefaultWarehouseId")
+                        .HasColumnType("INTEGER");
 
                     b.Property<string>("FullName")
                         .IsRequired()
@@ -1353,6 +1371,9 @@ namespace MiniTrade.Core.Data.Migrations
                     b.Property<int>("LoginCount")
                         .HasColumnType("INTEGER");
 
+                    b.Property<decimal?>("MaxDiscountPercent")
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("Note")
                         .HasMaxLength(500)
                         .HasColumnType("TEXT");
@@ -1370,6 +1391,12 @@ namespace MiniTrade.Core.Data.Migrations
 
                     b.Property<int>("Role")
                         .HasColumnType("INTEGER");
+
+                    b.Property<TimeSpan?>("WorkFrom")
+                        .HasColumnType("TEXT");
+
+                    b.Property<TimeSpan?>("WorkTo")
+                        .HasColumnType("TEXT");
 
                     b.HasKey("Id");
 

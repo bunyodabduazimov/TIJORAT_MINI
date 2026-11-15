@@ -1,0 +1,3551 @@
+{
+ "shared": {
+  "brand": {
+   "name": "TIJORAT",
+   "suffix": "PRO"
+  },
+  "prices": [
+   199,
+   399,
+   null
+  ],
+  "featured": 1,
+  "moduleCodes": [
+   "WMS",
+   "POS",
+   "PUR",
+   "FIN",
+   "CRM",
+   "HRM",
+   "MFG",
+   "AI"
+  ],
+  "demo": {
+   "revenue": 18450,
+   "checks": 212,
+   "hours": [
+    "09",
+    "10",
+    "11",
+    "12",
+    "13",
+    "14"
+   ],
+   "hourly": [
+    2.1,
+    3.0,
+    3.6,
+    4.8,
+    3.3,
+    0
+   ],
+   "items": [
+    {
+     "sku": "RIS-001",
+     "price": 14,
+     "cost": 11.5,
+     "qty": 48,
+     "min": 10
+    },
+    {
+     "sku": "MSL-014",
+     "price": 22,
+     "cost": 19,
+     "qty": 12,
+     "min": 10
+    },
+    {
+     "sku": "CHY-095",
+     "price": 12,
+     "cost": 9,
+     "qty": 7,
+     "min": 8
+    },
+    {
+     "sku": "ARD-200",
+     "price": 13,
+     "cost": 11,
+     "qty": 30,
+     "min": 10
+    },
+    {
+     "sku": "QND-010",
+     "price": 11,
+     "cost": 9.6,
+     "qty": 22,
+     "min": 10
+    }
+   ],
+   "cogs": 14390,
+   "debts": [
+    1250,
+    640,
+    2300,
+    0
+   ],
+   "salesSeed": [
+    [
+     "13:05",
+     0,
+     2,
+     1
+    ],
+    [
+     "13:12",
+     3,
+     1,
+     0
+    ],
+    [
+     "13:18",
+     1,
+     1,
+     2
+    ],
+    [
+     "13:26",
+     4,
+     3,
+     0
+    ],
+    [
+     "13:34",
+     2,
+     2,
+     1
+    ],
+    [
+     "13:41",
+     0,
+     1,
+     0
+    ],
+    [
+     "13:49",
+     3,
+     2,
+     1
+    ],
+    [
+     "13:58",
+     1,
+     3,
+     2
+    ]
+   ],
+   "purchases": [
+    [
+     "ЗП-118",
+     0,
+     "24.10",
+     2480,
+     0
+    ],
+    [
+     "ЗП-121",
+     1,
+     "27.10",
+     1350,
+     1
+    ],
+    [
+     "ЗП-122",
+     2,
+     "28.10",
+     960,
+     2
+    ]
+   ],
+   "week": [
+    15.2,
+    17.8,
+    16.4,
+    19.1,
+    21.3,
+    23.0
+   ],
+   "payShare": [
+    0.46,
+    0.38,
+    0.16
+   ],
+   "custLast": [
+    "27.10",
+    "26.10",
+    "21.10",
+    "28.10"
+   ]
+  },
+  "contacts": {
+   "phone": "+992 11 400 60 00",
+   "phoneHref": "tel:+992114006000",
+   "email": "info@tijorat.pro",
+   "social": [
+    [
+     "WhatsApp",
+     "https://wa.me/992114006000"
+    ],
+    [
+     "Telegram",
+     "https://t.me/tijorat_pro"
+    ],
+    [
+     "Instagram",
+     "https://instagram.com/tijorat.pro"
+    ],
+    [
+     "Facebook",
+     "https://facebook.com/tijorat.pro"
+    ]
+   ]
+  },
+  "included": [
+   [
+    5,
+    1
+   ],
+   [
+    15,
+    1
+   ]
+  ],
+  "addons": {
+   "user": 30,
+   "point": 150
+  },
+  "extras": [
+   [
+    "offline",
+    50
+   ],
+   [
+    "service",
+    100
+   ],
+   [
+    "rent",
+    100
+   ],
+   [
+    "mfg",
+    150
+   ],
+   [
+    "courses",
+    100
+   ],
+   [
+    "build",
+    200
+   ]
+  ],
+  "packages": [
+   0,
+   1500,
+   3500,
+   10000
+  ],
+  "dirs": [
+   [
+    "retail",
+    "pos"
+   ],
+   [
+    "wholesale",
+    "order"
+   ],
+   [
+    "mfg",
+    "bars"
+   ],
+   [
+    "pharmacy",
+    "pharm"
+   ],
+   [
+    "services",
+    "kanban"
+   ],
+   [
+    "rental",
+    "cal"
+   ],
+   [
+    "construction",
+    "build"
+   ],
+   [
+    "education",
+    "sched"
+   ],
+   [
+    "horeca",
+    "tables"
+   ],
+   [
+    "auto",
+    "auto"
+   ]
+  ],
+  "modLinks": [
+   [
+    1,
+    2,
+    6
+   ],
+   [
+    0,
+    3,
+    4
+   ],
+   [
+    0,
+    3
+   ],
+   [
+    1,
+    2,
+    5
+   ],
+   [
+    1,
+    3,
+    7
+   ],
+   [
+    3
+   ],
+   [
+    0,
+    2
+   ],
+   [
+    1,
+    3,
+    4
+   ]
+  ]
+ },
+ "ru": {
+  "label": "RU",
+  "ui": {
+   "nav": [
+    "Возможности",
+    "TIJORAT AI",
+    "Модули",
+    "Тарифы",
+    "Вопросы"
+   ],
+   "demoBtn": "Получить демо",
+   "themeSystem": "Системная тема",
+   "themeLight": "Светлая тема",
+   "themeDark": "Тёмная тема",
+   "currency": "сомони",
+   "perMonth": "TJS / мес",
+   "featTag": "Возможности",
+   "featTitle": "Что умеет программа",
+   "aiTag": "TIJORAT AI",
+   "aiTitle": "Помощник, который подсказывает",
+   "aiLead": "Спросите как в чате, и он ответит по вашим данным.",
+   "aiPoints": [
+    "Что скоро закончится",
+    "Что заказать",
+    "Ошибки в кассе",
+    "Какая прибыль"
+   ],
+   "aiChat": [
+    {
+     "q": "Что закончится на этой неделе?",
+     "a": "Чай зелёный №95 закончится через 2 дня, масло хлопковое через 4. Рекомендую заказать 40 и 60 шт."
+    },
+    {
+     "q": "Какой филиал дал больше прибыли в октябре?",
+     "a": "Филиал №2: прибыль на 18% выше среднего, маржа 24,1%."
+    }
+   ],
+   "aiInput": "Спросите о своём бизнесе…",
+   "modTag": "Модули",
+   "modTitle": "Что есть в программе",
+   "modLead": "Все разделы связаны: продали товар, и склад с отчётом обновились сами.",
+   "stepTag": "Внедрение",
+   "stepTitle": "Запуск за 4 шага",
+   "stepLead": "Через неделю вы уже работаете в программе.",
+   "indTag": "Отрасли",
+   "indTitle": "Кому подходит",
+   "priceTag": "Тарифы",
+   "priceTitle": "Простые цены",
+   "priceLead": "Нужно больше людей или касс? Добавьте за небольшую доплату.",
+   "billM": "Помесячно",
+   "billY": "За год −20%",
+   "popular": "Популярный",
+   "connect": "Подключить",
+   "discuss": "Обсудить",
+   "negotiable": "Договорная",
+   "faqTag": "Вопросы",
+   "faqTitle": "Частые вопросы",
+   "contactTitle": "Покажем программу бесплатно",
+   "contactSub": "Оставьте номер, и мы перезвоним.",
+   "perks": [
+    [
+     "30 мин",
+     "Покажем онлайн"
+    ],
+    [
+     "7 дней",
+     "Попробуете бесплатно"
+    ],
+    [
+     "1 день",
+     "Посчитаем цену"
+    ]
+   ],
+   "fName": "Имя",
+   "fPhone": "Телефон",
+   "fCompany": "Компания",
+   "fSphere": "Сфера",
+   "fMsg": "Что хотите автоматизировать?",
+   "pName": "Фаррух Рахимов",
+   "pCompany": "ООО «Барака Савдо»",
+   "pMsg": "Например: 3 магазина и склад, учёт долгов клиентов",
+   "spheres": [
+    "Розничная торговля",
+    "Оптовая торговля",
+    "Дистрибуция",
+    "Продуктовый магазин / минимаркет",
+    "Одежда и обувь",
+    "Стройматериалы",
+    "Аптека",
+    "Автозапчасти и автосервис",
+    "Бытовая техника и электроника",
+    "Кафе и рестораны",
+    "Производство",
+    "Услуги и ремонт",
+    "Аренда и прокат",
+    "Образование и курсы",
+    "Строительство",
+    "Другое"
+   ],
+   "submit": "Записаться на демо",
+   "errName": "Укажите имя",
+   "errPhone": "Введите номер: +992 и 9 цифр, например +992 90 123 45 67",
+   "sent": "{name}, спасибо! Заявка отправлена. Мы перезвоним в рабочее время.",
+   "footer": "Автоматизация торговли и производства",
+   "demo": {
+    "store": "Магазин №3 · Душанбе",
+    "online": "онлайн",
+    "menu": [
+     "Главная",
+     "Склад",
+     "Продажи",
+     "Закупки",
+     "Клиенты",
+     "Финансы",
+     "ИИ-помощник"
+    ],
+    "revenue": "Выручка",
+    "checks": "Чеков",
+    "avg": "Средний чек",
+    "stock": "Склад",
+    "stockPanel": "Остатки",
+    "pcs": "шт.",
+    "hourly": "Продажи по часам",
+    "hourlyUnit": "тыс. сомони",
+    "ops": "Последние операции",
+    "opsEmpty": "Продажи появятся здесь",
+    "sell": "Продать",
+    "low": "Заканчивается",
+    "reorder": "Заказать у поставщика",
+    "check": "Чек",
+    "incoming": "Приход",
+    "toStock": "склад",
+    "note": "Это пример. Нажмите «Продать» и посмотрите, что изменится.",
+    "items": [
+     "Рис, 1 кг",
+     "Масло хлопковое, 1 л",
+     "Чай зелёный №95, 100 г",
+     "Мука высший сорт, 2 кг",
+     "Сахар, 1 кг"
+    ],
+    "v": {
+     "stockCols": [
+      "Товар",
+      "Остаток",
+      "Мин.",
+      "Сумма"
+     ],
+     "receive": "+10",
+     "low": "Мало",
+     "ok": "В норме",
+     "salesCols": [
+      "Время",
+      "Товар",
+      "Кол-во",
+      "Сумма"
+     ],
+     "salesEmpty": "Продаж пока нет. Откройте «Главная» и нажмите «Продать».",
+     "salesTotal": "Итого за смену",
+     "purEmpty": "Все товары в наличии, заказывать нечего.",
+     "purCols": [
+      "Товар",
+      "Остаток",
+      "Заказ"
+     ],
+     "order": "Заказать",
+     "purHistory": "История приходов",
+     "none": "Пока пусто",
+     "custCols": [
+      "Клиент",
+      "Телефон",
+      "Долг"
+     ],
+     "pay": "Погасить",
+     "noDebt": "Нет долга",
+     "custTotal": "Всего долгов",
+     "custNames": [
+      "ИП Каримов",
+      "Магазин «Сомон»",
+      "Кафе «Ватан»",
+      "ООО «Нур Савдо»"
+     ],
+     "fin": [
+      "Выручка",
+      "Себестоимость",
+      "Валовая прибыль",
+      "Маржа"
+     ],
+     "finNote": "Цифры меняются после каждой продажи и прихода.",
+     "aiQ": [
+      "Что скоро закончится?",
+      "Какой товар продаётся лучше?",
+      "Какая сейчас прибыль?"
+     ],
+     "aiA": [
+      "{name}: осталось {qty} шт. Рекомендую заказать {n} шт.",
+      "Все товары выше минимального остатка.",
+      "{name}: продано {n} шт. на {sum} сомони.",
+      "В этой смене демо-продаж ещё не было. Нажмите «Продать» на главной.",
+      "Выручка {rev}, себестоимость {cogs}, прибыль {profit} сомони. Маржа {m}%."
+     ],
+     "aiNote": "Демо: ответы считаются по данным этой страницы.",
+     "aiHint": "Выберите вопрос",
+     "kItems": "Позиций",
+     "kStockSum": "Сумма склада",
+     "kLow": "Заканчивается",
+     "kRev": "Выручка за смену",
+     "kChecks": "Чеков",
+     "kAvg": "Средний чек",
+     "lastChecks": "Последние чеки",
+     "salesCols2": [
+      "Время",
+      "Товар",
+      "Кол-во",
+      "Оплата",
+      "Сумма"
+     ],
+     "poT": "Заказы поставщикам",
+     "poCols": [
+      "№",
+      "Поставщик",
+      "Дата",
+      "Статус",
+      "Сумма"
+     ],
+     "poSt": [
+      "Доставлен",
+      "В пути",
+      "Ожидает"
+     ],
+     "suppliers": [
+      "Сугд Агро",
+      "Нури Хуҷанд",
+      "Зарафшон Савдо"
+     ],
+     "needT": "Нужно заказать",
+     "inT": "Приходы сегодня",
+     "kDebt": "Долг клиентов",
+     "kDebtors": "Должников",
+     "kClients": "Клиентов",
+     "custCols2": [
+      "Клиент",
+      "Телефон",
+      "Последняя покупка",
+      "Долг"
+     ],
+     "weekT": "Выручка за 7 дней, тыс.",
+     "days": [
+      "Пн",
+      "Вт",
+      "Ср",
+      "Чт",
+      "Пт",
+      "Сб",
+      "Сегодня"
+     ],
+     "payT": "Способы оплаты"
+    }
+   },
+   "mock": {
+    "stockHead": "Склад · Душанбе",
+    "stockSub": "3 филиала",
+    "autoRow": "Заказ поставщику сформирован",
+    "auto": "Авто",
+    "posHead": "Чек №4821",
+    "posSub": "Касса 2",
+    "pay": [
+     "Наличные",
+     "Карта",
+     "QR"
+    ],
+    "total": "Итого",
+    "repHead": "Выручка за неделю",
+    "repSub": "все филиалы",
+    "margin": "Маржа",
+    "debts": "Долги клиентов",
+    "debtsVal": "8 клиентов",
+    "payBtn": "Пробить чек",
+    "paying": "Проводим оплату…",
+    "paid": "Оплачено",
+    "given": "Получено",
+    "change": "Сдача",
+    "cardWait": "Приложите карту к терминалу",
+    "qrScan": "Отсканируйте QR в банковском приложении",
+    "posHeadN": "Чек №",
+    "scanning": "Сканирование…"
+   },
+   "loadfail": "Не удалось загрузить данные. Обновите страницу.",
+   "aiTry": "Спросите сами",
+   "aiThinking": "Анализирую данные",
+   "aiToast": "Чай зелёный №95 закончится через 2 дня. Заказать 40 шт.?",
+   "aiCore": "ИИ онлайн",
+   "bot": {
+    "open": "Открыть чат TIJORAT AI",
+    "close": "Закрыть чат",
+    "title": "TIJORAT AI",
+    "online": "онлайн · Claude",
+    "demo": "демо-режим",
+    "greet": "Здравствуйте! Я TIJORAT AI. Спросите про цены, возможности или подключение.",
+    "ph": "Напишите вопрос…",
+    "send": "Отправить",
+    "stop": "Стоп",
+    "thinking": "Думаю…",
+    "sugg": [
+     "Сколько стоит?",
+     "Есть ли касса без интернета?",
+     "Как перенести данные из 1С?"
+    ],
+    "note": "Ответы ИИ могут быть неточными. Цены и условия уточняйте у менеджера.",
+    "noMatch": "Точного ответа у меня нет. Оставьте заявку внизу страницы, и менеджер ответит вам лично.",
+    "toForm": "Оставить заявку",
+    "errRate": "Слишком много вопросов подряд. Попробуйте через минуту.",
+    "errGen": "Не удалось получить ответ. Попробуйте ещё раз.",
+    "fallbackNote": "ИИ сейчас недоступен, отвечаю из базы знаний."
+   },
+   "foot": {
+    "tagline": "Управляй бизнесом легко!",
+    "about": "Tijorat Pro — современная экосистема автоматизации торговли, складского учёта и управления бизнесом.",
+    "hours": "Поддержка 24/7 · Офис: Пн — Сб, 09:00 — 18:00",
+    "navT": "Навигация",
+    "nav": [
+     "Возможности",
+     "Решения",
+     "Услуги",
+     "Цены",
+     "Контакты"
+    ],
+    "contT": "Контакты",
+    "address": "г. Худжанд, Таджикистан",
+    "legalT": "Юридическая информация",
+    "legal": [
+     "Политика конфиденциальности",
+     "Условия использования"
+    ],
+    "legalNote": "Программная платформа для автоматизации и роста бизнеса в Таджикистане и Центральной Азии.",
+    "rights": "Все права защищены."
+   },
+   "addUser": "Доп. пользователь",
+   "addPoint": "Доп. точка / касса",
+   "calcT": "Рассчитайте стоимость",
+   "calcPlan": "Тариф",
+   "calcUsers": "Пользователей",
+   "calcPoints": "Точек продаж / касс",
+   "calcTotal": "Итого в месяц",
+   "calcBase": "Тариф",
+   "calcExtraU": "Доп. пользователи",
+   "calcExtraP": "Доп. точки",
+   "calcCta": "Подключить за эту цену",
+   "calcX": {
+    "modT": "Отраслевые модули",
+    "modSub": "Добавьте то, что нужно вашему бизнесу",
+    "pkgT": "Пакеты внедрения и обучения",
+    "pkgSub": "Поможем настроить программу и обучить сотрудников",
+    "onceL": "Внедрение (разово)",
+    "firstPay": "Первый платёж",
+    "perMonthShort": "/ мес",
+    "extras": [
+     [
+      "Офлайн-касса 100%",
+      "Автономная работа кассовых мест при отсутствии интернета"
+     ],
+     [
+      "Услуги и заказ-наряды",
+      "Учёт услуг мастеров, автосервисов и приёма техники в ремонт"
+     ],
+     [
+      "Аренда и прокат",
+      "Учёт посуточной и почасовой аренды с расчётом залога"
+     ],
+     [
+      "Производство и техкарты",
+      "Списание сырья, технологические карты и себестоимость"
+     ],
+     [
+      "Курсы и абонементы",
+      "Учёт посещений учебных центров, тренеров и абонементов"
+     ],
+     [
+      "Стройка и объекты",
+      "Сметный учёт стройматериалов и взаиморасчёты с бригадами"
+     ]
+    ],
+    "packages": [
+     [
+      "Самостоятельно",
+      "Видеоуроки и инструкция по запуску"
+     ],
+     [
+      "Старт",
+      "Импорт номенклатуры и онлайн-инструктаж"
+     ],
+     [
+      "Бизнес-запуск",
+      "Выезд специалиста, настройка кассы и обучение"
+     ],
+     [
+      "Корпоративный",
+      "Полный аудит, перенос базы, адаптация и личный куратор"
+     ]
+    ]
+   },
+   "aiToasts": [
+    "Чай зелёный №95 закончится через 2 дня. Заказать 40 шт.?",
+    "Продажи сегодня на 12% выше, чем в прошлую субботу.",
+    "У 3 клиентов долг больше 30 дней. Отправить SMS-напоминание?",
+    "Маржа по муке упала до 15%. Проверьте цену поставщика.",
+    "Пик продаж с 12:00 до 13:00. Поставьте второго кассира."
+   ],
+   "dirPick": "Выберите направление бизнеса",
+   "dirCta": "Подключить для моего бизнеса",
+   "sending": "Отправляем…",
+   "sendErr": "Не удалось отправить заявку. Попробуйте ещё раз или позвоните нам: +992 11 400 60 00.",
+   "devT": "доступен с любого устройства",
+   "devSub": "Продали с телефона — выручка сразу видна на компьютере и планшете. Одни данные на всех экранах.",
+   "devs": [
+    "Компьютер",
+    "Планшет",
+    "Телефон"
+   ],
+   "devNotes": [
+    "Полный учёт, отчёты и настройки",
+    "Касса и склад прямо в торговом зале",
+    "Продажи и уведомления в кармане"
+   ],
+   "devPill": "Работает везде",
+   "devT1": "Ваш бизнес всегда под рукой",
+   "devT2": "на любом устройстве",
+   "devSale": "Новая продажа",
+   "devRev": "Выручка сегодня",
+   "devSync": "Синхронизировано",
+   "devTotal": "Итого",
+   "modLinked": "Связан с",
+   "modTap": "Нажмите на раздел"
+  },
+  "hero": {
+   "eyebrow": "Программа для магазина и склада",
+   "title": "Весь ваш бизнес",
+   "accent": "в одной программе",
+   "lead": "Продажи, склад, деньги и клиенты в одном месте. Без тетрадей и Excel.",
+   "cta": "Попробовать бесплатно",
+   "cta2": "Что умеет программа"
+  },
+  "stats": [
+   [
+    "1500+",
+    "пользователей уже работают с нами"
+   ],
+   [
+    "24/7",
+    "поддержка без выходных"
+   ],
+   [
+    "10+",
+    "направлений: подходит любому бизнесу"
+   ],
+   [
+    "7 дней",
+    "бесплатный пробный период"
+   ]
+  ],
+  "features": [
+   {
+    "tag": "Склад",
+    "title": "Всегда знаете, сколько товара осталось",
+    "text": "Программа сама подскажет, что заканчивается, и поможет заказать.",
+    "points": [
+     "Учёт по штрихкоду",
+     "Сроки годности",
+     "Несколько складов"
+    ],
+    "mock": "stock"
+   },
+   {
+    "tag": "Продажи",
+    "title": "Быстрая касса",
+    "text": "Продавайте в магазине, оптом или с выездом. Оплата наличными, картой или по QR.",
+    "points": [
+     "Чек за пару секунд",
+     "Карта и QR",
+     "Продажа в долг"
+    ],
+    "mock": "pos"
+   },
+   {
+    "tag": "Отчёты",
+    "title": "Прибыль видна с телефона",
+    "text": "Каждый вечер отчёт приходит в Telegram.",
+    "points": [
+     "Выручка и прибыль",
+     "Лучшие товары",
+     "Сравнение магазинов"
+    ],
+    "mock": "report"
+   }
+  ],
+  "modules": [
+   [
+    "Склад",
+    "Остатки, приход, перемещение."
+   ],
+   [
+    "Продажи и касса",
+    "Чеки, скидки, продажа в долг."
+   ],
+   [
+    "Закупки",
+    "Заказы поставщикам."
+   ],
+   [
+    "Деньги",
+    "Касса, банк, расходы."
+   ],
+   [
+    "Клиенты",
+    "Покупки и долги клиентов."
+   ],
+   [
+    "Сотрудники",
+    "Смены и зарплата."
+   ],
+   [
+    "Производство",
+    "Сырьё и готовая продукция."
+   ],
+   [
+    "ИИ-помощник",
+    "Подсказки и ответы на вопросы."
+   ]
+  ],
+  "steps": [
+   [
+    "Знакомство",
+    "Узнаём, как работает ваш бизнес.",
+    "1–2 дня"
+   ],
+   [
+    "Перенос данных",
+    "Переносим товары и клиентов из Excel или 1С.",
+    "2–3 дня"
+   ],
+   [
+    "Обучение",
+    "Учим ваших сотрудников.",
+    "1–2 дня"
+   ],
+   [
+    "Запуск",
+    "Начинаете работать. Мы на связи в Telegram.",
+    "с 7-го дня"
+   ]
+  ],
+  "industries": [
+   "Продуктовые магазины",
+   "Оптовые базы",
+   "Стройматериалы",
+   "Одежда и обувь",
+   "Аптеки",
+   "Автозапчасти",
+   "Кафе и общепит",
+   "Пищевое производство",
+   "Мебельные цеха",
+   "Бытовая техника"
+  ],
+  "plans": [
+   {
+    "name": "Standard",
+    "who": "5 пользователей · 1 торговая точка и склад",
+    "items": [
+     "5 пользователей включено",
+     "1 торговая точка / касса",
+     "Складской учёт и касса (POS)",
+     "Базовые финансовые отчёты"
+    ]
+   },
+   {
+    "name": "Business",
+    "who": "15 пользователей · 1 торговая точка и склад",
+    "items": [
+     "15 пользователей включено",
+     "1 торговая точка / касса",
+     "Расширенная аналитика и CRM клиентов",
+     "Разделение прав доступа сотрудников"
+    ]
+   },
+   {
+    "name": "Корпорация",
+    "who": "Для крупных компаний",
+    "items": [
+     "Все разделы",
+     "Производство",
+     "Связь с другими программами",
+     "Свой сервер",
+     "Личный менеджер"
+    ]
+   }
+  ],
+  "faq": [
+   [
+    "Перенесёте данные из 1С или Excel?",
+    "Да, мы сделаем это сами. Обычно 2–3 дня."
+   ],
+   [
+    "Касса работает без интернета?",
+    "Да. Когда интернет появится, всё сохранится."
+   ],
+   [
+    "Где хранятся данные?",
+    "В защищённом облаке. Копия делается каждый день."
+   ],
+   [
+    "Что умеет ИИ-помощник?",
+    "Подсказывает, что заказать, и отвечает на вопросы о вашем бизнесе."
+   ],
+   [
+    "Что будет после пробного периода?",
+    "Выберите тариф и работайте дальше. Все данные сохранятся."
+   ]
+  ],
+  "dirs": [
+   {
+    "name": "Розничная торговля",
+    "title": "Магазин без очередей",
+    "desc": "Касса, склад и покупатели в одной программе.",
+    "feats": [
+     "Касса со сканером штрихкодов",
+     "Скидки и бонусные карты",
+     "Остатки по всем магазинам",
+     "Ценники и этикетки за минуту"
+    ],
+    "mock": {
+     "t": "Касса · Магазин №1",
+     "grid": [
+      [
+       "Рис, 1 кг",
+       "14"
+      ],
+      [
+       "Масло, 1 л",
+       "22"
+      ],
+      [
+       "Чай №95",
+       "12"
+      ],
+      [
+       "Сахар, 1 кг",
+       "11"
+      ],
+      [
+       "Мука, 2 кг",
+       "13"
+      ],
+      [
+       "Молоко",
+       "9"
+      ]
+     ],
+     "lines": [
+      [
+       "Рис, 1 кг × 2",
+       "28"
+      ],
+      [
+       "Масло, 1 л",
+       "22"
+      ],
+      [
+       "Чай №95 × 3",
+       "36"
+      ]
+     ],
+     "total": "Итого",
+     "sum": "86 TJS",
+     "pay": [
+      "Наличные",
+      "Карта",
+      "QR"
+     ]
+    }
+   },
+   {
+    "name": "Оптовая торговля",
+    "title": "Оптовые заказы за минуту",
+    "desc": "Прайсы для разных клиентов, лимиты долга и доставка.",
+    "feats": [
+     "Несколько прайс-листов",
+     "Лимит долга для клиента",
+     "Приложение для торгового агента",
+     "Маршруты доставки"
+    ],
+    "mock": {
+     "t": "Заказ №1042",
+     "sub": "ООО «Нур Савдо» · Прайс: Опт-2",
+     "cols": [
+      "Товар",
+      "Кол-во",
+      "Сумма"
+     ],
+     "rows": [
+      [
+       "Рис, мешок 25 кг",
+       "40",
+       "13 200"
+      ],
+      [
+       "Масло, коробка 12 л",
+       "25",
+       "6 300"
+      ],
+      [
+       "Сахар, мешок 50 кг",
+       "10",
+       "5 200"
+      ]
+     ],
+     "kv": [
+      [
+       "Лимит долга",
+       "50 000"
+      ],
+      [
+       "Текущий долг",
+       "18 400"
+      ]
+     ],
+     "chip": "Доставка завтра · маршрут №3"
+    }
+   },
+   {
+    "name": "Производство",
+    "title": "Знаете цену каждой единицы",
+    "desc": "Сырьё списывается само, видно сколько стоит продукция.",
+    "feats": [
+     "Рецепты и техкарты",
+     "Автосписание сырья",
+     "Себестоимость партии",
+     "План и выпуск по сменам"
+    ],
+    "mock": {
+     "t": "Партия №58 · Хлеб «Нон»",
+     "bars": [
+      [
+       "Мука",
+       "120 кг",
+       96
+      ],
+      [
+       "Вода",
+       "70 л",
+       100
+      ],
+      [
+       "Дрожжи",
+       "2 кг",
+       88
+      ],
+      [
+       "Соль",
+       "2,4 кг",
+       100
+      ]
+     ],
+     "kpi": [
+      [
+       "Выпуск",
+       "1 200 шт."
+      ],
+      [
+       "Цена 1 шт.",
+       "1,85 TJS"
+      ]
+     ]
+    }
+   },
+   {
+    "name": "Аптека",
+    "title": "Каждая упаковка под контролем",
+    "desc": "Сроки годности, серии и быстрый поиск лекарств.",
+    "feats": [
+     "Сроки годности и серии",
+     "Поиск по названию и веществу",
+     "Рецептурные препараты",
+     "Продажа поштучно из упаковки"
+    ],
+    "mock": {
+     "t": "Поиск: Парацетамол",
+     "rows": [
+      [
+       "Парацетамол 500 мг №20",
+       "до 03.2027",
+       "48",
+       "6,5",
+       0
+      ],
+      [
+       "Парацетамол сироп 100 мл",
+       "до 11.2026",
+       "12",
+       "14",
+       0
+      ],
+      [
+       "Нурофен 200 мг №10",
+       "до 01.2026",
+       "5",
+       "22",
+       1
+      ]
+     ],
+     "note": "Срок скоро истекает: 1 товар"
+    }
+   },
+   {
+    "name": "Услуги и ремонт",
+    "title": "Все заказы на одном экране",
+    "desc": "Приём, мастера, статус и оплата каждого заказа.",
+    "feats": [
+     "Заказ-наряды",
+     "Работа мастеров и их процент",
+     "SMS клиенту, когда готово",
+     "Запчасти списываются сами"
+    ],
+    "mock": {
+     "t": "Заказы",
+     "cols": [
+      [
+       "Принят",
+       [
+        "iPhone 13 · экран",
+        "Ноутбук HP · чистка"
+       ]
+      ],
+      [
+       "В работе",
+       [
+        "Samsung A52 · батарея"
+       ]
+      ],
+      [
+       "Готов",
+       [
+        "Принтер Canon · 350 TJS"
+       ]
+      ]
+     ]
+    }
+   },
+   {
+    "name": "Аренда и прокат",
+    "title": "Видно, что свободно и когда",
+    "desc": "Календарь аренды, залог и возврат вовремя.",
+    "feats": [
+     "Календарь занятости",
+     "Посуточно и почасово",
+     "Учёт залога",
+     "Напоминание о возврате"
+    ],
+    "mock": {
+     "t": "Календарь аренды",
+     "days": [
+      "Пн",
+      "Вт",
+      "Ср",
+      "Чт",
+      "Пт",
+      "Сб",
+      "Вс"
+     ],
+     "rows": [
+      [
+       "Бетономешалка",
+       [
+        [
+         0,
+         3
+        ]
+       ]
+      ],
+      [
+       "Перфоратор",
+       [
+        [
+         0,
+         1
+        ],
+        [
+         4,
+         6
+        ]
+       ]
+      ],
+      [
+       "Леса, 10 секций",
+       [
+        [
+         2,
+         6
+        ]
+       ]
+      ],
+      [
+       "Генератор 5 кВт",
+       [
+        [
+         3,
+         4
+        ]
+       ]
+      ]
+     ],
+     "note": "Залог получен: 2 400 TJS"
+    }
+   },
+   {
+    "name": "Строительные компании",
+    "title": "Бюджет каждого объекта",
+    "desc": "Смета, материалы и расчёты с бригадами.",
+    "feats": [
+     "Смета по объектам",
+     "Материалы на объектах",
+     "Расчёты с бригадами",
+     "Расход денег против плана"
+    ],
+    "mock": {
+     "t": "Объекты",
+     "bars": [
+      [
+       "ЖК «Сомон», блок А",
+       "бюджет",
+       62
+      ],
+      [
+       "Школа №14, ремонт",
+       "бюджет",
+       88
+      ],
+      [
+       "Склад «Нур»",
+       "бюджет",
+       35
+      ]
+     ],
+     "kpi": [
+      [
+       "Бригад на объектах",
+       "6"
+      ],
+      [
+       "Долг бригадам",
+       "14 300 TJS"
+      ]
+     ]
+    }
+   },
+   {
+    "name": "Образовательные центры",
+    "title": "Группы, оплаты и посещения",
+    "desc": "Расписание, абонементы и долги учеников.",
+    "feats": [
+     "Расписание групп",
+     "Абонементы и оплаты",
+     "Отметка посещений",
+     "Зарплата преподавателей"
+    ],
+    "mock": {
+     "t": "Расписание · сегодня",
+     "rows": [
+      [
+       "09:00",
+       "Английский A2",
+       "Группа 5 · 12/14",
+       1
+      ],
+      [
+       "11:00",
+       "Математика",
+       "Группа 2 · 9/10",
+       0
+      ],
+      [
+       "14:00",
+       "IT для детей",
+       "Группа 1 · 15/15",
+       0
+      ]
+     ],
+     "kpi": [
+      [
+       "Абонемент заканчивается",
+       "7 учеников"
+      ],
+      [
+       "Оплатили за месяц",
+       "86%"
+      ]
+     ]
+    }
+   },
+   {
+    "name": "Кафе и рестораны",
+    "title": "Зал и кухня работают вместе",
+    "desc": "Столы, заказы и кухня без бумажек.",
+    "feats": [
+     "Схема зала и столы",
+     "Заказы сразу на кухню",
+     "Учёт продуктов по рецептам",
+     "Доставка и самовывоз"
+    ],
+    "mock": {
+     "t": "Зал",
+     "tables": [
+      0,
+      1,
+      2,
+      1,
+      0,
+      1,
+      0,
+      2
+     ],
+     "legend": [
+      "Свободен",
+      "Занят",
+      "Счёт"
+     ],
+     "orders": [
+      [
+       "Стол 2",
+       "Плов × 2, чай",
+       "Готовится"
+      ],
+      [
+       "Стол 4",
+       "Шашлык × 4",
+       "Готово"
+      ]
+     ]
+    }
+   },
+   {
+    "name": "Автосервис и запчасти",
+    "title": "Машина, запчасти и работа в одном заказе",
+    "desc": "Подбор деталей, работа мастеров и история машины.",
+    "feats": [
+     "Подбор запчастей по VIN",
+     "История ремонта машины",
+     "Работа и запчасти в одном чеке",
+     "Склад запчастей"
+    ],
+    "mock": {
+     "t": "Toyota Camry · 01 777 AA",
+     "rows": [
+      [
+       "Масло 5W-30, 4 л",
+       "1",
+       "320"
+      ],
+      [
+       "Фильтр масляный",
+       "1",
+       "45"
+      ],
+      [
+       "Работа: замена масла",
+       "—",
+       "80"
+      ]
+     ],
+     "total": "Итого",
+     "sum": "445 TJS",
+     "chip": "Подбор по VIN"
+    }
+   }
+  ]
+ },
+ "en": {
+  "label": "EN",
+  "ui": {
+   "nav": [
+    "Features",
+    "TIJORAT AI",
+    "Modules",
+    "Pricing",
+    "FAQ"
+   ],
+   "demoBtn": "Book a demo",
+   "themeSystem": "System theme",
+   "themeLight": "Light theme",
+   "themeDark": "Dark theme",
+   "currency": "TJS",
+   "perMonth": "TJS / month",
+   "featTag": "Features",
+   "featTitle": "What the app does",
+   "aiTag": "TIJORAT AI",
+   "aiTitle": "An assistant that gives tips",
+   "aiLead": "Ask like in a chat, and it answers from your data.",
+   "aiPoints": [
+    "What's running out",
+    "What to order",
+    "Till mistakes",
+    "Your profit"
+   ],
+   "aiChat": [
+    {
+     "q": "What will run out this week?",
+     "a": "Green tea No. 95 runs out in 2 days, cotton oil in 4. I recommend ordering 40 and 60 units."
+    },
+    {
+     "q": "Which branch made the most profit in October?",
+     "a": "Branch No. 2: profit 18% above average, margin 24.1%."
+    }
+   ],
+   "aiInput": "Ask about your business…",
+   "modTag": "Modules",
+   "modTitle": "What's inside",
+   "modLead": "Everything is connected: sell something, and stock and reports update.",
+   "stepTag": "Onboarding",
+   "stepTitle": "Up and running in 4 steps",
+   "stepLead": "In a week you're working in the app.",
+   "indTag": "Industries",
+   "indTitle": "Who it's for",
+   "priceTag": "Pricing",
+   "priceTitle": "Simple pricing",
+   "priceLead": "Need more people or tills? Add them for a small fee.",
+   "billM": "Monthly",
+   "billY": "Yearly −20%",
+   "popular": "Popular",
+   "connect": "Get started",
+   "discuss": "Contact us",
+   "negotiable": "Custom",
+   "faqTag": "FAQ",
+   "faqTitle": "Common questions",
+   "contactTitle": "We'll show you the app for free",
+   "contactSub": "Leave your number and we'll call you back.",
+   "perks": [
+    [
+     "30 min",
+     "Online demo"
+    ],
+    [
+     "7 days",
+     "Free trial"
+    ],
+    [
+     "1 day",
+     "Price estimate"
+    ]
+   ],
+   "fName": "Name",
+   "fPhone": "Phone",
+   "fCompany": "Company",
+   "fSphere": "Industry",
+   "fMsg": "What do you want to automate?",
+   "pName": "Farrukh Rahimov",
+   "pCompany": "Baraka Savdo LLC",
+   "pMsg": "For example: 3 shops and a warehouse, customer debt tracking",
+   "spheres": [
+    "Retail",
+    "Wholesale",
+    "Distribution",
+    "Grocery / convenience store",
+    "Clothing and shoes",
+    "Building materials",
+    "Pharmacy",
+    "Auto parts and car service",
+    "Appliances and electronics",
+    "Cafés and restaurants",
+    "Manufacturing",
+    "Services and repair",
+    "Rental and hire",
+    "Education and courses",
+    "Construction",
+    "Other"
+   ],
+   "submit": "Book a demo",
+   "errName": "Enter your name",
+   "errPhone": "Enter a number: +992 and 9 digits, e.g. +992 90 123 45 67",
+   "sent": "Thank you, {name}! Your request has been sent. We'll call you back during working hours.",
+   "footer": "Retail and manufacturing automation",
+   "demo": {
+    "store": "Shop No. 3 · Dushanbe",
+    "online": "online",
+    "menu": [
+     "Home",
+     "Stock",
+     "Sales",
+     "Purchasing",
+     "Customers",
+     "Finance",
+     "AI assistant"
+    ],
+    "revenue": "Revenue",
+    "checks": "Receipts",
+    "avg": "Avg receipt",
+    "stock": "Stock value",
+    "stockPanel": "Stock",
+    "pcs": "pcs",
+    "hourly": "Sales by hour",
+    "hourlyUnit": "k TJS",
+    "ops": "Recent activity",
+    "opsEmpty": "Sales will appear here",
+    "sell": "Sell",
+    "low": "Running low",
+    "reorder": "Order from supplier",
+    "check": "Receipt",
+    "incoming": "Received",
+    "toStock": "stock",
+    "note": "This is an example. Press “Sell” and see what changes.",
+    "items": [
+     "Rice, 1 kg",
+     "Cotton oil, 1 l",
+     "Green tea No. 95, 100 g",
+     "Premium flour, 2 kg",
+     "Sugar, 1 kg"
+    ],
+    "v": {
+     "stockCols": [
+      "Product",
+      "Qty",
+      "Min",
+      "Value"
+     ],
+     "receive": "+10",
+     "low": "Low",
+     "ok": "OK",
+     "salesCols": [
+      "Time",
+      "Product",
+      "Qty",
+      "Amount"
+     ],
+     "salesEmpty": "No sales yet. Open Home and press “Sell”.",
+     "salesTotal": "Shift total",
+     "purEmpty": "Everything is in stock, nothing to order.",
+     "purCols": [
+      "Product",
+      "Qty",
+      "Order"
+     ],
+     "order": "Order",
+     "purHistory": "Receiving history",
+     "none": "Nothing yet",
+     "custCols": [
+      "Customer",
+      "Phone",
+      "Debt"
+     ],
+     "pay": "Settle",
+     "noDebt": "No debt",
+     "custTotal": "Total debt",
+     "custNames": [
+      "Karimov (sole trader)",
+      "Somon shop",
+      "Vatan café",
+      "Nur Savdo LLC"
+     ],
+     "fin": [
+      "Revenue",
+      "Cost of goods",
+      "Gross profit",
+      "Margin"
+     ],
+     "finNote": "Figures update after every sale and delivery.",
+     "aiQ": [
+      "What will run out soon?",
+      "Which product sells best?",
+      "What is the profit now?"
+     ],
+     "aiA": [
+      "{name}: {qty} left. I recommend ordering {n} units.",
+      "All products are above minimum stock.",
+      "{name}: {n} sold for {sum} TJS.",
+      "No demo sales this shift yet. Press “Sell” on Home.",
+      "Revenue {rev}, cost of goods {cogs}, profit {profit} TJS. Margin {m}%."
+     ],
+     "aiNote": "Demo: answers are calculated from this page's data.",
+     "aiHint": "Pick a question",
+     "kItems": "Items",
+     "kStockSum": "Stock value",
+     "kLow": "Running low",
+     "kRev": "Shift revenue",
+     "kChecks": "Receipts",
+     "kAvg": "Avg receipt",
+     "lastChecks": "Latest receipts",
+     "salesCols2": [
+      "Time",
+      "Product",
+      "Qty",
+      "Payment",
+      "Amount"
+     ],
+     "poT": "Supplier orders",
+     "poCols": [
+      "No.",
+      "Supplier",
+      "Date",
+      "Status",
+      "Amount"
+     ],
+     "poSt": [
+      "Delivered",
+      "In transit",
+      "Pending"
+     ],
+     "suppliers": [
+      "Sughd Agro",
+      "Nuri Khujand",
+      "Zarafshon Savdo"
+     ],
+     "needT": "Needs ordering",
+     "inT": "Received today",
+     "kDebt": "Customer debt",
+     "kDebtors": "Debtors",
+     "kClients": "Customers",
+     "custCols2": [
+      "Customer",
+      "Phone",
+      "Last purchase",
+      "Debt"
+     ],
+     "weekT": "Revenue, last 7 days, k",
+     "days": [
+      "Mon",
+      "Tue",
+      "Wed",
+      "Thu",
+      "Fri",
+      "Sat",
+      "Today"
+     ],
+     "payT": "Payment methods"
+    }
+   },
+   "mock": {
+    "stockHead": "Stock · Dushanbe",
+    "stockSub": "3 branches",
+    "autoRow": "Supplier order created",
+    "auto": "Auto",
+    "posHead": "Receipt #4821",
+    "posSub": "Till 2",
+    "pay": [
+     "Cash",
+     "Card",
+     "QR"
+    ],
+    "total": "Total",
+    "repHead": "Revenue this week",
+    "repSub": "all branches",
+    "margin": "Margin",
+    "debts": "Customer debts",
+    "debtsVal": "8 customers",
+    "payBtn": "Ring up",
+    "paying": "Processing payment…",
+    "paid": "Paid",
+    "given": "Received",
+    "change": "Change",
+    "cardWait": "Tap the card on the terminal",
+    "qrScan": "Scan the QR in your banking app",
+    "posHeadN": "Receipt #",
+    "scanning": "Scanning…"
+   },
+   "loadfail": "Could not load data. Refresh the page.",
+   "aiTry": "Try it yourself",
+   "aiThinking": "Analysing data",
+   "aiToast": "Green tea No. 95 runs out in 2 days. Order 40 units?",
+   "aiCore": "AI online",
+   "bot": {
+    "open": "Open TIJORAT AI chat",
+    "close": "Close chat",
+    "title": "TIJORAT AI",
+    "online": "online · Claude",
+    "demo": "demo mode",
+    "greet": "Hello! I'm TIJORAT AI. Ask me about prices, features or getting started.",
+    "ph": "Type a question…",
+    "send": "Send",
+    "stop": "Stop",
+    "thinking": "Thinking…",
+    "sugg": [
+     "How much does it cost?",
+     "Does the till work offline?",
+     "How do we migrate from 1C?"
+    ],
+    "note": "AI answers may be inaccurate. Confirm prices and terms with a manager.",
+    "noMatch": "I don't have an exact answer. Leave a request at the bottom of the page and a manager will reply personally.",
+    "toForm": "Leave a request",
+    "errRate": "Too many questions in a row. Try again in a minute.",
+    "errGen": "Couldn't get an answer. Please try again.",
+    "fallbackNote": "AI is unavailable right now, answering from the knowledge base."
+   },
+   "foot": {
+    "tagline": "Run your business with ease!",
+    "about": "Tijorat Pro is a modern ecosystem for retail automation, inventory management and running a business.",
+    "hours": "Support 24/7 · Office: Mon — Sat, 09:00 — 18:00",
+    "navT": "Navigation",
+    "nav": [
+     "Features",
+     "Solutions",
+     "Services",
+     "Pricing",
+     "Contacts"
+    ],
+    "contT": "Contacts",
+    "address": "Khujand, Tajikistan",
+    "legalT": "Legal",
+    "legal": [
+     "Privacy policy",
+     "Terms of use"
+    ],
+    "legalNote": "A software platform for automating and growing businesses in Tajikistan and Central Asia.",
+    "rights": "All rights reserved."
+   },
+   "addUser": "Extra user",
+   "addPoint": "Extra point / till",
+   "calcT": "Calculate your price",
+   "calcPlan": "Plan",
+   "calcUsers": "Users",
+   "calcPoints": "Points of sale / tills",
+   "calcTotal": "Total per month",
+   "calcBase": "Plan",
+   "calcExtraU": "Extra users",
+   "calcExtraP": "Extra points",
+   "calcCta": "Get started at this price",
+   "calcX": {
+    "modT": "Industry modules",
+    "modSub": "Add what your business needs",
+    "pkgT": "Onboarding and training packages",
+    "pkgSub": "We'll set up the app and train your staff",
+    "onceL": "Onboarding (one-time)",
+    "firstPay": "First payment",
+    "perMonthShort": "/ mo",
+    "extras": [
+     [
+      "Offline till 100%",
+      "Tills keep working when the internet is down"
+     ],
+     [
+      "Services & work orders",
+      "Track technician services, car services and repair intake"
+     ],
+     [
+      "Rental & hire",
+      "Daily and hourly rentals with deposit calculation"
+     ],
+     [
+      "Manufacturing & recipes",
+      "Raw material write-off, recipe cards and cost price"
+     ],
+     [
+      "Courses & memberships",
+      "Attendance for training centres, coaches and memberships"
+     ],
+     [
+      "Construction & sites",
+      "Estimate-based materials tracking and settlements with crews"
+     ]
+    ],
+    "packages": [
+     [
+      "Self-service",
+      "Video lessons and a launch guide"
+     ],
+     [
+      "Start",
+      "Catalogue import and online briefing"
+     ],
+     [
+      "Business launch",
+      "On-site specialist, till setup and training"
+     ],
+     [
+      "Corporate",
+      "Full audit, data migration, adaptation and a personal curator"
+     ]
+    ]
+   },
+   "aiToasts": [
+    "Green tea No. 95 runs out in 2 days. Order 40 units?",
+    "Sales today are 12% higher than last Saturday.",
+    "3 customers owe for over 30 days. Send an SMS reminder?",
+    "Flour margin dropped to 15%. Check the supplier price.",
+    "Peak sales are 12:00–13:00. Add a second cashier."
+   ],
+   "dirPick": "Choose your type of business",
+   "dirCta": "Get it for my business",
+   "sending": "Sending…",
+   "sendErr": "Couldn't send the request. Try again or call us: +992 11 400 60 00.",
+   "devT": "works on any device",
+   "devSub": "Sell from your phone and the revenue shows up on the computer and tablet at once. The same data on every screen.",
+   "devs": [
+    "Computer",
+    "Tablet",
+    "Phone"
+   ],
+   "devNotes": [
+    "Full accounting, reports and settings",
+    "Till and stock right on the shop floor",
+    "Sales and alerts in your pocket"
+   ],
+   "devPill": "Works everywhere",
+   "devT1": "Your business always at hand",
+   "devT2": "on any device",
+   "devSale": "New sale",
+   "devRev": "Revenue today",
+   "devSync": "Synced",
+   "devTotal": "Total",
+   "modLinked": "Connected to",
+   "modTap": "Tap a section"
+  },
+  "hero": {
+   "eyebrow": "Software for shops and warehouses",
+   "title": "Your whole business",
+   "accent": "in one app",
+   "lead": "Sales, stock, money and customers in one place. No more notebooks or Excel.",
+   "cta": "Try for free",
+   "cta2": "What it does"
+  },
+  "stats": [
+   [
+    "1500+",
+    "users already work with us"
+   ],
+   [
+    "24/7",
+    "support, no days off"
+   ],
+   [
+    "10+",
+    "business types: fits any business"
+   ],
+   [
+    "7 days",
+    "free trial"
+   ]
+  ],
+  "features": [
+   {
+    "tag": "Stock",
+    "title": "Always know what's left",
+    "text": "The app tells you what's running out and helps you reorder.",
+    "points": [
+     "Barcode scanning",
+     "Expiry dates",
+     "Several warehouses"
+    ],
+    "mock": "stock"
+   },
+   {
+    "tag": "Sales",
+    "title": "A fast till",
+    "text": "Sell in store, wholesale or on the road. Cash, card or QR.",
+    "points": [
+     "Receipt in seconds",
+     "Card and QR",
+     "Sell on credit"
+    ],
+    "mock": "pos"
+   },
+   {
+    "tag": "Reports",
+    "title": "See your profit on your phone",
+    "text": "A report comes to Telegram every evening.",
+    "points": [
+     "Revenue and profit",
+     "Best-selling products",
+     "Compare shops"
+    ],
+    "mock": "report"
+   }
+  ],
+  "modules": [
+   [
+    "Stock",
+    "Stock, deliveries, transfers."
+   ],
+   [
+    "Sales & till",
+    "Receipts, discounts, credit."
+   ],
+   [
+    "Purchasing",
+    "Orders to suppliers."
+   ],
+   [
+    "Money",
+    "Cash, bank, expenses."
+   ],
+   [
+    "Customers",
+    "Purchases and debts."
+   ],
+   [
+    "Staff",
+    "Shifts and pay."
+   ],
+   [
+    "Manufacturing",
+    "Raw materials and products."
+   ],
+   [
+    "AI assistant",
+    "Tips and answers."
+   ]
+  ],
+  "steps": [
+   [
+    "Getting to know you",
+    "We learn how your business works.",
+    "1–2 days"
+   ],
+   [
+    "Data transfer",
+    "We move products and customers from Excel or 1C.",
+    "2–3 days"
+   ],
+   [
+    "Training",
+    "We train your staff.",
+    "1–2 days"
+   ],
+   [
+    "Launch",
+    "You start working. We're on Telegram.",
+    "from day 7"
+   ]
+  ],
+  "industries": [
+   "Grocery stores",
+   "Wholesale depots",
+   "Building materials",
+   "Clothing and shoes",
+   "Pharmacies",
+   "Auto parts",
+   "Cafés and restaurants",
+   "Food production",
+   "Furniture workshops",
+   "Home appliances"
+  ],
+  "plans": [
+   {
+    "name": "Standard",
+    "who": "5 users · 1 point of sale and warehouse",
+    "items": [
+     "5 users included",
+     "1 point of sale / till",
+     "Inventory and POS",
+     "Basic financial reports"
+    ]
+   },
+   {
+    "name": "Business",
+    "who": "15 users · 1 point of sale and warehouse",
+    "items": [
+     "15 users included",
+     "1 point of sale / till",
+     "Advanced analytics and customer CRM",
+     "Staff access permissions"
+    ]
+   },
+   {
+    "name": "Enterprise",
+    "who": "For large companies",
+    "items": [
+     "All sections",
+     "Manufacturing",
+     "Connect other software",
+     "Your own server",
+     "Personal manager"
+    ]
+   }
+  ],
+  "faq": [
+   [
+    "Can you move our data from 1C or Excel?",
+    "Yes, we do it for you. Usually 2–3 days."
+   ],
+   [
+    "Does the till work offline?",
+    "Yes. Everything syncs when the internet is back."
+   ],
+   [
+    "Where is our data stored?",
+    "In a secure cloud, backed up every day."
+   ],
+   [
+    "What does the AI assistant do?",
+    "It suggests what to order and answers questions about your business."
+   ],
+   [
+    "What happens after the trial?",
+    "Pick a plan and keep working. All your data stays."
+   ]
+  ],
+  "dirs": [
+   {
+    "name": "Retail",
+    "title": "A shop without queues",
+    "desc": "Till, stock and customers in one app.",
+    "feats": [
+     "Till with barcode scanner",
+     "Discounts and loyalty cards",
+     "Stock across all shops",
+     "Price tags and labels in a minute"
+    ],
+    "mock": {
+     "t": "Till · Shop 1",
+     "grid": [
+      [
+       "Rice, 1 kg",
+       "14"
+      ],
+      [
+       "Oil, 1 l",
+       "22"
+      ],
+      [
+       "Tea No. 95",
+       "12"
+      ],
+      [
+       "Sugar, 1 kg",
+       "11"
+      ],
+      [
+       "Flour, 2 kg",
+       "13"
+      ],
+      [
+       "Milk",
+       "9"
+      ]
+     ],
+     "lines": [
+      [
+       "Rice, 1 kg × 2",
+       "28"
+      ],
+      [
+       "Oil, 1 l",
+       "22"
+      ],
+      [
+       "Tea No. 95 × 3",
+       "36"
+      ]
+     ],
+     "total": "Total",
+     "sum": "86 TJS",
+     "pay": [
+      "Cash",
+      "Card",
+      "QR"
+     ]
+    }
+   },
+   {
+    "name": "Wholesale",
+    "title": "Wholesale orders in a minute",
+    "desc": "Price lists per customer, credit limits and delivery.",
+    "feats": [
+     "Several price lists",
+     "Credit limit per customer",
+     "App for sales reps",
+     "Delivery routes"
+    ],
+    "mock": {
+     "t": "Order #1042",
+     "sub": "Nur Savdo LLC · Price list: Wholesale-2",
+     "cols": [
+      "Product",
+      "Qty",
+      "Amount"
+     ],
+     "rows": [
+      [
+       "Rice, 25 kg bag",
+       "40",
+       "13 200"
+      ],
+      [
+       "Oil, 12 l box",
+       "25",
+       "6 300"
+      ],
+      [
+       "Sugar, 50 kg bag",
+       "10",
+       "5 200"
+      ]
+     ],
+     "kv": [
+      [
+       "Credit limit",
+       "50 000"
+      ],
+      [
+       "Current debt",
+       "18 400"
+      ]
+     ],
+     "chip": "Delivery tomorrow · route 3"
+    }
+   },
+   {
+    "name": "Manufacturing",
+    "title": "Know the cost of every unit",
+    "desc": "Raw materials are written off automatically and you see the product cost.",
+    "feats": [
+     "Recipes and specs",
+     "Automatic material write-off",
+     "Batch cost",
+     "Plan and output per shift"
+    ],
+    "mock": {
+     "t": "Batch #58 · “Non” bread",
+     "bars": [
+      [
+       "Flour",
+       "120 kg",
+       96
+      ],
+      [
+       "Water",
+       "70 l",
+       100
+      ],
+      [
+       "Yeast",
+       "2 kg",
+       88
+      ],
+      [
+       "Salt",
+       "2.4 kg",
+       100
+      ]
+     ],
+     "kpi": [
+      [
+       "Output",
+       "1 200 pcs"
+      ],
+      [
+       "Cost per piece",
+       "1.85 TJS"
+      ]
+     ]
+    }
+   },
+   {
+    "name": "Pharmacy",
+    "title": "Every pack under control",
+    "desc": "Expiry dates, batches and quick medicine search.",
+    "feats": [
+     "Expiry dates and batches",
+     "Search by name or substance",
+     "Prescription medicines",
+     "Sell single units from a pack"
+    ],
+    "mock": {
+     "t": "Search: Paracetamol",
+     "rows": [
+      [
+       "Paracetamol 500 mg ×20",
+       "to 03.2027",
+       "48",
+       "6.5",
+       0
+      ],
+      [
+       "Paracetamol syrup 100 ml",
+       "to 11.2026",
+       "12",
+       "14",
+       0
+      ],
+      [
+       "Nurofen 200 mg ×10",
+       "to 01.2026",
+       "5",
+       "22",
+       1
+      ]
+     ],
+     "note": "Expiring soon: 1 item"
+    }
+   },
+   {
+    "name": "Services and repair",
+    "title": "All jobs on one screen",
+    "desc": "Intake, technicians, status and payment for every job.",
+    "feats": [
+     "Work orders",
+     "Technician work and commission",
+     "SMS to the customer when ready",
+     "Parts written off automatically"
+    ],
+    "mock": {
+     "t": "Jobs",
+     "cols": [
+      [
+       "Received",
+       [
+        "iPhone 13 · screen",
+        "HP laptop · cleaning"
+       ]
+      ],
+      [
+       "In progress",
+       [
+        "Samsung A52 · battery"
+       ]
+      ],
+      [
+       "Ready",
+       [
+        "Canon printer · 350 TJS"
+       ]
+      ]
+     ]
+    }
+   },
+   {
+    "name": "Rental and hire",
+    "title": "See what's free and when",
+    "desc": "Rental calendar, deposits and on-time returns.",
+    "feats": [
+     "Availability calendar",
+     "Daily and hourly",
+     "Deposit tracking",
+     "Return reminders"
+    ],
+    "mock": {
+     "t": "Rental calendar",
+     "days": [
+      "Mon",
+      "Tue",
+      "Wed",
+      "Thu",
+      "Fri",
+      "Sat",
+      "Sun"
+     ],
+     "rows": [
+      [
+       "Concrete mixer",
+       [
+        [
+         0,
+         3
+        ]
+       ]
+      ],
+      [
+       "Hammer drill",
+       [
+        [
+         0,
+         1
+        ],
+        [
+         4,
+         6
+        ]
+       ]
+      ],
+      [
+       "Scaffolding, 10",
+       [
+        [
+         2,
+         6
+        ]
+       ]
+      ],
+      [
+       "Generator 5 kW",
+       [
+        [
+         3,
+         4
+        ]
+       ]
+      ]
+     ],
+     "note": "Deposit received: 2 400 TJS"
+    }
+   },
+   {
+    "name": "Construction companies",
+    "title": "A budget for every site",
+    "desc": "Estimates, materials and payments to crews.",
+    "feats": [
+     "Estimates per site",
+     "Materials on site",
+     "Payments to crews",
+     "Spending vs plan"
+    ],
+    "mock": {
+     "t": "Sites",
+     "bars": [
+      [
+       "Somon residence, block A",
+       "budget",
+       62
+      ],
+      [
+       "School No. 14, renovation",
+       "budget",
+       88
+      ],
+      [
+       "Nur warehouse",
+       "budget",
+       35
+      ]
+     ],
+     "kpi": [
+      [
+       "Crews on site",
+       "6"
+      ],
+      [
+       "Owed to crews",
+       "14 300 TJS"
+      ]
+     ]
+    }
+   },
+   {
+    "name": "Education centres",
+    "title": "Groups, payments and attendance",
+    "desc": "Timetable, memberships and student debts.",
+    "feats": [
+     "Group timetable",
+     "Memberships and payments",
+     "Attendance marks",
+     "Teacher pay"
+    ],
+    "mock": {
+     "t": "Timetable · today",
+     "rows": [
+      [
+       "09:00",
+       "English A2",
+       "Group 5 · 12/14",
+       1
+      ],
+      [
+       "11:00",
+       "Maths",
+       "Group 2 · 9/10",
+       0
+      ],
+      [
+       "14:00",
+       "IT for kids",
+       "Group 1 · 15/15",
+       0
+      ]
+     ],
+     "kpi": [
+      [
+       "Membership ending",
+       "7 students"
+      ],
+      [
+       "Paid this month",
+       "86%"
+      ]
+     ]
+    }
+   },
+   {
+    "name": "Cafés and restaurants",
+    "title": "Floor and kitchen work together",
+    "desc": "Tables, orders and kitchen without paper.",
+    "feats": [
+     "Floor plan and tables",
+     "Orders go straight to the kitchen",
+     "Ingredient tracking by recipe",
+     "Delivery and takeaway"
+    ],
+    "mock": {
+     "t": "Floor",
+     "tables": [
+      0,
+      1,
+      2,
+      1,
+      0,
+      1,
+      0,
+      2
+     ],
+     "legend": [
+      "Free",
+      "Busy",
+      "Bill"
+     ],
+     "orders": [
+      [
+       "Table 2",
+       "Plov × 2, tea",
+       "Cooking"
+      ],
+      [
+       "Table 4",
+       "Shashlik × 4",
+       "Ready"
+      ]
+     ]
+    }
+   },
+   {
+    "name": "Car service and parts",
+    "title": "Car, parts and labour in one order",
+    "desc": "Parts lookup, technician work and car history.",
+    "feats": [
+     "Parts lookup by VIN",
+     "Car repair history",
+     "Labour and parts on one receipt",
+     "Parts warehouse"
+    ],
+    "mock": {
+     "t": "Toyota Camry · 01 777 AA",
+     "rows": [
+      [
+       "Oil 5W-30, 4 l",
+       "1",
+       "320"
+      ],
+      [
+       "Oil filter",
+       "1",
+       "45"
+      ],
+      [
+       "Labour: oil change",
+       "—",
+       "80"
+      ]
+     ],
+     "total": "Total",
+     "sum": "445 TJS",
+     "chip": "VIN lookup"
+    }
+   }
+  ]
+ },
+ "tg": {
+  "label": "TJ",
+  "ui": {
+   "nav": [
+    "Имкониятҳо",
+    "TIJORAT AI",
+    "Модулҳо",
+    "Тарифҳо",
+    "Саволҳо"
+   ],
+   "demoBtn": "Демо гирифтан",
+   "themeSystem": "Мавзӯи система",
+   "themeLight": "Мавзӯи равшан",
+   "themeDark": "Мавзӯи торик",
+   "currency": "сомонӣ",
+   "perMonth": "TJS / моҳ",
+   "featTag": "Имкониятҳо",
+   "featTitle": "Барнома чӣ кор мекунад",
+   "aiTag": "TIJORAT AI",
+   "aiTitle": "Ёрдамчие, ки маслиҳат медиҳад",
+   "aiLead": "Мисли чат пурсед, ва ӯ аз рӯи маълумоти шумо ҷавоб медиҳад.",
+   "aiPoints": [
+    "Чӣ тамом мешавад",
+    "Чиро фармоиш додан",
+    "Хатоҳо дар хазина",
+    "Фоида чанд аст"
+   ],
+   "aiChat": [
+    {
+     "q": "Дар ҳамин ҳафта чӣ тамом мешавад?",
+     "a": "Чойи сабзи №95 пас аз 2 рӯз, равғани пахта пас аз 4 рӯз тамом мешавад. 40 ва 60 дона фармоиш додан тавсия дода мешавад."
+    },
+    {
+     "q": "Дар моҳи октябр кадом филиал бештар фоида овард?",
+     "a": "Филиали №2: фоида 18% аз миёна зиёд, маржа 24,1%."
+    }
+   ],
+   "aiInput": "Дар бораи тиҷорати худ пурсед…",
+   "modTag": "Модулҳо",
+   "modTitle": "Дар барнома чӣ ҳаст",
+   "modLead": "Ҳама бахшҳо пайвастанд: мол фурӯхтед, анбор ва ҳисобот худ нав мешаванд.",
+   "stepTag": "Ҷорӣ кардан",
+   "stepTitle": "Оғоз дар 4 қадам",
+   "stepLead": "Пас аз як ҳафта шумо дар барнома кор мекунед.",
+   "indTag": "Соҳаҳо",
+   "indTitle": "Барои кӣ мувофиқ аст",
+   "priceTag": "Тарифҳо",
+   "priceTitle": "Нархҳои содда",
+   "priceLead": "Одам ё хазинаи бештар лозим аст? Бо пардохти хурди иловагӣ илова кунед.",
+   "billM": "Ҳар моҳ",
+   "billY": "Барои сол −20%",
+   "popular": "Маъмул",
+   "connect": "Пайваст шудан",
+   "discuss": "Муҳокима",
+   "negotiable": "Бо мувофиқа",
+   "faqTag": "Саволҳо",
+   "faqTitle": "Саволҳои маъмул",
+   "contactTitle": "Барномаро ройгон нишон медиҳем",
+   "contactSub": "Рақамро гузоред, мо занг мезанем.",
+   "perks": [
+    [
+     "30 дақ",
+     "Намоиши онлайн"
+    ],
+    [
+     "7 рӯз",
+     "Ройгон санҷидан"
+    ],
+    [
+     "1 рӯз",
+     "Ҳисоби нарх"
+    ]
+   ],
+   "fName": "Ном",
+   "fPhone": "Телефон",
+   "fCompany": "Ширкат",
+   "fSphere": "Соҳа",
+   "fMsg": "Чиро автоматикунонидан мехоҳед?",
+   "pName": "Фаррух Раҳимов",
+   "pCompany": "ҶДММ «Барака Савдо»",
+   "pMsg": "Масалан: 3 мағоза ва анбор, баҳисобгирии қарзи мизоҷон",
+   "spheres": [
+    "Савдои чакана",
+    "Савдои яклухт",
+    "Дистрибутсия",
+    "Мағозаи хӯрокворӣ / минимаркет",
+    "Либос ва пойафзол",
+    "Масолеҳи сохтмонӣ",
+    "Дорухона",
+    "Қисмҳои эҳтиётӣ ва автосервис",
+    "Техникаи маишӣ ва электроника",
+    "Қаҳвахона ва тарабхонаҳо",
+    "Истеҳсолот",
+    "Хизматрасонӣ ва таъмир",
+    "Иҷора ва киро",
+    "Маориф ва курсҳо",
+    "Сохтмон",
+    "Дигар"
+   ],
+   "submit": "Ба демо сабт шудан",
+   "errName": "Номро нависед",
+   "errPhone": "Рақамро ворид кунед: +992 ва 9 рақам, масалан +992 90 123 45 67",
+   "sent": "{name}, ташаккур! Дархост фиристода шуд. Дар вақти корӣ занг мезанем.",
+   "footer": "Автоматикунонии савдо ва истеҳсолот",
+   "demo": {
+    "store": "Мағозаи №3 · Душанбе",
+    "online": "онлайн",
+    "menu": [
+     "Асосӣ",
+     "Анбор",
+     "Фурӯш",
+     "Харид",
+     "Мизоҷон",
+     "Молия",
+     "Ёрдамчии ЗС"
+    ],
+    "revenue": "Даромад",
+    "checks": "Чекҳо",
+    "avg": "Чеки миёна",
+    "stock": "Анбор",
+    "stockPanel": "Бақияҳо",
+    "pcs": "дона",
+    "hourly": "Фурӯш аз рӯи соат",
+    "hourlyUnit": "ҳаз. сомонӣ",
+    "ops": "Амалиёти охирин",
+    "opsEmpty": "Фурӯшҳо дар ин ҷо пайдо мешаванд",
+    "sell": "Фурӯхтан",
+    "low": "Тамом шуда истодааст",
+    "reorder": "Фармоиш ба таъминкунанда",
+    "check": "Чек",
+    "incoming": "Воридот",
+    "toStock": "анбор",
+    "note": "Ин намуна аст. «Фурӯхтан»-ро пахш кунед ва бинед, ки чӣ тағйир меёбад.",
+    "items": [
+     "Биринҷ, 1 кг",
+     "Равғани пахта, 1 л",
+     "Чойи сабз №95, 100 г",
+     "Орди олӣ, 2 кг",
+     "Шакар, 1 кг"
+    ],
+    "v": {
+     "stockCols": [
+      "Мол",
+      "Бақия",
+      "Ҳадди ақал",
+      "Маблағ"
+     ],
+     "receive": "+10",
+     "low": "Кам",
+     "ok": "Мӯътадил",
+     "salesCols": [
+      "Вақт",
+      "Мол",
+      "Миқдор",
+      "Маблағ"
+     ],
+     "salesEmpty": "Ҳоло фурӯш нест. «Асосӣ»-ро кушоед ва «Фурӯхтан»-ро пахш кунед.",
+     "salesTotal": "Ҳамагӣ дар баст",
+     "purEmpty": "Ҳамаи молҳо ҳастанд, фармоиш лозим нест.",
+     "purCols": [
+      "Мол",
+      "Бақия",
+      "Фармоиш"
+     ],
+     "order": "Фармоиш",
+     "purHistory": "Таърихи воридот",
+     "none": "Ҳоло холӣ",
+     "custCols": [
+      "Мизоҷ",
+      "Телефон",
+      "Қарз"
+     ],
+     "pay": "Пардохт",
+     "noDebt": "Қарз нест",
+     "custTotal": "Ҳамагӣ қарз",
+     "custNames": [
+      "СЯ Каримов",
+      "Мағозаи «Сомон»",
+      "Қаҳвахонаи «Ватан»",
+      "ҶДММ «Нур Савдо»"
+     ],
+     "fin": [
+      "Даромад",
+      "Арзиши аслӣ",
+      "Фоидаи умумӣ",
+      "Маржа"
+     ],
+     "finNote": "Рақамҳо пас аз ҳар фурӯш ва воридот нав мешаванд.",
+     "aiQ": [
+      "Чӣ зуд тамом мешавад?",
+      "Кадом мол беҳтар фурӯхта мешавад?",
+      "Ҳоло фоида чӣ қадар аст?"
+     ],
+     "aiA": [
+      "{name}: {qty} дона монд. {n} дона фармоиш додан тавсия дода мешавад.",
+      "Ҳамаи молҳо аз бақияи ҳадди ақал зиёданд.",
+      "{name}: {n} дона ба маблағи {sum} сомонӣ фурӯхта шуд.",
+      "Дар ин баст ҳоло фурӯши демо набуд. Дар «Асосӣ» «Фурӯхтан»-ро пахш кунед.",
+      "Даромад {rev}, арзиши аслӣ {cogs}, фоида {profit} сомонӣ. Маржа {m}%."
+     ],
+     "aiNote": "Демо: ҷавобҳо аз рӯи маълумоти ҳамин саҳифа ҳисоб мешаванд.",
+     "aiHint": "Саволро интихоб кунед",
+     "kItems": "Мавқеъҳо",
+     "kStockSum": "Маблағи анбор",
+     "kLow": "Тамом мешавад",
+     "kRev": "Даромади баст",
+     "kChecks": "Чекҳо",
+     "kAvg": "Чеки миёна",
+     "lastChecks": "Чекҳои охирин",
+     "salesCols2": [
+      "Вақт",
+      "Мол",
+      "Миқдор",
+      "Пардохт",
+      "Маблағ"
+     ],
+     "poT": "Фармоишҳо ба таъминкунандагон",
+     "poCols": [
+      "№",
+      "Таъминкунанда",
+      "Сана",
+      "Ҳолат",
+      "Маблағ"
+     ],
+     "poSt": [
+      "Расонида шуд",
+      "Дар роҳ",
+      "Интизорӣ"
+     ],
+     "suppliers": [
+      "Суғд Агро",
+      "Нури Хуҷанд",
+      "Зарафшон Савдо"
+     ],
+     "needT": "Бояд фармоиш дод",
+     "inT": "Воридоти имрӯза",
+     "kDebt": "Қарзи мизоҷон",
+     "kDebtors": "Қарздорон",
+     "kClients": "Мизоҷон",
+     "custCols2": [
+      "Мизоҷ",
+      "Телефон",
+      "Хариди охирин",
+      "Қарз"
+     ],
+     "weekT": "Даромад дар 7 рӯз, ҳаз.",
+     "days": [
+      "Дш",
+      "Сш",
+      "Чш",
+      "Пш",
+      "Ҷм",
+      "Шб",
+      "Имрӯз"
+     ],
+     "payT": "Тарзҳои пардохт"
+    }
+   },
+   "mock": {
+    "stockHead": "Анбор · Душанбе",
+    "stockSub": "3 филиал",
+    "autoRow": "Фармоиш ба таъминкунанда тайёр шуд",
+    "auto": "Худкор",
+    "posHead": "Чеки №4821",
+    "posSub": "Хазинаи 2",
+    "pay": [
+     "Нақд",
+     "Корт",
+     "QR"
+    ],
+    "total": "Ҳамагӣ",
+    "repHead": "Даромади ҳафта",
+    "repSub": "ҳамаи филиалҳо",
+    "margin": "Маржа",
+    "debts": "Қарзи мизоҷон",
+    "debtsVal": "8 мизоҷ",
+    "payBtn": "Чекро задан",
+    "paying": "Пардохт иҷро мешавад…",
+    "paid": "Пардохт шуд",
+    "given": "Гирифта шуд",
+    "change": "Бақияи пул",
+    "cardWait": "Кортро ба терминал наздик кунед",
+    "qrScan": "QR-ро дар барномаи бонкӣ скан кунед",
+    "posHeadN": "Чеки №",
+    "scanning": "Скан мешавад…"
+   },
+   "loadfail": "Маълумот бор нашуд. Саҳифаро нав кунед.",
+   "aiTry": "Худатон пурсед",
+   "aiThinking": "Маълумотро таҳлил мекунам",
+   "aiToast": "Чойи сабзи №95 пас аз 2 рӯз тамом мешавад. 40 дона фармоиш диҳем?",
+   "aiCore": "ЗС онлайн",
+   "bot": {
+    "open": "Чати TIJORAT AI-ро кушодан",
+    "close": "Пӯшидани чат",
+    "title": "TIJORAT AI",
+    "online": "онлайн · Claude",
+    "demo": "реҷаи демо",
+    "greet": "Салом! Ман TIJORAT AI ҳастам. Дар бораи нарх, имкониятҳо ё пайвастшавӣ пурсед.",
+    "ph": "Саволро нависед…",
+    "send": "Фиристодан",
+    "stop": "Бас",
+    "thinking": "Фикр мекунам…",
+    "sugg": [
+     "Нархаш чанд аст?",
+     "Оё хазина бе интернет кор мекунад?",
+     "Маълумотро аз 1С чӣ тавр интиқол диҳем?"
+    ],
+    "note": "Ҷавобҳои ЗС метавонанд нодуруст бошанд. Нарх ва шартҳоро аз менеҷер пурсед.",
+    "noMatch": "Ҷавоби дақиқ надорам. Дар поёни саҳифа дархост гузоред, менеҷер шахсан ҷавоб медиҳад.",
+    "toForm": "Дархост гузоштан",
+    "errRate": "Саволҳо аз ҳад зиёд. Пас аз як дақиқа кӯшиш кунед.",
+    "errGen": "Ҷавоб гирифта нашуд. Боз кӯшиш кунед.",
+    "fallbackNote": "ЗС ҳоло дастрас нест, аз базаи дониш ҷавоб медиҳам."
+   },
+   "foot": {
+    "tagline": "Тиҷоратро осон идора кунед!",
+    "about": "Tijorat Pro — экосистемаи муосири автоматикунонии савдо, баҳисобгирии анбор ва идоракунии тиҷорат.",
+    "hours": "Дастгирӣ 24/7 · Офис: Дш — Шб, 09:00 — 18:00",
+    "navT": "Навигатсия",
+    "nav": [
+     "Имкониятҳо",
+     "Ҳалли масъалаҳо",
+     "Хизматрасониҳо",
+     "Нархҳо",
+     "Тамос"
+    ],
+    "contT": "Тамос",
+    "address": "ш. Хуҷанд, Тоҷикистон",
+    "legalT": "Маълумоти ҳуқуқӣ",
+    "legal": [
+     "Сиёсати махфият",
+     "Шартҳои истифода"
+    ],
+    "legalNote": "Платформаи барномавӣ барои автоматикунонӣ ва рушди тиҷорат дар Тоҷикистон ва Осиёи Марказӣ.",
+    "rights": "Ҳамаи ҳуқуқҳо ҳифз шудаанд."
+   },
+   "addUser": "Корбари иловагӣ",
+   "addPoint": "Нуқта / хазинаи иловагӣ",
+   "calcT": "Арзишро ҳисоб кунед",
+   "calcPlan": "Тариф",
+   "calcUsers": "Корбарон",
+   "calcPoints": "Нуқтаҳои фурӯш / хазинаҳо",
+   "calcTotal": "Ҳамагӣ дар як моҳ",
+   "calcBase": "Тариф",
+   "calcExtraU": "Корбарони иловагӣ",
+   "calcExtraP": "Нуқтаҳои иловагӣ",
+   "calcCta": "Бо ҳамин нарх пайваст шудан",
+   "calcX": {
+    "modT": "Модулҳои соҳавӣ",
+    "modSub": "Барои тиҷорати худ чизи лозимиро илова кунед",
+    "pkgT": "Бастаҳои ҷорӣ кардан ва омӯзиш",
+    "pkgSub": "Барномаро танзим мекунем ва кормандонро меомӯзонем",
+    "onceL": "Ҷорӣ кардан (якдафъаина)",
+    "firstPay": "Пардохти аввал",
+    "perMonthShort": "/ моҳ",
+    "extras": [
+     [
+      "Хазинаи офлайн 100%",
+      "Кори мустақили ҷойҳои хазина ҳангоми набудани интернет"
+     ],
+     [
+      "Хизматрасонӣ ва фармоишҳои корӣ",
+      "Баҳисобгирии хизмати устоҳо, автосервисҳо ва қабули техника барои таъмир"
+     ],
+     [
+      "Иҷора ва киро",
+      "Баҳисобгирии иҷораи шабонарӯзӣ ва соатбайъ бо ҳисоби гарав"
+     ],
+     [
+      "Истеҳсолот ва харитаҳои технологӣ",
+      "Хориҷи ашёи хом, харитаҳои технологӣ ва арзиши аслӣ"
+     ],
+     [
+      "Курсҳо ва абонементҳо",
+      "Баҳисобгирии ташрифи марказҳои таълимӣ, мураббиён ва абонементҳо"
+     ],
+     [
+      "Сохтмон ва объектҳо",
+      "Баҳисобгирии сметавии масолеҳи сохтмонӣ ва ҳисоббаробаркунӣ бо бригадаҳо"
+     ]
+    ],
+    "packages": [
+     [
+      "Мустақилона",
+      "Дарсҳои видеоӣ ва дастури оғоз"
+     ],
+     [
+      "Старт",
+      "Воридоти номенклатура ва дастурдиҳии онлайн"
+     ],
+     [
+      "Бизнес-оғоз",
+      "Сафари мутахассис, танзими хазина ва омӯзиш"
+     ],
+     [
+      "Корпоративӣ",
+      "Аудити пурра, интиқоли база, мутобиқсозӣ ва куратори шахсӣ"
+     ]
+    ]
+   },
+   "aiToasts": [
+    "Чойи сабзи №95 пас аз 2 рӯз тамом мешавад. 40 дона фармоиш диҳем?",
+    "Фурӯши имрӯза аз шанбеи гузашта 12% зиёд аст.",
+    "3 мизоҷ зиёда аз 30 рӯз қарздоранд. SMS-ёдрас фиристем?",
+    "Маржаи орд то 15% паст шуд. Нархи таъминкунандаро санҷед.",
+    "Авҷи фурӯш аз 12:00 то 13:00. Хазинадори дуюмро гузоред."
+   ],
+   "dirPick": "Самти тиҷоратро интихоб кунед",
+   "dirCta": "Барои тиҷорати ман пайваст кардан",
+   "sending": "Фиристода истодаем…",
+   "sendErr": "Дархост фиристода нашуд. Боз кӯшиш кунед ё ба мо занг занед: +992 11 400 60 00.",
+   "devT": "аз ҳар дастгоҳ дастрас аст",
+   "devSub": "Аз телефон фурӯхтед — даромад фавран дар компютер ва планшет намоён аст. Маълумоти ягона дар ҳама экранҳо.",
+   "devs": [
+    "Компютер",
+    "Планшет",
+    "Телефон"
+   ],
+   "devNotes": [
+    "Баҳисобгирии пурра, ҳисобот ва танзимот",
+    "Хазина ва анбор дар толори савдо",
+    "Фурӯш ва огоҳиҳо дар кисаатон"
+   ],
+   "devPill": "Дар ҳама ҷо кор мекунад",
+   "devT1": "Тиҷорати шумо ҳамеша дар даст",
+   "devT2": "дар ҳар дастгоҳ",
+   "devSale": "Фурӯши нав",
+   "devRev": "Даромади имрӯз",
+   "devSync": "Ҳамоҳанг шуд",
+   "devTotal": "Ҳамагӣ",
+   "modLinked": "Пайваст бо",
+   "modTap": "Ба бахш пахш кунед"
+  },
+  "hero": {
+   "eyebrow": "Барнома барои мағоза ва анбор",
+   "title": "Тамоми тиҷорати шумо",
+   "accent": "дар як барнома",
+   "lead": "Фурӯш, анбор, пул ва мизоҷон дар як ҷо. Бе дафтар ва Excel.",
+   "cta": "Ройгон санҷед",
+   "cta2": "Барнома чӣ кор мекунад"
+  },
+  "stats": [
+   [
+    "1500+",
+    "корбар аллакай бо мо кор мекунанд"
+   ],
+   [
+    "24/7",
+    "дастгирӣ бе рӯзи истироҳат"
+   ],
+   [
+    "10+",
+    "самт: барои ҳар тиҷорат мувофиқ"
+   ],
+   [
+    "7 рӯз",
+    "давраи озмоишии ройгон"
+   ]
+  ],
+  "features": [
+   {
+    "tag": "Анбор",
+    "title": "Ҳамеша медонед, ки чӣ қадар мол монд",
+    "text": "Барнома худаш мегӯяд, ки чӣ тамом мешавад, ва дар фармоиш кумак мекунад.",
+    "points": [
+     "Бо штрих-код",
+     "Мӯҳлати истифода",
+     "Якчанд анбор"
+    ],
+    "mock": "stock"
+   },
+   {
+    "tag": "Фурӯш",
+    "title": "Хазинаи тез",
+    "text": "Дар мағоза, яклухт ё сайёр фурӯшед. Нақд, корт ё QR.",
+    "points": [
+     "Чек дар чанд сония",
+     "Корт ва QR",
+     "Фурӯш ба қарз"
+    ],
+    "mock": "pos"
+   },
+   {
+    "tag": "Ҳисобот",
+    "title": "Фоида дар телефон",
+    "text": "Ҳар бегоҳ ҳисобот ба Telegram меояд.",
+    "points": [
+     "Даромад ва фоида",
+     "Молҳои беҳтарин",
+     "Муқоисаи мағозаҳо"
+    ],
+    "mock": "report"
+   }
+  ],
+  "modules": [
+   [
+    "Анбор",
+    "Бақия, воридот, интиқол."
+   ],
+   [
+    "Фурӯш ва хазина",
+    "Чек, тахфиф, фурӯш ба қарз."
+   ],
+   [
+    "Харид",
+    "Фармоиш ба таъминкунандагон."
+   ],
+   [
+    "Пул",
+    "Хазина, бонк, хароҷот."
+   ],
+   [
+    "Мизоҷон",
+    "Харидҳо ва қарзҳо."
+   ],
+   [
+    "Кормандон",
+    "Баст ва музд."
+   ],
+   [
+    "Истеҳсолот",
+    "Ашёи хом ва маҳсулот."
+   ],
+   [
+    "Ёрдамчии ЗС",
+    "Маслиҳат ва ҷавобҳо."
+   ]
+  ],
+  "steps": [
+   [
+    "Шиносоӣ",
+    "Мефаҳмем, ки тиҷорати шумо чӣ тавр кор мекунад.",
+    "1–2 рӯз"
+   ],
+   [
+    "Интиқоли маълумот",
+    "Молҳо ва мизоҷонро аз Excel ё 1С интиқол медиҳем.",
+    "2–3 рӯз"
+   ],
+   [
+    "Омӯзиш",
+    "Кормандони шуморо меомӯзонем.",
+    "1–2 рӯз"
+   ],
+   [
+    "Оғоз",
+    "Кор оғоз мекунед. Мо дар Telegram ҳастем.",
+    "аз рӯзи 7"
+   ]
+  ],
+  "industries": [
+   "Мағозаҳои хӯрокворӣ",
+   "Базаҳои яклухт",
+   "Масолеҳи сохтмонӣ",
+   "Либос ва пойафзол",
+   "Дорухонаҳо",
+   "Қисмҳои эҳтиётии мошин",
+   "Қаҳвахона ва ошхона",
+   "Истеҳсоли хӯрокворӣ",
+   "Сехҳои мебел",
+   "Техникаи маишӣ"
+  ],
+  "plans": [
+   {
+    "name": "Standard",
+    "who": "5 корбар · 1 нуқтаи савдо ва анбор",
+    "items": [
+     "5 корбар дохил аст",
+     "1 нуқтаи савдо / хазина",
+     "Баҳисобгирии анбор ва хазина (POS)",
+     "Ҳисоботҳои асосии молиявӣ"
+    ]
+   },
+   {
+    "name": "Business",
+    "who": "15 корбар · 1 нуқтаи савдо ва анбор",
+    "items": [
+     "15 корбар дохил аст",
+     "1 нуқтаи савдо / хазина",
+     "Таҳлили васеъ ва CRM-и мизоҷон",
+     "Тақсими ҳуқуқи дастрасии кормандон"
+    ]
+   },
+   {
+    "name": "Корпоратсия",
+    "who": "Барои ширкатҳои калон",
+    "items": [
+     "Ҳамаи бахшҳо",
+     "Истеҳсолот",
+     "Пайвастшавӣ бо барномаҳои дигар",
+     "Сервери худ",
+     "Менеҷери шахсӣ"
+    ]
+   }
+  ],
+  "faq": [
+   [
+    "Маълумотро аз 1С ё Excel интиқол медиҳед?",
+    "Бале, худамон интиқол медиҳем. Одатан 2–3 рӯз."
+   ],
+   [
+    "Хазина бе интернет кор мекунад?",
+    "Бале. Вақте интернет пайдо шавад, ҳама нигоҳ дошта мешавад."
+   ],
+   [
+    "Маълумот дар куҷо нигоҳ дошта мешавад?",
+    "Дар абри ҳифзшуда. Ҳар рӯз нусха гирифта мешавад."
+   ],
+   [
+    "Ёрдамчии ЗС чӣ кор мекунад?",
+    "Мегӯяд, ки чиро фармоиш диҳед, ва ба саволҳо дар бораи тиҷорататон ҷавоб медиҳад."
+   ],
+   [
+    "Пас аз давраи озмоишӣ чӣ мешавад?",
+    "Тарифро интихоб кунед ва кор кунед. Ҳама маълумот боқӣ мемонад."
+   ]
+  ],
+  "dirs": [
+   {
+    "name": "Савдои чакана",
+    "title": "Мағоза бе навбат",
+    "desc": "Хазина, анбор ва харидорон дар як барнома.",
+    "feats": [
+     "Хазина бо сканери штрих-код",
+     "Тахфиф ва кортҳои бонусӣ",
+     "Бақия дар ҳамаи мағозаҳо",
+     "Нархнома ва тамғаҳо дар як дақиқа"
+    ],
+    "mock": {
+     "t": "Хазина · Мағозаи №1",
+     "grid": [
+      [
+       "Биринҷ, 1 кг",
+       "14"
+      ],
+      [
+       "Равған, 1 л",
+       "22"
+      ],
+      [
+       "Чой №95",
+       "12"
+      ],
+      [
+       "Шакар, 1 кг",
+       "11"
+      ],
+      [
+       "Орд, 2 кг",
+       "13"
+      ],
+      [
+       "Шир",
+       "9"
+      ]
+     ],
+     "lines": [
+      [
+       "Биринҷ, 1 кг × 2",
+       "28"
+      ],
+      [
+       "Равған, 1 л",
+       "22"
+      ],
+      [
+       "Чой №95 × 3",
+       "36"
+      ]
+     ],
+     "total": "Ҳамагӣ",
+     "sum": "86 TJS",
+     "pay": [
+      "Нақд",
+      "Корт",
+      "QR"
+     ]
+    }
+   },
+   {
+    "name": "Савдои яклухт",
+    "title": "Фармоиши яклухт дар як дақиқа",
+    "desc": "Нархномаҳо барои мизоҷони гуногун, ҳадди қарз ва расонидан.",
+    "feats": [
+     "Якчанд нархнома",
+     "Ҳадди қарз барои мизоҷ",
+     "Барнома барои агенти савдо",
+     "Масирҳои расонидан"
+    ],
+    "mock": {
+     "t": "Фармоиши №1042",
+     "sub": "ҶДММ «Нур Савдо» · Нархнома: Яклухт-2",
+     "cols": [
+      "Мол",
+      "Миқдор",
+      "Маблағ"
+     ],
+     "rows": [
+      [
+       "Биринҷ, халта 25 кг",
+       "40",
+       "13 200"
+      ],
+      [
+       "Равған, қуттӣ 12 л",
+       "25",
+       "6 300"
+      ],
+      [
+       "Шакар, халта 50 кг",
+       "10",
+       "5 200"
+      ]
+     ],
+     "kv": [
+      [
+       "Ҳадди қарз",
+       "50 000"
+      ],
+      [
+       "Қарзи ҷорӣ",
+       "18 400"
+      ]
+     ],
+     "chip": "Расонидан фардо · масири №3"
+    }
+   },
+   {
+    "name": "Истеҳсолот",
+    "title": "Нархи ҳар як воҳидро медонед",
+    "desc": "Ашёи хом худ хориҷ мешавад, арзиши маҳсулот намоён аст.",
+    "feats": [
+     "Дастурҳо ва харитаҳои технологӣ",
+     "Хориҷи худкори ашё",
+     "Арзиши партия",
+     "Нақша ва истеҳсол аз рӯи баст"
+    ],
+    "mock": {
+     "t": "Партияи №58 · Нон",
+     "bars": [
+      [
+       "Орд",
+       "120 кг",
+       96
+      ],
+      [
+       "Об",
+       "70 л",
+       100
+      ],
+      [
+       "Хамиртуруш",
+       "2 кг",
+       88
+      ],
+      [
+       "Намак",
+       "2,4 кг",
+       100
+      ]
+     ],
+     "kpi": [
+      [
+       "Истеҳсол",
+       "1 200 дона"
+      ],
+      [
+       "Нархи 1 дона",
+       "1,85 TJS"
+      ]
+     ]
+    }
+   },
+   {
+    "name": "Дорухона",
+    "title": "Ҳар баста зери назорат",
+    "desc": "Мӯҳлати истифода, серияҳо ва ҷустуҷӯи тези дору.",
+    "feats": [
+     "Мӯҳлат ва серияҳо",
+     "Ҷустуҷӯ аз рӯи ном ва модда",
+     "Доруҳои бо дорухат",
+     "Фурӯши донагӣ аз баста"
+    ],
+    "mock": {
+     "t": "Ҷустуҷӯ: Парацетамол",
+     "rows": [
+      [
+       "Парацетамол 500 мг №20",
+       "то 03.2027",
+       "48",
+       "6,5",
+       0
+      ],
+      [
+       "Парацетамол шарбат 100 мл",
+       "то 11.2026",
+       "12",
+       "14",
+       0
+      ],
+      [
+       "Нурофен 200 мг №10",
+       "то 01.2026",
+       "5",
+       "22",
+       1
+      ]
+     ],
+     "note": "Мӯҳлат ба охир мерасад: 1 мол"
+    }
+   },
+   {
+    "name": "Хизматрасонӣ ва таъмир",
+    "title": "Ҳамаи фармоишҳо дар як экран",
+    "desc": "Қабул, устоҳо, ҳолат ва пардохти ҳар фармоиш.",
+    "feats": [
+     "Фармоишҳои корӣ",
+     "Кори устоҳо ва фоизи онҳо",
+     "SMS ба мизоҷ ҳангоми тайёр шудан",
+     "Қисмҳо худ хориҷ мешаванд"
+    ],
+    "mock": {
+     "t": "Фармоишҳо",
+     "cols": [
+      [
+       "Қабул шуд",
+       [
+        "iPhone 13 · экран",
+        "Ноутбук HP · тозакунӣ"
+       ]
+      ],
+      [
+       "Дар кор",
+       [
+        "Samsung A52 · батарея"
+       ]
+      ],
+      [
+       "Тайёр",
+       [
+        "Принтер Canon · 350 TJS"
+       ]
+      ]
+     ]
+    }
+   },
+   {
+    "name": "Иҷора ва киро",
+    "title": "Намоён аст, ки чӣ ва кай озод аст",
+    "desc": "Тақвими иҷора, гарав ва баргардонидан саривақт.",
+    "feats": [
+     "Тақвими бандӣ",
+     "Шабонарӯзӣ ва соатбайъ",
+     "Баҳисобгирии гарав",
+     "Ёдрас дар бораи баргардонидан"
+    ],
+    "mock": {
+     "t": "Тақвими иҷора",
+     "days": [
+      "Дш",
+      "Сш",
+      "Чш",
+      "Пш",
+      "Ҷм",
+      "Шб",
+      "Яш"
+     ],
+     "rows": [
+      [
+       "Бетонхалткунак",
+       [
+        [
+         0,
+         3
+        ]
+       ]
+      ],
+      [
+       "Перфоратор",
+       [
+        [
+         0,
+         1
+        ],
+        [
+         4,
+         6
+        ]
+       ]
+      ],
+      [
+       "Ҳавоза, 10 қисм",
+       [
+        [
+         2,
+         6
+        ]
+       ]
+      ],
+      [
+       "Генератор 5 кВт",
+       [
+        [
+         3,
+         4
+        ]
+       ]
+      ]
+     ],
+     "note": "Гарав гирифта шуд: 2 400 TJS"
+    }
+   },
+   {
+    "name": "Ширкатҳои сохтмонӣ",
+    "title": "Буҷети ҳар объект",
+    "desc": "Смета, масолеҳ ва ҳисоббаробаркунӣ бо бригадаҳо.",
+    "feats": [
+     "Смета аз рӯи объектҳо",
+     "Масолеҳ дар объектҳо",
+     "Ҳисоб бо бригадаҳо",
+     "Хароҷот нисбат ба нақша"
+    ],
+    "mock": {
+     "t": "Объектҳо",
+     "bars": [
+      [
+       "ЖК «Сомон», блоки А",
+       "буҷет",
+       62
+      ],
+      [
+       "Мактаби №14, таъмир",
+       "буҷет",
+       88
+      ],
+      [
+       "Анбори «Нур»",
+       "буҷет",
+       35
+      ]
+     ],
+     "kpi": [
+      [
+       "Бригадаҳо дар объект",
+       "6"
+      ],
+      [
+       "Қарз ба бригадаҳо",
+       "14 300 TJS"
+      ]
+     ]
+    }
+   },
+   {
+    "name": "Марказҳои таълимӣ",
+    "title": "Гурӯҳҳо, пардохтҳо ва ташрифҳо",
+    "desc": "Ҷадвал, абонементҳо ва қарзи хонандагон.",
+    "feats": [
+     "Ҷадвали гурӯҳҳо",
+     "Абонементҳо ва пардохтҳо",
+     "Қайди ташриф",
+     "Музди омӯзгорон"
+    ],
+    "mock": {
+     "t": "Ҷадвал · имрӯз",
+     "rows": [
+      [
+       "09:00",
+       "Англисӣ A2",
+       "Гурӯҳи 5 · 12/14",
+       1
+      ],
+      [
+       "11:00",
+       "Математика",
+       "Гурӯҳи 2 · 9/10",
+       0
+      ],
+      [
+       "14:00",
+       "IT барои кӯдакон",
+       "Гурӯҳи 1 · 15/15",
+       0
+      ]
+     ],
+     "kpi": [
+      [
+       "Абонемент тамом мешавад",
+       "7 хонанда"
+      ],
+      [
+       "Дар моҳ пардохтанд",
+       "86%"
+      ]
+     ]
+    }
+   },
+   {
+    "name": "Қаҳвахона ва тарабхонаҳо",
+    "title": "Толор ва ошхона якҷоя кор мекунанд",
+    "desc": "Мизҳо, фармоишҳо ва ошхона бе коғаз.",
+    "feats": [
+     "Нақшаи толор ва мизҳо",
+     "Фармоиш фавран ба ошхона",
+     "Баҳисобгирии маҳсулот аз рӯи дастур",
+     "Расонидан ва бурдан"
+    ],
+    "mock": {
+     "t": "Толор",
+     "tables": [
+      0,
+      1,
+      2,
+      1,
+      0,
+      1,
+      0,
+      2
+     ],
+     "legend": [
+      "Озод",
+      "Банд",
+      "Ҳисоб"
+     ],
+     "orders": [
+      [
+       "Мизи 2",
+       "Палов × 2, чой",
+       "Пухта мешавад"
+      ],
+      [
+       "Мизи 4",
+       "Шашлик × 4",
+       "Тайёр"
+      ]
+     ]
+    }
+   },
+   {
+    "name": "Автосервис ва қисмҳо",
+    "title": "Мошин, қисмҳо ва кор дар як фармоиш",
+    "desc": "Интихоби қисмҳо, кори устоҳо ва таърихи мошин.",
+    "feats": [
+     "Интихоби қисм аз рӯи VIN",
+     "Таърихи таъмири мошин",
+     "Кор ва қисмҳо дар як чек",
+     "Анбори қисмҳо"
+    ],
+    "mock": {
+     "t": "Toyota Camry · 01 777 AA",
+     "rows": [
+      [
+       "Равғани 5W-30, 4 л",
+       "1",
+       "320"
+      ],
+      [
+       "Филтри равған",
+       "1",
+       "45"
+      ],
+      [
+       "Кор: ивази равған",
+       "—",
+       "80"
+      ]
+     ],
+     "total": "Ҳамагӣ",
+     "sum": "445 TJS",
+     "chip": "Интихоб аз рӯи VIN"
+    }
+   }
+  ]
+ }
+}

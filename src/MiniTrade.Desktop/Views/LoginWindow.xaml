@@ -7,7 +7,7 @@
         xmlns:vm="clr-namespace:MiniTrade.Desktop.ViewModels"
         xmlns:inf="clr-namespace:MiniTrade.Desktop.Infrastructure"
         mc:Ignorable="d" d:DataContext="{d:DesignInstance vm:LoginViewModel}"
-        Title="{l:T 'TIJORAT.PRO — вход'}" Width="904" Height="568"
+        Title="{l:T 'TIJORAT LITE — вход'}" Width="904" Height="568"
         Style="{StaticResource AppWindow}" Background="Transparent"
         WindowStyle="None" AllowsTransparency="True" ResizeMode="NoResize"
         WindowStartupLocation="CenterScreen"

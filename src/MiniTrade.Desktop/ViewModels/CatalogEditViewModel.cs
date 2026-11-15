@@ -17,12 +17,12 @@ public static class CatalogEntities
         Product p => (T)(object)new Product
         {
             Id = p.Id, Name = p.Name, IsService = p.IsService, IsWeighted = p.IsWeighted, Sku = p.Sku, Barcode = p.Barcode, Unit = p.Unit, CategoryId = p.CategoryId,
-            PurchasePrice = p.PurchasePrice, SalePrice = p.SalePrice, MinStock = p.MinStock, IsActive = p.IsActive
+            PurchasePrice = p.PurchasePrice, SalePrice = p.SalePrice, WholesalePrice = p.WholesalePrice, MinStock = p.MinStock, IsActive = p.IsActive
         },
         MeasureUnit u => (T)(object)new MeasureUnit { Id = u.Id, Name = u.Name, Description = u.Description, IsActive = u.IsActive },
         ScaleDevice s => (T)(object)new ScaleDevice { Id = s.Id, Name = s.Name, Type = s.Type, Ip = s.Ip, Port = s.Port, FilePath = s.FilePath, IsActive = s.IsActive },
         Category c => (T)(object)new Category { Id = c.Id, Name = c.Name, Description = c.Description, Image = c.Image, IsActive = c.IsActive },
-        Counterparty c => (T)(object)new Counterparty { Id = c.Id, Name = c.Name, GroupId = c.GroupId, Phone = c.Phone, Address = c.Address, Note = c.Note, IsActive = c.IsActive },
+        Counterparty c => (T)(object)new Counterparty { Id = c.Id, Name = c.Name, GroupId = c.GroupId, Phone = c.Phone, Address = c.Address, Note = c.Note, IsActive = c.IsActive, Balance = c.Balance },
         CounterpartyGroup g => (T)(object)new CounterpartyGroup { Id = g.Id, Name = g.Name, Description = g.Description, IsActive = g.IsActive },
         Warehouse w => (T)(object)new Warehouse { Id = w.Id, Name = w.Name, Address = w.Address, IsActive = w.IsActive },
         CashRegister c => (T)(object)new CashRegister { Id = c.Id, Name = c.Name, Balance = c.Balance, IsCashless = c.IsCashless, IsActive = c.IsActive },

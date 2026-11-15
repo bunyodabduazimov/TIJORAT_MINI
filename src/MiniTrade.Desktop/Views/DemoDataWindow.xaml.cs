@@ -70,14 +70,14 @@ public partial class DemoDataWindow : Window
             // Генерация — в фоне: окно остаётся отзывчивым
             await Task.Run(() => DemoCompanySeeder.RunAsync(_factory, _session, choice.Profile.Industry, progress));
             MessageWindow.Show(L.F("Демо-данные «{0}» созданы: товары, клиенты, поставщики и год работы компании.", L.T(choice.Profile.Title)),
-                "TIJORAT.PRO", MessageKind.Info);
+                "TIJORAT LITE", MessageKind.Info);
             DialogResult = true;
         }
         catch (Exception ex)
         {
             ErrorLog.Write(ex, GetType().Name);
             _running = false;
-            MessageWindow.Show(L.F("Не удалось заполнить демо-данные:\n{0}", ex.InnerException?.Message ?? ex.Message), "TIJORAT.PRO", MessageKind.Error);
+            MessageWindow.Show(L.F("Не удалось заполнить демо-данные:\n{0}", ex.InnerException?.Message ?? ex.Message), "TIJORAT LITE", MessageKind.Error);
             DialogResult = false;
         }
     }

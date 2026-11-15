@@ -8,7 +8,8 @@ namespace MiniTrade.Desktop.Infrastructure;
 public static class FiscalPrinter
 {
     public static FiscalSettings Settings => App.Ui.Fiscal;
-    public static bool Enabled => Settings.Enabled && !string.IsNullOrWhiteSpace(Settings.Host);
+    /// <summary>Только для компаний из Таджикистана (Fiscat — таджикская ККТ).</summary>
+    public static bool Enabled => MiniTrade.Core.Common.Countries.FiscalSupported && Settings.Enabled && !string.IsNullOrWhiteSpace(Settings.Host);
     public static FiscatClient Client => new(Settings);
 
     public static string Cashier

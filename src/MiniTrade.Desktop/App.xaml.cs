@@ -161,7 +161,7 @@ public partial class App : Application
             {
                 // Сервер недоступен — предложить работать с локальной базой этого компьютера
                 if (MessageWindow.Show(L.F("Не удалось подключиться к серверу базы данных:\n{0}\n\n{1}\n\nПереключиться на локальную базу этого компьютера?", connection.Display, reason),
-                        "TIJORAT.PRO", MessageKind.Question))
+                        "TIJORAT LITE", MessageKind.Question))
                 {
                     DatabaseSettings.Save(connection with { Provider = DatabaseProvider.Sqlite });
                     Restart();
@@ -169,7 +169,7 @@ public partial class App : Application
                 }
             }
             else
-                MessageWindow.Show(L.F("Не удалось открыть базу данных:\n{0}\n\n{1}", connection.Display, reason), "TIJORAT.PRO", MessageKind.Error);
+                MessageWindow.Show(L.F("Не удалось открыть базу данных:\n{0}\n\n{1}", connection.Display, reason), "TIJORAT LITE", MessageKind.Error);
             Shutdown(1);
             return;
         }
@@ -215,12 +215,12 @@ public partial class App : Application
                 await DemoDataGenerator.RunAsync(Services.GetRequiredService<IDbContextFactory<TradeDbContext>>(),
                     Services.GetRequiredService<UserSession>(),
                     progress: new Progress<string>(s => System.Diagnostics.Debug.WriteLine(s)));
-                MessageWindow.Show($"Тестовые данные созданы за {sw.Elapsed:mm\\:ss}", "TIJORAT.PRO", MessageKind.Info);
+                MessageWindow.Show($"Тестовые данные созданы за {sw.Elapsed:mm\\:ss}", "TIJORAT LITE", MessageKind.Info);
             }
             catch (Exception ex)
             {
                 ErrorLog.Write(ex, "генерация тестовых данных");
-                MessageWindow.Show($"Ошибка генерации тестовых данных:\n{ex.InnerException?.Message ?? ex.Message}", "TIJORAT.PRO", MessageKind.Error);
+                MessageWindow.Show($"Ошибка генерации тестовых данных:\n{ex.InnerException?.Message ?? ex.Message}", "TIJORAT LITE", MessageKind.Error);
             }
         }
 
@@ -287,7 +287,7 @@ public partial class App : Application
     private void OnUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)
     {
         ErrorLog.Write(e.Exception, "необработанная ошибка интерфейса");
-        MessageWindow.Show(L.F("Непредвиденная ошибка:\n{0}", e.Exception.Message), "TIJORAT.PRO", MessageKind.Error);
+        MessageWindow.Show(L.F("Непредвиденная ошибка:\n{0}", e.Exception.Message), "TIJORAT LITE", MessageKind.Error);
         e.Handled = true;
     }
 }

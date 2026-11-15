@@ -30,7 +30,22 @@ public partial class SalesViewModel(SalesService sales, CatalogService catalog, 
     // Без права оформления открываем сразу историю (вкладка оформления скрыта)
     [ObservableProperty] private int _selectedTab = Core.Services.Access.Can(Core.Domain.Perm.SalesCreate) || Core.Services.Access.Can(Core.Domain.Perm.SalesEdit) ? 0 : 1;
 
-    protected override decimal DefaultPrice(Product product) => product.SalePrice;
+    /// <summary>Тип цены в чеке: false — розница, true — опт (если оптовая цена не задана — берётся розничная).</summary>
+    [ObservableProperty] [NotifyPropertyChangedFor(nameof(IsRetail))] private bool _isWholesale;
+    public bool IsRetail { get => !IsWholesale; set => IsWholesale = !value; }
+
+    public static decimal PriceOf(Product product, bool wholesale) =>
+        wholesale && product.WholesalePrice > 0 ? product.WholesalePrice : product.SalePrice;
+
+    protected override decimal DefaultPrice(Product product) => PriceOf(product, IsWholesale);
+
+    /// <summary>Переключили розницу/опт — цены строк чека и витрины пересчитываются.</summary>
+    partial void OnIsWholesaleChanged(bool value)
+    {
+        foreach (var l in Lines) l.Price = DefaultPrice(l.Product);
+        foreach (var i in _allItems) i.IsWholesale = value;
+        RaiseTotals();
+    }
 
     // Справочники прямо из чека
     [RelayCommand]
@@ -78,6 +93,11 @@ public partial class SalesViewModel(SalesService sales, CatalogService catalog, 
     {
         if (Warehouse is null || CashRegister is null) { Dialogs.Error(L.T("Выберите склад и кассу.")); return; }
         if (Lines.Count == 0) { Dialogs.Error(L.T("Добавьте товары в чек.")); return; }
+        if (Access.MaxDiscountPercent is { } maxDiscount && Total > 0 && DiscountAmount / Total * 100 > maxDiscount + 0.005m)
+        {
+            Dialogs.Error(L.F("Скидка больше разрешённой вам ({0}%). Обратитесь к администратору.", maxDiscount.ToString("0.##")));
+            return;
+        }
         if (Payments.Any(p => p.CashRegister is null && p.Amount > 0)) { Dialogs.Error(L.T("Выберите кассу для каждой оплаты.")); return; }
         if (Payments.Any(p => p.Amount < 0)) { Dialogs.Error(L.T("Сумма оплаты не может быть отрицательной.")); return; }
         if (CreditNeedsCustomer)

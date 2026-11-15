@@ -40,6 +40,10 @@ public class SettingsService(IDbContextFactory<TradeDbContext> factory, UserSess
         var user = await db.Users.Include(u => u.AccessRole)
             .FirstOrDefaultAsync(u => u.Login == login.Trim().ToLower() && u.IsActive, ct);
         if (user is null || !PasswordHasher.Verify(password, user.PasswordHash)) return null;
+        if (user.IsAccessExpired)
+            throw new BusinessException("Срок доступа истёк {0:dd.MM.yyyy}. Обратитесь к администратору.", user.AccessUntil);
+        if (!user.IsWithinWorkHours(DateTime.Now.TimeOfDay))
+            throw new BusinessException("Вход разрешён только с {0} до {1}. Обратитесь к администратору.", user.WorkFrom?.ToString(@"hh\:mm"), user.WorkTo?.ToString(@"hh\:mm"));
         session.SignIn(user);
         var company = await db.CompanySettings.AsNoTracking().Select(c => new { c.Currency, c.Country }).FirstOrDefaultAsync(ct);
         Money.SetCurrency(company?.Currency);
@@ -135,6 +139,18 @@ public class SettingsService(IDbContextFactory<TradeDbContext> factory, UserSess
         user.Phone = string.IsNullOrWhiteSpace(user.Phone) ? null : user.Phone.Trim();
         user.Note = string.IsNullOrWhiteSpace(user.Note) ? null : user.Note.Trim();
         user.Permissions = null;
+        if (user.MaxDiscountPercent is < 0 or > 100) throw new BusinessException("Максимальная скидка — от 0 до 100%.");
+        user.AccessUntil = user.AccessUntil?.Date;
+        if ((user.WorkFrom is null) != (user.WorkTo is null))
+            throw new BusinessException("Укажите начало и конец времени работы или оставьте оба поля пустыми.");
+        if (user.WorkFrom is { } wf && wf == user.WorkTo) { user.WorkFrom = null; user.WorkTo = null; }
+        if (user.Id == session.UserId && !user.IsWithinWorkHours(DateTime.Now.TimeOfDay))
+            throw new BusinessException("Текущее время вне указанного времени работы — вы не сможете войти. Нельзя ограничить самого себя так.");
+        // Склад/касса по умолчанию должны входить в доступные
+        if (User.ParseIds(user.AllowedWarehouseIds) is { } wh && user.DefaultWarehouseId is { } dw && !wh.Contains(dw))
+            throw new BusinessException("Склад по умолчанию должен быть среди доступных складов.");
+        if (User.ParseIds(user.AllowedCashRegisterIds) is { } cr && user.DefaultCashRegisterId is { } dc && !cr.Contains(dc))
+            throw new BusinessException("Касса по умолчанию должна быть среди доступных касс.");
 
         await using var db = await factory.CreateDbContextAsync(ct);
         var role = await db.AccessRoles.FindAsync([user.AccessRoleId.Value], ct) ?? throw new BusinessException("Роль не найдена.");
@@ -170,6 +186,14 @@ public class SettingsService(IDbContextFactory<TradeDbContext> factory, UserSess
             existing.IsActive = user.IsActive;
             existing.Phone = user.Phone;
             existing.Note = user.Note;
+            existing.DefaultWarehouseId = user.DefaultWarehouseId;
+            existing.DefaultCashRegisterId = user.DefaultCashRegisterId;
+            existing.AllowedWarehouseIds = user.AllowedWarehouseIds;
+            existing.AllowedCashRegisterIds = user.AllowedCashRegisterIds;
+            existing.MaxDiscountPercent = user.MaxDiscountPercent;
+            existing.AccessUntil = user.AccessUntil;
+            existing.WorkFrom = user.WorkFrom;
+            existing.WorkTo = user.WorkTo;
             existing.Permissions = null;
             if (!string.IsNullOrWhiteSpace(newPassword))
             {

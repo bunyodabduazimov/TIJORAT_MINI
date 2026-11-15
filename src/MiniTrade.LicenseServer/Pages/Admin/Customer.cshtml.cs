@@ -15,7 +15,7 @@ public class CustomerModel(LicenseDbContext db) : PageModel
         var c = await db.Customers.Include(x => x.Licenses).FirstOrDefaultAsync(x => x.Id == id);
         if (c is null) return NotFound();
         Customer = c;
-        Input = new CustomerInput { FullName = c.FullName, Company = c.Company, Phone = c.Phone, Email = c.Email, Notes = c.Notes };
+        Input = new CustomerInput { FullName = c.FullName, Company = c.Company, Phone = c.Phone, Country = c.Country, Email = c.Email, Notes = c.Notes };
         return Page();
     }
 
@@ -31,6 +31,7 @@ public class CustomerModel(LicenseDbContext db) : PageModel
         c.FullName = Input.FullName.Trim();
         c.Company = Input.Company?.Trim() ?? "";
         c.Phone = Input.Phone?.Trim() ?? "";
+        c.Country = Input.NormalizedCountry;
         c.Email = Input.Email?.Trim();
         c.Notes = Input.Notes;
         await db.SaveChangesAsync();

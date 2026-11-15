@@ -24,6 +24,8 @@
     <Resource Include="Resources\Fonts\materialdesignicons-webfont.ttf" />
     <EmbeddedResource Include="Resources\license-public.pem" LogicalName="MiniTrade.LicensePublicKey" />
     <None Update="appsettings.json" CopyToOutputDirectory="PreserveNewest" />
+    <!-- Встроенная копия: значения по умолчанию, если у клиента остался старый appsettings.json без нужных разделов -->
+    <EmbeddedResource Include="appsettings.json" LogicalName="MiniTrade.DefaultSettings" />
     <!-- Переводы интерфейса: Languages/<код>.json рядом с программой (новый язык — новый файл, без перекомпиляции) -->
     <None Include="Languages\*.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>

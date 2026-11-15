@@ -77,7 +77,7 @@
                 </Grid.ColumnDefinitions>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/><RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
 
                 <StackPanel>
@@ -118,11 +118,17 @@
                     <TextBox l:Ui.Numeric="True" Text="{Binding PurchasePrice, Converter={StaticResource Dec}, UpdateSourceTrigger=PropertyChanged}"/>
                 </StackPanel>
                 <StackPanel Grid.Row="2" Grid.Column="2">
-                    <TextBlock Text="{l:T 'Цена продажи'}" Style="{StaticResource FieldLabel}"/>
+                    <TextBlock Text="{l:T 'Розничная цена'}" Style="{StaticResource FieldLabel}"/>
                     <TextBox l:Ui.Numeric="True" Text="{Binding SalePrice, Converter={StaticResource Dec}, UpdateSourceTrigger=PropertyChanged}"/>
                 </StackPanel>
 
                 <StackPanel Grid.Row="3">
+                    <TextBlock Text="{l:T 'Оптовая цена'}" Style="{StaticResource FieldLabel}"/>
+                    <TextBox l:Ui.Numeric="True" ToolTip="{l:T 'Если не задана — при продаже оптом берётся розничная цена'}"
+                             Text="{Binding WholesalePrice, Converter={StaticResource Dec}, UpdateSourceTrigger=PropertyChanged}"/>
+                </StackPanel>
+
+                <StackPanel Grid.Row="4">
                     <TextBlock Text="{l:T 'Ед. измерения'}" Style="{StaticResource FieldLabel}"/>
                     <DockPanel>
                         <Button DockPanel.Dock="Right" Style="{StaticResource InputAddonButton}" Content="&#xF0415;" ToolTip="{l:T 'Новая единица измерения'}"
@@ -136,13 +142,13 @@
                                   DisplayMemberPath="Name"/>
                     </DockPanel>
                 </StackPanel>
-                <StackPanel Grid.Row="3" Grid.Column="2"
+                <StackPanel Grid.Row="4" Grid.Column="2"
                             Visibility="{Binding IsChecked, ElementName=ServiceKind, Converter={StaticResource InvBoolToVis}}">
                     <TextBlock Text="{l:T 'Мин. остаток'}" Style="{StaticResource FieldLabel}"/>
                     <TextBox l:Ui.Numeric="True" Text="{Binding MinStock, Converter={StaticResource Dec}, UpdateSourceTrigger=PropertyChanged}"/>
                 </StackPanel>
 
-                <CheckBox Grid.Row="4" Grid.ColumnSpan="3" Content="{l:T 'Активен (доступен для выбора в документах)'}" IsChecked="{Binding IsActive}" Margin="0,14,0,0"/>
+                <CheckBox Grid.Row="5" Grid.ColumnSpan="3" Content="{l:T 'Активен (доступен для выбора в документах)'}" IsChecked="{Binding IsActive}" Margin="0,14,0,0"/>
             </Grid>
             </DockPanel>
         </DataTemplate>

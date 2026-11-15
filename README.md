@@ -1,4 +1,6 @@
-# Mini Trade — мини ERP для торговли (TJS)
+# TIJORAT LITE — простая программа учёта для торговли (TJS)
+
+> Внутреннее имя проекта в коде — `MiniTrade` (решение, проекты, `MiniTrade.exe`, папка `%LocalAppData%\MiniTrade`). Пользователь видит название **TIJORAT LITE**.
 
 Офлайн-программа для Windows: продажи, закуп, склад, финансы, отчёты.
 C# · WPF · .NET 10 · SQLite · Entity Framework Core · MVVM (CommunityToolkit.Mvvm).

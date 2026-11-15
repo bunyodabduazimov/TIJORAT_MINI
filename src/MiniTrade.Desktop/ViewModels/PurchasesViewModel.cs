@@ -141,9 +141,9 @@ public partial class PurchasesViewModel(PurchaseService purchases, FinanceServic
         });
         if (!ok || doc is null) return;
 
-        // Изменённые в строках цены продажи — в карточки товаров
-        var salePrices = Lines.Where(l => l.SalePrice != l.Product.SalePrice)
-            .GroupBy(l => l.Product.Id).ToDictionary(g => g.Key, g => g.Last().SalePrice);
+        // Изменённые в строках цены продажи (розница и опт) — в карточки товаров
+        var salePrices = Lines.Where(l => l.SalePrice != l.Product.SalePrice || l.WholesalePrice != l.Product.WholesalePrice)
+            .GroupBy(l => l.Product.Id).ToDictionary(g => g.Key, g => (g.Last().SalePrice, g.Last().WholesalePrice));
         if (salePrices.Count > 0) await RunAsync(() => catalog.SetSalePricesAsync(salePrices));
 
         LastResult = editing is not null

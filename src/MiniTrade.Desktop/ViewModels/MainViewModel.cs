@@ -94,23 +94,19 @@ public partial class MainViewModel : ObservableObject, IDisposable
         System.Windows.Application.Current.Dispatcher.BeginInvoke(App.SignOut);
     }
 
-    /// <summary>Окно «Мой аккаунт»: профиль, пароль, интерфейс этого компьютера.</summary>
+    /// <summary>Окно «Мой аккаунт»: профиль и смена пароля (интерфейс — в «Настройки → Компания»).</summary>
     [RelayCommand]
-    private void OpenProfile() => ShowProfile(ProfileViewModel.AccountTab);
-
-    private void ShowProfile(int tab)
+    private void OpenProfile()
     {
-        var vm = new ProfileViewModel(_services.GetRequiredService<SettingsService>(), _services.GetRequiredService<UserSession>(), _dialogs, tab);
+        var vm = new ProfileViewModel(_services.GetRequiredService<SettingsService>(), _services.GetRequiredService<UserSession>(), _dialogs);
         ModalHost.ShowDialog(new Views.ProfileWindow { DataContext = vm });
     }
 
-    /// <summary>После смены языка: новое главное окно на той же странице и снова «Мой аккаунт» → «Интерфейс».</summary>
-    public static void ReloadWithProfile()
+    /// <summary>После смены языка: новое главное окно снова на «Настройки → Компания» (карточки интерфейса).</summary>
+    public static void ReloadOnInterfaceSettings()
     {
-        var page = (System.Windows.Application.Current.MainWindow?.DataContext as MainViewModel)?.CurrentPage?.GetType();
         var main = App.ReloadMainWindow();
-        if (page is not null) main.NavigateTo(page);
-        main.ShowProfile(ProfileViewModel.InterfaceTab);
+        main.Navigate<SettingsViewModel>(s => s.SelectedTab = SettingsViewModel.CompanyTab);
     }
 
     public void Dispose() => _license.StateChanged -= OnLicenseChanged;
@@ -145,9 +141,24 @@ public partial class MainViewModel : ObservableObject, IDisposable
     [ObservableProperty] private NavItem? _selectedNav;
     [ObservableProperty] private PageViewModel? _currentPage;
 
-    partial void OnSelectedNavChanged(NavItem? value)
+    private bool _revertingNav;
+
+    partial void OnSelectedNavChanged(NavItem? oldValue, NavItem? newValue)
     {
-        if (value is null) return;
+        if (_revertingNav || newValue is null) return;
+        if (CurrentPage is { HasUnsavedChanges: true } && oldValue is not null
+            && !_dialogs.Confirm(L.T("Документ не сохранён. Перейти в другой раздел? Введённые данные будут потеряны.")))
+        {
+            // Возврат выделения меню — после завершения текущего изменения (иначе ListBox его не примет).
+            System.Windows.Application.Current.Dispatcher.BeginInvoke(() =>
+            {
+                _revertingNav = true;
+                SelectedNav = oldValue;
+                _revertingNav = false;
+            });
+            return;
+        }
+        var value = newValue;
         var page = (PageViewModel)_services.GetRequiredService(value.PageType);
         CurrentPage = page;
         _ = page.LoadAsync();

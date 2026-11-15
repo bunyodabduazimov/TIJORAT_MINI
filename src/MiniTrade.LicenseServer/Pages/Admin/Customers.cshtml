@@ -11,24 +11,26 @@
         <div><label>ФИО *</label><input asp-for="Input.FullName" required /></div>
         <div><label>Компания</label><input asp-for="Input.Company" /></div>
         <div><label>Телефон</label><input asp-for="Input.Phone" /></div>
+        <div><label>Страна (код)</label><input asp-for="Input.Country" maxlength="2" placeholder="TJ" style="text-transform:uppercase" /></div>
         <div><label>Email</label><input asp-for="Input.Email" type="email" /></div>
         <div><button class="btn" type="submit">Добавить</button></div>
     </form>
 </div>
 <div class="card">
     <table>
-        <tr><th>ФИО</th><th>Компания</th><th>Телефон</th><th>Лицензии</th><th>Создан</th><th></th></tr>
+        <tr><th>ФИО</th><th>Компания</th><th>Телефон</th><th>Страна</th><th>Лицензии</th><th>Создан</th><th></th></tr>
         @foreach (var c in Model.Items)
         {
             <tr>
                 <td><b>@c.FullName</b><div class="muted">@c.Email</div></td>
                 <td>@c.Company</td>
                 <td>@c.Phone</td>
+                <td>@c.Country</td>
                 <td>@c.Licenses.Count</td>
                 <td>@Fmt.Date(c.CreatedAt)</td>
                 <td style="text-align:right"><a class="btn btn-light btn-sm" href="/admin/customers/@c.Id">Открыть</a></td>
             </tr>
         }
-        @if (Model.Items.Count == 0) { <tr><td colspan="6" class="muted">Клиенты не найдены</td></tr> }
+        @if (Model.Items.Count == 0) { <tr><td colspan="7" class="muted">Клиенты не найдены</td></tr> }
     </table>
 </div>

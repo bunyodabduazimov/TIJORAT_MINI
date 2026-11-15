@@ -35,6 +35,8 @@ public partial class InventoryLineViewModel(Product product, decimal book, decim
 /// <summary>Склад: остатки, перемещения, инвентаризация, журнал движения.</summary>
 public partial class WarehouseViewModel : DocumentEditorBase
 {
+    public override bool HasUnsavedChanges => base.HasUnsavedChanges || InventoryLines.Any(l => l.HasDifference);
+
     private readonly WarehouseService _warehouse;
     private readonly CatalogService _catalog;
     private Dictionary<int, (decimal Quantity, decimal AvgCost)> _transferStock = new();

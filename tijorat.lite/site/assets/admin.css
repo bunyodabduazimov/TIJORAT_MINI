@@ -1,0 +1,115 @@
+/* Панель лицензий — в стиле сайта TIJORAT LITE */
+:root{
+  --bg:#f5f6fc;--side:#ffffff;--card:#ffffff;--hover:#eef0fb;--head:#f3f4fb;--field:#ffffff;--line:#dde1f1;
+  --text:#0a0d1f;--muted:#565e80;--primary:#4f46e5;--primary-soft:#e8e7ff;--glow:rgba(79,70,229,.25);
+  --green:#15803d;--green-bg:#dcfce7;--red:#dc2626;--red-bg:#fee2e2;--orange:#c2410c;--orange-bg:#ffedd5;
+  --violet:#7c3aed;--violet-bg:#ede9fe;--blue:#2563eb;--blue-bg:#dbeafe;--gray-bg:#eceefa;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){:root{
+  --bg:#080b1c;--side:#0c1028;--card:#0f1430;--hover:#161c3d;--head:#121733;--field:#0a0e24;--line:#232a4d;
+  --text:#eef1ff;--muted:#9aa3c7;--primary:#7c74ff;--primary-soft:#1d1f4a;--glow:rgba(124,116,255,.35);
+  --green:#4ade80;--green-bg:#0f2e20;--red:#f87171;--red-bg:#3a1a20;--orange:#fb923c;--orange-bg:#3a2614;
+  --violet:#c4b5fd;--violet-bg:#2a1f4a;--blue:#93c5fd;--blue-bg:#13284a;--gray-bg:#1a2040;
+  color-scheme:dark;
+}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:14px/1.45 "Onest","Segoe UI",system-ui,sans-serif;display:flex;min-height:100vh}
+a{color:var(--primary);text-decoration:none}a:hover{text-decoration:underline}
+
+/* Боковое меню */
+aside{width:220px;flex-shrink:0;background:var(--side);border-right:1px solid var(--line);display:flex;flex-direction:column;padding:16px 12px;position:sticky;top:0;height:100vh}
+.brand{display:flex;align-items:center;gap:10px;padding:4px 8px 18px;font-weight:800;letter-spacing:.02em;color:var(--text);font-size:16px}
+.brand:hover{text-decoration:none}
+.brand b{color:var(--primary)}
+.brand small{display:block;font-weight:500;color:var(--muted);font-size:12px;letter-spacing:0}
+.logo{width:34px;height:34px;border-radius:9px}
+nav{display:flex;flex-direction:column;gap:3px;flex:1}
+nav a{display:flex;align-items:center;gap:10px;color:var(--muted);padding:9px 12px;border-radius:10px;font-weight:600}
+nav a i{font-style:normal;width:18px;text-align:center;opacity:.85}
+nav a:hover{background:var(--hover);color:var(--text);text-decoration:none}
+nav a.on{background:var(--primary-soft);color:var(--primary)}
+aside .new{background:var(--primary);color:#fff;text-align:center;padding:10px;border-radius:12px;margin-bottom:8px;font-weight:700;box-shadow:0 8px 24px var(--glow)}
+aside .new:hover{text-decoration:none;filter:brightness(1.08)}
+aside .logout{color:var(--muted);text-align:center;padding:6px;font-weight:600}
+
+main{flex:1;min-width:0;padding:22px 26px;max-width:1400px}
+main.bare{display:flex;align-items:center;justify-content:center;max-width:none;position:relative;overflow:hidden}
+main.bare::before{content:"";position:absolute;width:700px;height:700px;top:-250px;right:-200px;background:radial-gradient(circle,var(--glow),transparent 65%);pointer-events:none}
+@media(max-width:760px){body{flex-direction:column}aside{width:auto;height:auto;position:static;flex-direction:row;flex-wrap:wrap;align-items:center;gap:6px}
+ nav{flex-direction:row;flex-wrap:wrap}.brand{padding:0 8px}aside .new{margin:0 8px}main{padding:16px}}
+
+/* Заголовок страницы */
+.head{display:flex;align-items:center;gap:12px;margin-bottom:14px;flex-wrap:wrap}
+h1{font-size:22px;margin:0;display:flex;align-items:center;gap:10px;flex-wrap:wrap;letter-spacing:-.01em}
+h1 b{color:var(--primary)}
+.head .sp{flex:1}
+h2{font-size:15px;margin:0 0 12px;display:flex;align-items:center;gap:8px}
+h2 .sp{flex:1}
+
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px;margin-bottom:14px;overflow-x:auto}
+.card.flat{padding:0}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:14px}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px 16px;display:block;color:var(--text);transition:transform .15s,box-shadow .15s}
+.stat:hover{border-color:var(--primary);text-decoration:none;transform:translateY(-1px);box-shadow:0 10px 30px -12px var(--glow)}
+.stat span{color:var(--muted);font-size:12.5px}.stat b{display:block;font-size:26px;margin-top:2px}
+.cols{display:grid;grid-template-columns:1.6fr 1fr;gap:14px;align-items:start}.cols>*{margin-bottom:0}
+@media(max-width:1000px){.cols{grid-template-columns:1fr}}
+
+/* Таблицы */
+table{width:100%;border-collapse:collapse}
+th{text-align:left;color:var(--muted);font-weight:600;font-size:12px;padding:10px 12px;border-bottom:1px solid var(--line);white-space:nowrap;background:var(--head);position:sticky;top:0}
+td{padding:8px 12px;border-bottom:1px solid var(--line);vertical-align:middle}
+tbody tr:last-child td{border-bottom:0}
+tbody tr:hover td{background:var(--hover)}
+tr.off td{opacity:.45}
+tr.click{cursor:pointer}
+td.r,th.r{text-align:right}
+.empty{color:var(--muted);text-align:center;padding:28px}
+
+/* Формы */
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}.grid .wide{grid-column:1/-1}
+label{display:flex;flex-direction:column;gap:5px;color:var(--muted);font-size:12.5px;font-weight:600}
+input,select{background:var(--field);color:var(--text);border:1px solid var(--line);border-radius:10px;padding:7px 11px;font:inherit;font-weight:500;min-width:0;height:36px}
+input:focus,select:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 3px var(--primary-soft)}
+.btn{display:inline-flex;align-items:center;gap:6px;height:36px;background:var(--card);color:var(--text);border:1px solid var(--line);border-radius:10px;padding:0 14px;font:inherit;font-weight:700;cursor:pointer;white-space:nowrap}
+.btn:hover{border-color:var(--primary);text-decoration:none}
+.btn.primary{background:var(--primary);border-color:var(--primary);color:#fff;box-shadow:0 8px 22px -8px var(--glow)}
+.btn.primary:hover{filter:brightness(1.08)}
+.btn.danger{background:var(--red-bg);border-color:transparent;color:var(--red)}
+.btn.sm{height:28px;padding:0 10px;font-size:12.5px;border-radius:8px}
+.toolbar{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;align-items:center}
+.toolbar input[type=search]{flex:1;min-width:220px}
+.row{display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap}.row>input,.row>select{flex:1}
+.sep{border:0;border-top:1px solid var(--line);margin:14px 0}
+
+/* Чипы-фильтры */
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{padding:6px 12px;border-radius:999px;background:var(--card);border:1px solid var(--line);color:var(--muted);font-size:12.5px;font-weight:600}
+.chip b{color:var(--text);margin-left:4px}
+.chip:hover{text-decoration:none;border-color:var(--primary)}
+.chip.on{background:var(--primary-soft);border-color:var(--primary);color:var(--primary)}
+
+/* Метки */
+.badge,.ev{display:inline-block;padding:2px 9px;border-radius:999px;font-size:11.5px;font-weight:700;white-space:nowrap}
+.green{background:var(--green-bg);color:var(--green)}.red{background:var(--red-bg);color:var(--red)}.gray{background:var(--gray-bg);color:var(--muted)}
+.blue{background:var(--blue-bg);color:var(--blue)}.violet{background:var(--violet-bg);color:var(--violet)}.orange{background:var(--orange-bg);color:var(--orange)}
+.dl{font-size:12.5px;font-weight:700}.dl.ok{color:var(--green)}.dl.warn{color:var(--orange)}.dl.bad{color:var(--red)}
+
+.key{display:inline-flex;align-items:center;gap:4px;white-space:nowrap}
+.copy{background:none;border:0;color:var(--muted);cursor:pointer;font-size:13px;padding:0 3px;opacity:.6}
+.copy:hover{opacity:1;color:var(--primary)}
+.muted{color:var(--muted)}.center{text-align:center;margin:-4px 0 4px}
+.mono{font-family:"JetBrains Mono",Consolas,"Cascadia Mono",monospace;font-size:12.5px;letter-spacing:.3px}
+.nowrap{white-space:nowrap}.sm{font-size:12.5px}
+.sub{color:var(--muted);font-size:12px;display:block}
+.flash{background:var(--primary-soft);border:1px solid var(--primary);color:var(--text);padding:10px 14px;border-radius:12px;margin-bottom:14px;font-weight:600}
+.error{background:var(--red-bg);color:var(--red);padding:10px 14px;border-radius:12px;margin:8px 0;font-weight:600}
+dl.info{display:grid;grid-template-columns:auto 1fr;gap:8px 16px;margin:0}dl.info dt{color:var(--muted)}dl.info dd{margin:0}
+.pager{display:flex;gap:6px;padding:12px;justify-content:flex-end}
+
+details.new-form>summary{list-style:none;cursor:pointer}details.new-form>summary::-webkit-details-marker{display:none}
+.login{position:relative;width:380px;max-width:100%;display:flex;flex-direction:column;gap:14px;padding:32px;border-radius:24px;box-shadow:0 30px 80px -30px var(--glow)}
+.login h1{justify-content:center;margin:0;font-size:24px}
+.login-logo{width:56px;height:56px;border-radius:14px;align-self:center}
+.login input{height:42px}.login .btn{height:44px;justify-content:center;font-size:15px}

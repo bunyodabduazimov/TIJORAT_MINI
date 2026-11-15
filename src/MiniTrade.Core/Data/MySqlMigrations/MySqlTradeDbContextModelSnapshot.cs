@@ -508,6 +508,9 @@ namespace MiniTrade.Core.Data.MySqlMigrations
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("datetime(6)");
 
+                    b.Property<decimal>("WholesalePrice")
+                        .HasColumnType("decimal(18,2)");
+
                     b.HasKey("Id");
 
                     b.HasIndex("Barcode");
@@ -1330,8 +1333,23 @@ namespace MiniTrade.Core.Data.MySqlMigrations
                     b.Property<int?>("AccessRoleId")
                         .HasColumnType("int");
 
+                    b.Property<DateTime?>("AccessUntil")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("AllowedCashRegisterIds")
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("AllowedWarehouseIds")
+                        .HasColumnType("longtext");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime(6)");
+
+                    b.Property<int?>("DefaultCashRegisterId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("DefaultWarehouseId")
+                        .HasColumnType("int");
 
                     b.Property<string>("FullName")
                         .IsRequired()
@@ -1355,6 +1373,9 @@ namespace MiniTrade.Core.Data.MySqlMigrations
                     b.Property<int>("LoginCount")
                         .HasColumnType("int");
 
+                    b.Property<decimal?>("MaxDiscountPercent")
+                        .HasColumnType("decimal(18,2)");
+
                     b.Property<string>("Note")
                         .HasMaxLength(500)
                         .HasColumnType("varchar(500)");
@@ -1372,6 +1393,12 @@ namespace MiniTrade.Core.Data.MySqlMigrations
 
                     b.Property<int>("Role")
                         .HasColumnType("int");
+
+                    b.Property<TimeSpan?>("WorkFrom")
+                        .HasColumnType("time(6)");
+
+                    b.Property<TimeSpan?>("WorkTo")
+                        .HasColumnType("time(6)");
 
                     b.HasKey("Id");
 

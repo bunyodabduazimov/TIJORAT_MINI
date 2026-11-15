@@ -28,6 +28,48 @@ public partial class ActivationViewModel : ViewModelBase
     public string ServerUrl => _config.LicenseServerUrl;
     public bool CanRetry => !string.IsNullOrEmpty(_license.StoredKey);
 
+    /// <summary>Контакты разработчика (панель справа).</summary>
+    public AboutInfo About => AboutInfo.Current;
+
+    // ── Язык интерфейса: меняется сразу, окно перерисовывается с новыми текстами ──
+    public IReadOnlyList<LanguageInfo> Languages { get; } = L.Available();
+    public bool HasLanguages => Languages.Count > 1;
+
+    /// <summary>Сменился язык — окну нужно пересоздать содержимое.</summary>
+    public event EventHandler? LanguageChanged;
+
+    public LanguageInfo? Language
+    {
+        get => Languages.FirstOrDefault(l => l.Code == L.Current.Code);
+        set
+        {
+            if (value is null || value.Code == L.Current.Code) return;
+            App.Ui.Language = value.Code;
+            App.Ui.Save();
+            L.Load(value.Code);
+            OnPropertyChanged();
+            LanguageChanged?.Invoke(this, EventArgs.Empty);
+        }
+    }
+
+    // ── Тема: переключение светлая ↔ тёмная, сохраняется в ui.json ──
+    /// <summary>Глиф кнопки: в тёмной теме — солнце (перейти на светлую), в светлой — луна.</summary>
+    public string ThemeGlyph => ThemeManager.IsDark ? "\U000F05A8" : "\U000F0594";
+
+    [RelayCommand]
+    private void ToggleTheme()
+    {
+        var theme = ThemeManager.IsDark ? AppTheme.Light : AppTheme.Dark;
+        App.Ui.Theme = theme;
+        App.Ui.Save();
+        ThemeManager.Apply(theme);
+        OnPropertyChanged(nameof(ThemeGlyph));
+    }
+
+    // ── Телефон: страна + номер по маске этой страны ──
+    public IReadOnlyList<PhoneCountry> Countries => PhoneCountry.All;
+
+    [ObservableProperty] private PhoneCountry _selectedCountry = PhoneCountry.Default;
     [ObservableProperty] private bool _isKeyMode;
     [ObservableProperty] private string _fullName = "";
     [ObservableProperty] private string _company = "";
@@ -36,12 +78,30 @@ public partial class ActivationViewModel : ViewModelBase
     [ObservableProperty] private string? _statusMessage;
     [ObservableProperty] private bool _isError;
 
+    /// <summary>Подсказка под полем телефона, пока номер введён не полностью.</summary>
+    public string? PhoneHint => Phone.Length == 0 || SelectedCountry.IsComplete(Phone)
+        ? null
+        : L.F("Введите номер полностью: {0} {1}", SelectedCountry.Code, SelectedCountry.Placeholder);
+
+    partial void OnPhoneChanged(string value) => OnPropertyChanged(nameof(PhoneHint));
+
+    partial void OnSelectedCountryChanged(PhoneCountry? oldValue, PhoneCountry newValue)
+    {
+        // Цифры номера переносятся в маску новой страны (лишние обрезаются)
+        var digits = oldValue?.ExtractDigits(Phone) ?? "";
+        Phone = newValue.Format(newValue.ExtractDigits(digits));
+        OnPropertyChanged(nameof(PhoneHint));
+    }
+
     [RelayCommand]
     private Task RegisterTrialAsync() => ExecuteAsync(async () =>
     {
         if (string.IsNullOrWhiteSpace(FullName) || string.IsNullOrWhiteSpace(Phone))
             return new LicenseResponse(false, L.T("Заполните ФИО и телефон."));
-        return await _license.RegisterTrialAsync(FullName.Trim(), Company.Trim(), Phone.Trim());
+        if (!SelectedCountry.IsComplete(Phone))
+            return new LicenseResponse(false, L.F("Неверный номер телефона. Формат для страны «{0}»: {1} {2}",
+                SelectedCountry.Name, SelectedCountry.Code, SelectedCountry.Placeholder));
+        return await _license.RegisterTrialAsync(FullName.Trim(), Company.Trim(), SelectedCountry.FullNumber(Phone), SelectedCountry.Iso);
     });
 
     [RelayCommand]

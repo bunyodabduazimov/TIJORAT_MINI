@@ -58,9 +58,9 @@ public sealed class LicenseManager
         return State = state;
     }
 
-    public async Task<LicenseResponse> RegisterTrialAsync(string fullName, string company, string phone, CancellationToken ct = default)
+    public async Task<LicenseResponse> RegisterTrialAsync(string fullName, string company, string phone, string? country, CancellationToken ct = default)
     {
-        var response = await _client.RegisterAsync(new RegisterRequest(DeviceInfo(), fullName, company, phone), ct);
+        var response = await _client.RegisterAsync(new RegisterRequest(DeviceInfo(), fullName, company, phone, country), ct);
         return Apply(response);
     }
 

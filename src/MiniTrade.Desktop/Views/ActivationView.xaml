@@ -1,0 +1,245 @@
+<UserControl x:Class="MiniTrade.Desktop.Views.ActivationView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:l="clr-namespace:MiniTrade.Desktop.Infrastructure"
+             xmlns:inf="clr-namespace:MiniTrade.Desktop.Infrastructure"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:MiniTrade.Desktop.ViewModels"
+             mc:Ignorable="d" d:DataContext="{d:DesignInstance vm:ActivationViewModel}">
+    <UserControl.Resources>
+        <!-- Строка контакта: иконка в плашке + подпись + значение; пустой контакт скрыт -->
+        <Style x:Key="ContactRow" TargetType="Button">
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Focusable" Value="False"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
+            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+            <Setter Property="Margin" Value="0,0,0,4"/>
+            <Setter Property="Command" Value="{Binding OpenCommand, Source={x:Static inf:AboutInfo.Current}}"/>
+            <Setter Property="CommandParameter" Value="{Binding Tag, RelativeSource={RelativeSource Self}}"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bd" CornerRadius="8" Padding="8,7" Background="Transparent">
+                            <ContentPresenter/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource RowHoverBrush}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <Trigger Property="Tag" Value="{x:Null}"><Setter Property="Visibility" Value="Collapsed"/></Trigger>
+                <Trigger Property="Tag" Value=""><Setter Property="Visibility" Value="Collapsed"/></Trigger>
+            </Style.Triggers>
+        </Style>
+        <Style x:Key="ContactIcon" TargetType="Border">
+            <Setter Property="Width" Value="34"/>
+            <Setter Property="Height" Value="34"/>
+            <Setter Property="CornerRadius" Value="9"/>
+            <Setter Property="Background" Value="{DynamicResource PrimaryLightBrush}"/>
+            <Setter Property="Margin" Value="0,0,12,0"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+        </Style>
+        <Style x:Key="ContactGlyph" TargetType="TextBlock">
+            <Setter Property="FontFamily" Value="{StaticResource IconFont}"/>
+            <Setter Property="FontSize" Value="17"/>
+            <Setter Property="Foreground" Value="{DynamicResource PrimaryBrush}"/>
+            <Setter Property="HorizontalAlignment" Value="Center"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+        </Style>
+        <Style x:Key="ContactCaption" TargetType="TextBlock" BasedOn="{StaticResource Muted}">
+            <Setter Property="FontSize" Value="11"/>
+        </Style>
+        <Style x:Key="ContactValue" TargetType="TextBlock">
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
+        </Style>
+    </UserControl.Resources>
+
+    <!-- Поля по краям — место для тени; окно перетаскивается за любое пустое место -->
+    <Grid Margin="22" MouseLeftButtonDown="OnDrag">
+        <Border Background="{DynamicResource SurfaceBrush}" CornerRadius="14" Effect="{DynamicResource DialogShadow}"/>
+        <Border Background="{DynamicResource SurfaceBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" CornerRadius="14">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="300"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- ══════ Слева: регистрация / активация ══════ -->
+                <StackPanel Margin="28,26,28,22">
+                    <DockPanel Margin="0,0,0,18">
+                        <Image Source="{StaticResource LogoMark}" Width="44" Height="44" VerticalAlignment="Top"/>
+                        <StackPanel Margin="12,0,0,0" VerticalAlignment="Center">
+                            <TextBlock Text="{l:T 'Добро пожаловать в TIJORAT LITE'}" FontSize="18" FontWeight="SemiBold" TextWrapping="Wrap"/>
+                            <TextBlock Text="{l:T 'Для начала работы зарегистрируйтесь или активируйте ключ'}" Style="{StaticResource Muted}" TextWrapping="Wrap"/>
+                        </StackPanel>
+                    </DockPanel>
+
+                    <Border Style="{StaticResource Card}">
+                        <StackPanel>
+                            <!-- Интерфейс: язык и тема -->
+                            <DockPanel Margin="0,0,0,14">
+                                <Button DockPanel.Dock="Right" Style="{StaticResource InputAddonButton}" Width="36" MinHeight="34" FontSize="17" Margin="8,0,0,0"
+                                        Content="{Binding ThemeGlyph}" ToolTip="{l:T 'Светлая / тёмная тема'}" Command="{Binding ToggleThemeCommand}"/>
+                                <ComboBox DockPanel.Dock="Right" Width="170"
+                                          ItemsSource="{Binding Languages}" SelectedItem="{Binding Language}" DisplayMemberPath="Name"
+                                          ToolTip="{l:T 'Язык интерфейса'}"
+                                          Visibility="{Binding HasLanguages, Converter={StaticResource BoolToVis}}"/>
+                                <TextBlock Text="{l:T 'Интерфейс'}" Style="{StaticResource Muted}" VerticalAlignment="Center"/>
+                            </DockPanel>
+                            <WrapPanel Margin="0,0,0,8">
+                                <RadioButton Content="{l:T 'Пробный период — 7 дней'}" IsChecked="{Binding IsKeyMode, Converter={StaticResource Equals}, ConverterParameter=False}" GroupName="mode" Margin="0,0,20,4" FontWeight="SemiBold"/>
+                                <RadioButton Content="{l:T 'У меня есть лицензионный ключ'}" IsChecked="{Binding IsKeyMode}" GroupName="mode" Margin="0,0,0,4" FontWeight="SemiBold"/>
+                            </WrapPanel>
+
+                            <StackPanel Visibility="{Binding IsKeyMode, Converter={StaticResource BoolToVis}}">
+                                <TextBlock Text="{l:T 'Лицензионный ключ *'}" Style="{StaticResource FieldLabel}"/>
+                                <TextBox Text="{Binding LicenseKey, UpdateSourceTrigger=PropertyChanged}" FontFamily="Consolas" FontSize="15" CharacterCasing="Upper"
+                                         inf:Ui.Placeholder="MT-XXXXX-XXXXX-XXXXX-XXXXX"/>
+                            </StackPanel>
+
+                            <!-- Данные клиента — только для пробного периода; у ключа они уже есть на сервере -->
+                            <StackPanel Visibility="{Binding IsKeyMode, Converter={StaticResource InvBoolToVis}}">
+                                <TextBlock Text="{l:T 'ФИО *'}" Style="{StaticResource FieldLabel}"/>
+                                <TextBox Text="{Binding FullName, UpdateSourceTrigger=PropertyChanged}"/>
+                                <TextBlock Text="{l:T 'Компания'}" Style="{StaticResource FieldLabel}"/>
+                                <TextBox Text="{Binding Company, UpdateSourceTrigger=PropertyChanged}"/>
+
+                                <TextBlock Text="{l:T 'Телефон *'}" Style="{StaticResource FieldLabel}"/>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="210"/>
+                                        <ColumnDefinition Width="8"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <ComboBox ItemsSource="{Binding Countries}" SelectedItem="{Binding SelectedCountry}" ToolTip="{l:T 'Страна'}">
+                                        <ComboBox.ItemTemplate>
+                                            <DataTemplate>
+                                                <DockPanel>
+                                                    <TextBlock DockPanel.Dock="Right" Text="{Binding Code}" Style="{StaticResource Muted}" Margin="10,0,0,0"/>
+                                                    <TextBlock Text="{Binding Name}" TextTrimming="CharacterEllipsis"/>
+                                                </DockPanel>
+                                            </DataTemplate>
+                                        </ComboBox.ItemTemplate>
+                                    </ComboBox>
+                                    <Grid Grid.Column="2">
+                                        <TextBox x:Name="PhoneBox" Text="{Binding Phone, UpdateSourceTrigger=PropertyChanged}"
+                                                 FontSize="14" Padding="54,0,10,0" MaxLength="20" InputScope="TelephoneNumber"
+                                                 inf:Ui.Placeholder="{Binding SelectedCountry.Placeholder}"
+                                                 TextChanged="OnPhoneChanged" PreviewTextInput="OnPhoneTextInput"/>
+                                        <!-- Код страны внутри поля, слева -->
+                                        <TextBlock Text="{Binding SelectedCountry.Code}" FontSize="14" Style="{StaticResource Muted}" IsHitTestVisible="False"
+                                                   HorizontalAlignment="Left" VerticalAlignment="Center" Margin="12,0,0,0"/>
+                                    </Grid>
+                                </Grid>
+                                <TextBlock Text="{Binding PhoneHint}" FontSize="12" Foreground="{DynamicResource WarningBrush}" Margin="0,6,0,0" TextWrapping="Wrap"
+                                           Visibility="{Binding PhoneHint, Converter={StaticResource BoolToVis}}"/>
+                            </StackPanel>
+
+                            <Grid Margin="0,18,0,0">
+                                <Button Content="{l:T 'Начать пробный период'}" Command="{Binding RegisterTrialCommand}" MinHeight="38"
+                                        Visibility="{Binding IsKeyMode, Converter={StaticResource InvBoolToVis}}"/>
+                                <Button Content="{l:T 'Активировать'}" Command="{Binding ActivateCommand}" MinHeight="38"
+                                        Visibility="{Binding IsKeyMode, Converter={StaticResource BoolToVis}}"/>
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+
+                    <Border Margin="0,12,0,0" Padding="12" CornerRadius="8"
+                            Visibility="{Binding StatusMessage, Converter={StaticResource BoolToVis}}">
+                        <Border.Style>
+                            <Style TargetType="Border">
+                                <Setter Property="Background" Value="{DynamicResource InfoLightBrush}"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsError}" Value="True">
+                                        <Setter Property="Background" Value="{DynamicResource DangerLightBrush}"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Border.Style>
+                        <DockPanel>
+                            <Button DockPanel.Dock="Right" Content="{l:T 'Проверить снова'}" Style="{StaticResource SmallButton}" Margin="8,0,0,0"
+                                    Command="{Binding RetryCommand}" Visibility="{Binding CanRetry, Converter={StaticResource BoolToVis}}"/>
+                            <TextBlock Text="{Binding StatusMessage}" TextWrapping="Wrap" VerticalAlignment="Center"/>
+                        </DockPanel>
+                    </Border>
+
+                    <TextBlock Margin="0,14,0,0" Style="{StaticResource Muted}" FontSize="11" TextWrapping="Wrap">
+                        <Run Text="{l:T 'ID установки:'}"/> <Run Text="{Binding InstallationId, Mode=OneWay}" FontFamily="Consolas"/>
+                        <LineBreak/>
+                        <Run Text="{l:T 'Сервер лицензий:'}"/> <Run Text="{Binding ServerUrl, Mode=OneWay}"/>
+                    </TextBlock>
+                </StackPanel>
+
+                <!-- ══════ Справа: контакты ══════ -->
+                <Border Grid.Column="1" Background="{DynamicResource SurfaceAltBrush}" BorderBrush="{DynamicResource BorderBrush}"
+                        BorderThickness="1,0,0,0" CornerRadius="0,13,13,0">
+                    <DockPanel Margin="20,26,20,22" DataContext="{Binding About}">
+                        <StackPanel DockPanel.Dock="Top" Margin="8,0,40,14">
+                            <TextBlock Text="&#xF02CE;" FontFamily="{StaticResource IconFont}" FontSize="26" Foreground="{DynamicResource PrimaryBrush}" Margin="0,0,0,8"/>
+                            <TextBlock Text="{l:T 'Связаться с нами'}" FontSize="16" FontWeight="SemiBold"/>
+                            <TextBlock Text="{l:T 'Покупка лицензионного ключа, установка и помощь в работе.'}" Style="{StaticResource Muted}"
+                                       FontSize="12" TextWrapping="Wrap" Margin="0,4,0,0"/>
+                        </StackPanel>
+
+                        <StackPanel>
+                            <Button Style="{StaticResource ContactRow}" Tag="{Binding Phone}">
+                                <DockPanel>
+                                    <Border Style="{StaticResource ContactIcon}"><TextBlock Text="&#xF03F2;" Style="{StaticResource ContactGlyph}"/></Border>
+                                    <StackPanel VerticalAlignment="Center">
+                                        <TextBlock Text="{l:T 'Телефон'}" Style="{StaticResource ContactCaption}"/>
+                                        <TextBlock Text="{Binding Phone}" Style="{StaticResource ContactValue}"/>
+                                    </StackPanel>
+                                </DockPanel>
+                            </Button>
+                            <Button Style="{StaticResource ContactRow}" Tag="{Binding WhatsAppLink}">
+                                <DockPanel>
+                                    <Border Style="{StaticResource ContactIcon}"><TextBlock Text="&#xF05A3;" Style="{StaticResource ContactGlyph}"/></Border>
+                                    <StackPanel VerticalAlignment="Center">
+                                        <TextBlock Text="WhatsApp" Style="{StaticResource ContactCaption}"/>
+                                        <TextBlock Text="{l:T 'Написать в WhatsApp'}" Style="{StaticResource ContactValue}"/>
+                                    </StackPanel>
+                                </DockPanel>
+                            </Button>
+                            <Button Style="{StaticResource ContactRow}" Tag="{Binding Telegram}">
+                                <DockPanel>
+                                    <Border Style="{StaticResource ContactIcon}"><TextBlock Text="&#xF0501;" Style="{StaticResource ContactGlyph}"/></Border>
+                                    <StackPanel VerticalAlignment="Center">
+                                        <TextBlock Text="Telegram" Style="{StaticResource ContactCaption}"/>
+                                        <TextBlock Text="{l:T 'Написать в Telegram'}" Style="{StaticResource ContactValue}"/>
+                                    </StackPanel>
+                                </DockPanel>
+                            </Button>
+                            <Button Style="{StaticResource ContactRow}" Tag="{Binding Email}">
+                                <DockPanel>
+                                    <Border Style="{StaticResource ContactIcon}"><TextBlock Text="&#xF01EE;" Style="{StaticResource ContactGlyph}"/></Border>
+                                    <StackPanel VerticalAlignment="Center">
+                                        <TextBlock Text="Email" Style="{StaticResource ContactCaption}"/>
+                                        <TextBlock Text="{Binding Email}" Style="{StaticResource ContactValue}"/>
+                                    </StackPanel>
+                                </DockPanel>
+                            </Button>
+                            <Button Style="{StaticResource ContactRow}" Tag="{Binding Website}">
+                                <DockPanel>
+                                    <Border Style="{StaticResource ContactIcon}"><TextBlock Text="&#xF059F;" Style="{StaticResource ContactGlyph}"/></Border>
+                                    <StackPanel VerticalAlignment="Center">
+                                        <TextBlock Text="{l:T 'Сайт'}" Style="{StaticResource ContactCaption}"/>
+                                        <TextBlock Text="{Binding Website}" Style="{StaticResource ContactValue}"/>
+                                    </StackPanel>
+                                </DockPanel>
+                            </Button>
+                        </StackPanel>
+                    </DockPanel>
+                </Border>
+
+                <Button Grid.Column="1" Style="{StaticResource IconButton}" Content="&#xF0156;" ToolTip="{l:T 'Закрыть'}" Width="32" Height="32"
+                        HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,12,12,0" IsTabStop="False" Click="OnClose"/>
+            </Grid>
+        </Border>
+    </Grid>
+</UserControl>

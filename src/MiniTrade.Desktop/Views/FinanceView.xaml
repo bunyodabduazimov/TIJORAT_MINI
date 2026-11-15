@@ -16,9 +16,22 @@
                         <DockPanel DockPanel.Dock="Top" Margin="0,0,0,10">
                             <StackPanel DockPanel.Dock="Left" Orientation="Horizontal">
                                 <TextBlock Text="{l:T 'Период:'}" Style="{StaticResource Muted}" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                                <DatePicker SelectedDate="{Binding From}" Width="130"/>
-                                <TextBlock Text="—" VerticalAlignment="Center" Margin="6,0"/>
-                                <DatePicker SelectedDate="{Binding To}" Width="130"/>
+                                <!-- При фильтре «Последние добавленные» период не учитывается — поля неактивны -->
+                                <StackPanel Orientation="Horizontal" IsEnabled="{Binding PeriodEnabled}" ToolTipService.ShowOnDisabled="True">
+                                    <StackPanel.Style>
+                                        <Style TargetType="StackPanel">
+                                            <Style.Triggers>
+                                                <Trigger Property="IsEnabled" Value="False">
+                                                    <Setter Property="ToolTip" Value="{l:T 'Включён фильтр «Последние добавленные» — период не учитывается'}"/>
+                                                    <Setter Property="Opacity" Value="0.5"/>
+                                                </Trigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </StackPanel.Style>
+                                    <DatePicker SelectedDate="{Binding From}" Width="130"/>
+                                    <TextBlock Text="—" VerticalAlignment="Center" Margin="6,0"/>
+                                    <DatePicker SelectedDate="{Binding To}" Width="130"/>
+                                </StackPanel>
                                 <Button Style="{StaticResource InputAddonButton}" Content="&#xF0450;" ToolTip="{l:T 'Обновить'}" Command="{Binding RefreshCommand}" Margin="8,0,0,0"/>
                             </StackPanel>
                             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="12,0,0,0">

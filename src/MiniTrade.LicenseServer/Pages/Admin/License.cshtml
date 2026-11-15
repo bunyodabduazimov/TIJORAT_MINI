@@ -7,7 +7,7 @@
 <div class="toolbar">
     <div>
         <h1 style="margin:0" class="key">@l.Key</h1>
-        <div class="muted">Клиент: <a href="/admin/customers/@l.CustomerId">@l.Customer?.FullName</a> @l.Customer?.Company · @l.Customer?.Phone</div>
+        <div class="muted">Клиент: <a href="/admin/customers/@l.CustomerId">@l.Customer?.FullName</a> @l.Customer?.Company · @l.Customer?.Phone @l.Customer?.Country</div>
     </div>
     <partial name="_Badges" model="l" />
 </div>

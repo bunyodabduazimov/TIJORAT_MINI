@@ -213,6 +213,8 @@ public class PurchaseService(IDbContextFactory<TradeDbContext> factory, UserSess
 
     private static List<DocumentLine> ValidLines(PurchaseRequest request)
     {
+        Access.DemandWarehouse(request.WarehouseId);
+        if (request.CashRegisterId is { } cash && request.PaidAmount > 0) Access.DemandCashRegister(cash);
         var lines = request.Lines.Where(l => l.Quantity != 0).ToList();
         if (lines.Count == 0) throw new BusinessException("Добавьте хотя бы один товар.");
         if (lines.Any(l => l.Quantity < 0)) throw new BusinessException("Количество не может быть отрицательным.");

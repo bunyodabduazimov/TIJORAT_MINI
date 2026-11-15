@@ -14,10 +14,14 @@ public partial class DocumentLineViewModel : ObservableObject
         _price = price;
         Available = available;
         _salePrice = product.SalePrice;
+        _wholesalePrice = product.WholesalePrice;
     }
 
     /// <summary>Цена продажи (в закупке — можно изменить, сохраняется в карточку товара).</summary>
     [ObservableProperty] private decimal _salePrice;
+
+    /// <summary>Оптовая цена продажи (в закупке — можно изменить, сохраняется в карточку товара).</summary>
+    [ObservableProperty] private decimal _wholesalePrice;
 
     /// <summary>Сумма строки для ввода: при изменении пересчитывается цена (сумма / количество).</summary>
     public decimal AmountInput

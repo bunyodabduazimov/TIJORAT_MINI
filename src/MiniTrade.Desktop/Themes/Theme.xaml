@@ -3,7 +3,7 @@
                     xmlns:inf="clr-namespace:MiniTrade.Desktop.Infrastructure">
 
     <!--
-        Единая тема TIJORAT.PRO.
+        Единая тема TIJORAT LITE.
         Все поля и кнопки: высота 30, скругление 6, отступ текста 10 px.
         Фокус — синяя рамка + мягкое кольцо; ошибка — красная рамка.
 
